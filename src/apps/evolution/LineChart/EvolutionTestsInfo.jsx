@@ -198,6 +198,128 @@ function PerGroupBody({ testId, result }) {
   );
 }
 
+function LmmBody({ result }) {
+  if (!result) return null;
+
+  const fixedEffects = Array.isArray(result.fixedEffects) ? result.fixedEffects : [];
+  const variance = result.variance || {};
+  const timeEffect = result?.wald?.time;
+  const metadata = result?.metadata || {};
+  const warnings = Array.isArray(result.warnings)
+    ? result.warnings
+    : result.warning
+      ? [result.warning]
+      : [];
+
+  return (
+    <>
+      {warnings.map((warning, index) => (
+        <div key={`${warning}-${index}`} className={styles.note}>
+          {warning}
+        </div>
+      ))}
+
+      <div className={styles.effectGrid}>
+        <div className={styles.effectCard}>
+          <div className={styles.effectTitle}>Main Time Test (Wald)</div>
+          <div className={styles.statLine}>
+            β = {formatNumber(timeEffect?.estimate, 4)}
+          </div>
+          <div className={styles.statLine}>
+            Wald = {formatNumber(timeEffect?.wald, 3)}
+          </div>
+          <div className={styles.statLine}>
+            z = {formatNumber(timeEffect?.statistic, 3)}
+          </div>
+          <div className={styles.statLine}>p = {formatP(timeEffect?.pValue)}</div>
+        </div>
+
+        <div className={styles.effectCard}>
+          <div className={styles.effectTitle}>Variance Components</div>
+          <div className={styles.statLine}>
+            Var(u) = {formatNumber(variance.randomIntercept, 4)}
+          </div>
+          <div className={styles.statLine}>
+            Var(ε) = {formatNumber(variance.residual, 4)}
+          </div>
+          <div className={styles.statLine}>
+            ICC = {formatNumber(variance.icc, 3)}
+          </div>
+        </div>
+
+        <div className={styles.effectCard}>
+          <div className={styles.effectTitle}>Model Metadata</div>
+          <div className={styles.statLine}>
+            Subjects used = {metadata.subjectsUsed ?? result.nSubjects ?? "—"}
+          </div>
+          <div className={styles.statLine}>
+            Observations used ={" "}
+            {metadata.observationsUsed ?? result.nObservations ?? "—"}
+          </div>
+          <div className={styles.statLine}>
+            Groups count = {metadata.groupsCount ?? result.nGroups ?? "—"}
+          </div>
+          <div className={styles.statLine}>
+            Method = {result.method || "REML"}
+          </div>
+          <div className={styles.statLine}>
+            Time coding = {metadata.timeCoding || result.timeCoding || "ordered-index"}
+          </div>
+          <div className={styles.statLine}>
+            Group reference = {metadata.groupReference || result.referenceGroup || "—"}
+          </div>
+          <div className={styles.statLine}>
+            Converged = {(metadata.converged ?? result.converged) ? "yes" : "no"}
+          </div>
+        </div>
+      </div>
+
+      {result?.filteredData && (
+        <div className={styles.note}>
+          Rows: {result.filteredData.rowsBeforeFiltering} initial,{" "}
+          {result.filteredData.rowsAfterCompleteCase} after complete-case,{" "}
+          {result.filteredData.rowsAfterSubjectFilter} after subject filter. Subjects:{" "}
+          {result.filteredData.subjectsAfterFilter}.
+        </div>
+      )}
+
+      {!!fixedEffects.length && (
+        <div className={styles.meansSection}>
+          <div className={styles.sectionTitle}>Fixed Effects</div>
+          <div className={styles.tableWrap}>
+            <table className={styles.effectsTable}>
+              <thead>
+                <tr>
+                  <th>Term</th>
+                  <th>Estimate</th>
+                  <th>SE</th>
+                  <th>p</th>
+                  <th>CI95%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fixedEffects.map((effect) => (
+                  <tr key={effect.name}>
+                    <td>{effect.name}</td>
+                    <td>{formatNumber(effect.estimate, 4)}</td>
+                    <td>{formatNumber(effect.se, 4)}</td>
+                    <td>{formatP(effect.pValue)}</td>
+                    <td>
+                      [{formatNumber(effect.ci95?.lower, 2)},{" "}
+                      {formatNumber(effect.ci95?.upper, 2)}]
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+    </>
+  );
+}
+
 export default function EvolutionTestsInfo({ tests = [] }) {
   if (!tests.length) return null;
 
@@ -221,6 +343,17 @@ export default function EvolutionTestsInfo({ tests = [] }) {
             `t = ${test.result.pairTimes[0]} → ${test.result.pairTimes[1]}`
           );
         }
+        if (test.variant === "lmm") {
+          if (test.result?.nSubjects != null) {
+            meta.push(`subjects = ${test.result.nSubjects}`);
+          }
+          if (test.result?.nObservations != null) {
+            meta.push(`obs = ${test.result.nObservations}`);
+          }
+          if (test.result?.nGroups != null) {
+            meta.push(`groups = ${test.result.nGroups}`);
+          }
+        }
 
         return (
           <div key={test.id} className={styles.card}>
@@ -231,7 +364,6 @@ export default function EvolutionTestsInfo({ tests = [] }) {
                   <div className={styles.cardMeta}>{meta.join(" • ")}</div>
                 )}
               </div>
-              {test.scope && <div className={styles.badge}>{test.scope}</div>}
             </div>
 
             {test.description && (
@@ -253,6 +385,8 @@ export default function EvolutionTestsInfo({ tests = [] }) {
               <div className={styles.error}>{error}</div>
             ) : test.variant === "rm-anova" ? (
               <RMAnovaBody result={test.result} />
+            ) : test.variant === "lmm" ? (
+              <LmmBody result={test.result} />
             ) : (
               <PerGroupBody testId={test.id} result={test.result} />
             )}

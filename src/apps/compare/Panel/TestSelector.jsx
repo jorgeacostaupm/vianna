@@ -138,58 +138,6 @@ export default function TestSelector({ generateTest, generateRanking }) {
             </OptGroup>
           ))}
         </Select>
-
-        {selectedTestObj && (
-          <div
-            style={{
-              marginTop: "8px",
-              border: "1px solid #d9d9d9",
-              borderRadius: "8px",
-              padding: "10px",
-              background: "#fafafa",
-              display: "flex",
-              flexDirection: "column",
-              gap: "6px",
-              fontSize: "12px",
-            }}
-          >
-            <div>
-              <strong>Test:</strong> {selectedTestObj.label}
-            </div>
-            <div>
-              <strong>Applies to:</strong> {selectedTestObj.applicability}
-            </div>
-            <div>
-              <strong>Current context:</strong> {groups.length} groups
-              {selectedVarType
-                ? `, ${getVariableTypeLabel(selectedVarType)} variable`
-                : ", variable type not selected"}
-            </div>
-            <div>
-              <strong>Current applicability:</strong>{" "}
-              <span
-                className={
-                  isApplicableNow
-                    ? styles.applicabilityYes
-                    : styles.applicabilityNo
-                }
-              >
-                {isApplicableNow ? "Applicable" : "Not applicable"}
-              </span>
-            </div>
-            <div>
-              <strong>Reported measures:</strong>
-              <ul style={{ margin: "4px 0 0", paddingLeft: "18px" }}>
-                {selectedTestObj.reportedMeasures?.map((measure) => (
-                  <li key={measure}>{measure}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <strong>Post hoc:</strong> {selectedTestObj.postHoc}
-            </div>
-          </div>
-        )}
       </div>
 
       <ColoredButton
@@ -213,6 +161,58 @@ export default function TestSelector({ generateTest, generateRanking }) {
         onClick={() => selectedTest && generateRanking(selectedTest)}
         disabled={!selectedTest || !groupVar}
       />
+
+      {selectedTestObj && (
+        <div
+          style={{
+            marginTop: "8px",
+            border: "1px solid #d9d9d9",
+            borderRadius: "8px",
+            padding: "10px",
+            background: "#fafafa",
+            display: "flex",
+            flexDirection: "column",
+            gap: "6px",
+            fontSize: "12px",
+          }}
+        >
+          <div>
+            <strong>Test:</strong> {selectedTestObj.label}
+          </div>
+          <div>
+            <strong>Applies to:</strong> {selectedTestObj.applicability}
+          </div>
+          <div>
+            <strong>Current context:</strong> {groups.length} groups
+            {selectedVarType
+              ? `, ${getVariableTypeLabel(selectedVarType)} variable`
+              : ", variable type not selected"}
+          </div>
+          <div>
+            <strong>Current applicability:</strong>{" "}
+            <span
+              className={
+                isApplicableNow
+                  ? styles.applicabilityYes
+                  : styles.applicabilityNo
+              }
+            >
+              {isApplicableNow ? "Applicable" : "Not applicable"}
+            </span>
+          </div>
+          <div>
+            <strong>Reported measures:</strong>
+            <ul style={{ margin: "4px 0 0", paddingLeft: "18px" }}>
+              {selectedTestObj.reportedMeasures?.map((measure) => (
+                <li key={measure}>{measure}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <strong>Post hoc:</strong> {selectedTestObj.postHoc}
+          </div>
+        </div>
+      )}
     </>
   );
 }

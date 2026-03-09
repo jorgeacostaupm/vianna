@@ -358,6 +358,37 @@
   padding-left: 2px;
 }
 
+.contextStatsBox {
+  margin-top: 2px;
+  border-top: 1px dashed rgba(30, 112, 194, 0.28);
+  padding-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contextStatsRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.contextStatsLabel {
+  color: var(--color-ink-secondary);
+  font-size: var(--font-size-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextStatsValue {
+  color: var(--color-ink);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .selectorControl {
   min-width: 0;
   width: 100%;

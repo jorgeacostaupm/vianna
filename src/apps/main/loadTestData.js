@@ -36,6 +36,7 @@ export default async function loadTestData(dispatch) {
     );
 
     dispatch(setIdVar(idVar));
+
     return true;
   } catch (error) {
     notifyError({

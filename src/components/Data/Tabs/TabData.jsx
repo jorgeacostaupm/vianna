@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Select, Typography, Divider } from "antd";
 import DragDropData from "../DragDrop/DragDropData";
@@ -10,6 +10,10 @@ import {
   selectNumericVars,
   selectUnkownVars,
 } from "@/store/slices/cantabSlice";
+import {
+  getColumnValueCounts,
+  getDistinctValueCount,
+} from "@/utils/dataSummary";
 import styles from "../Data.module.css";
 
 const { Title, Text } = Typography;
@@ -102,6 +106,26 @@ const UploadPanel = () => {
   const dispatch = useDispatch();
   const idVar = useSelector((state) => state.cantab.present.idVar);
   const vars = useSelector(selectNavioVars);
+  const selection = useSelector((state) => state.dataframe.present.selection);
+  const dataframe = useSelector((state) => state.dataframe.present.dataframe);
+  const rows = Array.isArray(selection)
+    ? selection
+    : Array.isArray(dataframe)
+      ? dataframe
+      : [];
+
+  const idValueCounts = useMemo(
+    () => getColumnValueCounts(rows, idVar),
+    [rows, idVar],
+  );
+  const subjectCount = useMemo(
+    () => getDistinctValueCount(rows, idVar) ?? 0,
+    [rows, idVar],
+  );
+  const repeatedIdsCount = useMemo(
+    () => idValueCounts.filter((item) => !item.isMissing && item.count > 1).length,
+    [idValueCounts],
+  );
 
   const handleChange = useCallback(
     (setter) => (value) => dispatch(setter(value)),
@@ -159,6 +183,48 @@ const UploadPanel = () => {
           />
         </div>
       ))}
+
+      <div className={styles.idFrequencyBlock}>
+        {!idVar ? (
+          <Text type="secondary">
+            Select an ID measurement to display subject frequencies.
+          </Text>
+        ) : (
+          <>
+            <div className={styles.idFrequencyMeta}>
+              <Text type="secondary">
+                Subjects (unique IDs): <Text strong>{subjectCount}</Text>
+              </Text>
+              <Text type="secondary">
+                Repeated IDs: <Text strong>{repeatedIdsCount}</Text>
+              </Text>
+            </div>
+
+            <div className={styles.idFrequencyList}>
+              {idValueCounts.length === 0 ? (
+                <Text type="secondary">
+                  No values found for the selected ID column.
+                </Text>
+              ) : (
+                idValueCounts.map((item) => (
+                  <div
+                    key={`${item.value}-${item.isMissing ? "missing" : "value"}`}
+                    className={styles.idFrequencyRow}
+                  >
+                    <Text
+                      className={styles.idFrequencyValue}
+                      ellipsis={{ tooltip: item.value }}
+                    >
+                      {item.value}
+                    </Text>
+                    <Text strong>{item.count}</Text>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
+      </div>
 
       <Divider style={{ margin: "1rem 0" }} />
 

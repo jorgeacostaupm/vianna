@@ -15,16 +15,45 @@ import {
 export default function useLineChart({ chartRef, legendRef, data, config }) {
   const dimensions = useResizeObserver(chartRef);
   const groupVar = useSelector((s) => s.evolution.groupVar);
-  const rawGroups = Array.from(
-    new Set(
-      (data?.meanData || [])
-        .map((entry) => entry.group)
-        .concat((data?.participantData || []).map((entry) => entry.group))
-    )
-  ).filter((value) => value != null);
+  const {
+    showMeans,
+    showOverallMean,
+    showStds,
+    showObs,
+    showCIs,
+    showLmmFit,
+    showLmmCI,
+    showLegend,
+    showGrid,
+    meanPointSize,
+    meanStrokeWidth,
+    subjectPointSize,
+    subjectStrokeWidth,
+  } = config || {};
+  const visibleGroups = [];
+  if (showMeans) {
+    visibleGroups.push(...(data?.meanData || []).map((entry) => entry.group));
+  }
+  if (showObs) {
+    visibleGroups.push(
+      ...(data?.participantData || []).map((entry) => entry.group),
+    );
+  }
+  if (showLmmFit || showLmmCI) {
+    visibleGroups.push(
+      ...(data?.lmm?.predictions || []).map((entry) => entry.group),
+    );
+  }
+  if (showOverallMean && data?.overallMeanData?.values?.length) {
+    visibleGroups.push(data.overallMeanData.group ?? "All");
+  }
+
+  const rawGroups = Array.from(new Set(visibleGroups)).filter(
+    (value) => value != null,
+  );
   const { colorDomain, orderedGroups: groups } = useGroupColorDomain(
     groupVar,
-    rawGroups
+    rawGroups,
   );
   const selectionGroups = groups;
   const selectionTimestamps = (data?.times || []).map((t) => `${t}`);
@@ -38,19 +67,6 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
     y: null,
   });
 
-  const {
-    showMeans,
-    showStds,
-    showObs,
-    showCIs,
-    showLegend,
-    showGrid,
-    meanPointSize,
-    meanStrokeWidth,
-    subjectPointSize,
-    subjectStrokeWidth,
-  } = config || {};
-
   useEffect(() => {
     if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
 
@@ -62,10 +78,15 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
     const [yMin, yMax] = getYRange(
       data.participantData,
       data.meanData,
+      data.overallMeanData,
+      data.lmm?.predictions,
       showMeans,
+      showOverallMean,
       showStds,
       showObs,
-      showCIs
+      showCIs,
+      showLmmFit,
+      showLmmCI
     );
 
     const svg = d3.select(chartRef.current);
@@ -353,8 +374,260 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
       });
     }
 
+    function renderOverallMean() {
+      const overall = data?.overallMeanData;
+      if (!showOverallMean || !overall?.values?.length) return;
+
+      const overallGroup = overall.group ?? "All";
+      const overallColor = color(overallGroup);
+      const line = d3
+        .line()
+        .defined((point) => Number.isFinite(+point.value?.mean))
+        .x((point) => x(point.time) + x.bandwidth() / 2)
+        .y((point) => y(+point.value.mean));
+
+      const overallSelection = chart
+        .selectAll(".evolutionOverallMean")
+        .data([overall], () => "overall-mean")
+        .join(
+          (enter) => {
+            const g = enter.append("g").attr("class", "evolutionOverallMean");
+            g.append("path")
+              .attr("class", "evolutionOverallMeanLine")
+              .attr("fill", "none");
+            g.append("g").attr("class", "overall-means");
+            return g;
+          },
+          (update) => update,
+          (exit) => exit.remove(),
+        )
+        .classed("hide", (entry) => hide.includes(entry.group));
+
+      overallSelection
+        .select(".evolutionOverallMeanLine")
+        .datum(overall.values)
+        .attr("d", line)
+        .attr("stroke", overallColor)
+        .attr("stroke-width", meanStrokeWidth)
+        .attr("fill", "none");
+
+      const overallPoints = overallSelection
+        .select(".overall-means")
+        .selectAll("circle.overall-mean")
+        .data(overall.values, (value) => `overall-${value.time}`)
+        .join("circle")
+        .attr("class", "overall-mean");
+
+      overallPoints
+        .attr("cx", (value) => x(value.time) + x.bandwidth() / 2)
+        .attr("cy", (value) => y(+value.value.mean))
+        .attr("fill", overallColor)
+        .attr("stroke", CHART_OUTLINE)
+        .attr("r", Math.max(meanPointSize, 4))
+        .on("mouseover", function (event, value) {
+          const html = `
+            <strong>All groups</strong><br/>
+            ${value.time}<br/>
+            Mean: ${Number(value.value.mean).toFixed(2)}<br/>
+            Std: ${Number(value.value.std).toFixed(2)}<br/>
+            n: ${value.value.count}
+          `;
+          tooltip.style("opacity", 1).html(html);
+        })
+        .on("mousemove", function (e) {
+          moveTooltip(e, tooltip, chart);
+        })
+        .on("mouseout", function () {
+          tooltip.style("opacity", 0);
+        });
+
+      if (!showCIs) {
+        chart.selectAll(".evolutionOverallCI").remove();
+        return;
+      }
+
+      const barWidth = x.bandwidth() * 0.12;
+      const overallCI = chart
+        .selectAll(".evolutionOverallCI")
+        .data([overall], () => "overall-ci")
+        .join(
+          (enter) => {
+            const g = enter.append("g").attr("class", "evolutionOverallCI");
+            g.append("g").attr("class", "overall-ci-lines");
+            return g;
+          },
+          (update) => update,
+          (exit) => exit.remove(),
+        )
+        .classed("hide", (entry) => hide.includes(entry.group));
+
+      const ciLines = [];
+      overall.values.forEach((value) => {
+        const centerX = x(value.time) + x.bandwidth() / 2;
+        ciLines.push({
+          key: `${value.time}-v`,
+          x1: centerX,
+          x2: centerX,
+          y1: y(value.value.ci95.lower),
+          y2: y(value.value.ci95.upper),
+        });
+        ciLines.push({
+          key: `${value.time}-top`,
+          x1: centerX - barWidth / 2,
+          x2: centerX + barWidth / 2,
+          y1: y(value.value.ci95.upper),
+          y2: y(value.value.ci95.upper),
+        });
+        ciLines.push({
+          key: `${value.time}-bottom`,
+          x1: centerX - barWidth / 2,
+          x2: centerX + barWidth / 2,
+          y1: y(value.value.ci95.lower),
+          y2: y(value.value.ci95.lower),
+        });
+      });
+
+      overallCI
+        .select(".overall-ci-lines")
+        .selectAll("line")
+        .data(ciLines, (d) => d.key)
+        .join("line")
+        .attr("x1", (d) => d.x1)
+        .attr("x2", (d) => d.x2)
+        .attr("y1", (d) => d.y1)
+        .attr("y2", (d) => d.y2)
+        .attr("stroke", overallColor)
+        .attr("stroke-width", 2);
+    }
+
+    function renderLmm() {
+      const predictions = data?.lmm?.predictions;
+      if (!Array.isArray(predictions) || !predictions.length) return;
+      const timeEffect = data?.lmm?.wald?.time;
+      const slope = Number(timeEffect?.estimate);
+      const pValue = Number(timeEffect?.pValue);
+      const slopeDirection = Number.isFinite(slope)
+        ? slope > 0
+          ? "positive"
+          : slope < 0
+            ? "negative"
+            : "flat"
+        : "unknown";
+      const formatSlope = (value, digits = 4) =>
+        Number.isFinite(value) ? value.toFixed(digits) : "—";
+      const formatP = (value) => {
+        if (!Number.isFinite(value)) return "—";
+        if (value < 0.001) return "< 0.001";
+        return value.toFixed(3);
+      };
+
+      const line = d3
+        .line()
+        .defined((point) => Number.isFinite(+point.fit))
+        .x((point) => x(point.time) + x.bandwidth() / 2)
+        .y((point) => y(+point.fit))
+        .curve(d3.curveMonotoneX);
+
+      if (showLmmCI) {
+        const area = d3
+          .area()
+          .defined(
+            (point) =>
+              Number.isFinite(+point?.ci95?.lower) &&
+              Number.isFinite(+point?.ci95?.upper),
+          )
+          .x((point) => x(point.time) + x.bandwidth() / 2)
+          .y0((point) => y(+point.ci95.lower))
+          .y1((point) => y(+point.ci95.upper))
+          .curve(d3.curveMonotoneX);
+
+        const ciBands = chart
+          .selectAll(".evolutionLmmCI")
+          .data(predictions, (entry) => entry.group)
+          .join(
+            (enter) => {
+              const g = enter.append("g").attr("class", "evolutionLmmCI");
+              g.append("path").attr("class", "evolutionLmmCIBand");
+              return g;
+            },
+            (update) => update,
+            (exit) => exit.remove(),
+          )
+          .classed("hide", (entry) => hide.includes(entry.group));
+
+        ciBands
+          .select(".evolutionLmmCIBand")
+          .attr("d", (entry) => area(entry.values))
+          .attr("fill", (entry) => color(entry.group))
+          .attr("opacity", 0.12);
+      }
+
+      if (!showLmmFit) return;
+
+      const lmmLines = chart
+        .selectAll(".evolutionLmm")
+        .data(predictions, (entry) => entry.group)
+        .join(
+          (enter) => {
+            const g = enter.append("g").attr("class", "evolutionLmm");
+            g.append("path")
+              .attr("class", "evolutionLmmLine")
+              .attr("fill", "none");
+            return g;
+          },
+          (update) => update,
+          (exit) => exit.remove(),
+        )
+        .classed("hide", (entry) => hide.includes(entry.group));
+
+      lmmLines.each(function (entry) {
+        const validValues = (entry.values || []).filter((point) =>
+          Number.isFinite(+point.fit),
+        );
+        const first = validValues.length ? validValues[0] : null;
+        const last = validValues.length ? validValues[validValues.length - 1] : null;
+        const delta =
+          first && last ? Number(last.fit) - Number(first.fit) : Number.NaN;
+        const trendLabel =
+          Number.isFinite(delta) && delta !== 0
+            ? delta > 0
+              ? "upward"
+              : "downward"
+            : "flat";
+        const groupLabel = entry.group ?? "All";
+
+        d3.select(this)
+          .select(".evolutionLmmLine")
+          .datum(entry.values)
+          .attr("d", line)
+          .attr("stroke", color(entry.group))
+          .attr("stroke-width", Math.max(2, meanStrokeWidth - 1))
+          .attr("stroke-dasharray", "10 6")
+          .attr("fill", "none")
+          .on("mouseover", function () {
+            const html = `
+              <strong>${groupLabel}</strong><br/>
+              LMM fit<br/>
+              Reference: ${data?.lmm?.selectedGroup ?? "All"}<br/>
+              Slope (time): ${formatSlope(slope)} (${slopeDirection})<br/>
+              Wald p: ${formatP(pValue)}<br/>
+              Δ first→last: ${formatSlope(delta, 3)} (${trendLabel})
+            `;
+            tooltip.style("opacity", 1).html(html);
+          })
+          .on("mousemove", function (e) {
+            moveTooltip(e, tooltip, chart);
+          })
+          .on("mouseout", function () {
+            tooltip.style("opacity", 0);
+          });
+      });
+    }
+
     if (showObs) renderParticipants();
     if (showMeans) renderMeans();
+    renderOverallMean();
+    if (showLmmFit || showLmmCI) renderLmm();
 
     const inactiveOpacity = 0.12;
     const setGroupHighlight = (activeGroup = null) => {
@@ -368,6 +641,10 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
       chart.selectAll(".evolutionMean").attr("opacity", resolveOpacity);
       chart.selectAll(".evolutionStd").attr("opacity", resolveOpacity);
       chart.selectAll(".evolutionCI").attr("opacity", resolveOpacity);
+      chart.selectAll(".evolutionLmm").attr("opacity", resolveOpacity);
+      chart.selectAll(".evolutionLmmCI").attr("opacity", resolveOpacity);
+      chart.selectAll(".evolutionOverallMean").attr("opacity", resolveOpacity);
+      chart.selectAll(".evolutionOverallCI").attr("opacity", resolveOpacity);
 
       legend.selectAll(".legend-item").attr("opacity", (d) => {
         if (!hasActiveGroup) return 1;
@@ -411,6 +688,9 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
     dimensions,
     selectionTimestamps.join("|"),
     showCIs,
+    showOverallMean,
+    showLmmCI,
+    showLmmFit,
     showObs,
     showMeans,
     showStds,
@@ -432,12 +712,20 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
 
     if (meanPointSize != null)
       chart.selectAll("circle.mean").attr("r", meanPointSize);
+    if (meanPointSize != null)
+      chart
+        .selectAll("circle.overall-mean")
+        .attr("r", Math.max(meanPointSize, 4));
     if (subjectPointSize != null)
       chart.selectAll("circle.obs-point").attr("r", subjectPointSize);
     if (meanStrokeWidth != null)
       chart
         .selectAll(".evolutionMeanLine")
         .attr("stroke-width", meanStrokeWidth);
+    if (meanStrokeWidth != null)
+      chart
+        .selectAll(".evolutionLmmLine")
+        .attr("stroke-width", Math.max(2, meanStrokeWidth - 1));
     if (subjectStrokeWidth != null)
       chart
         .selectAll(".evolution-line")
@@ -457,6 +745,22 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
       .classed("hide", (d) => hide.includes(d.group));
 
     chart
+      .selectAll(".evolutionLmm")
+      .classed("hide", (d) => hide.includes(d.group));
+
+    chart
+      .selectAll(".evolutionLmmCI")
+      .classed("hide", (d) => hide.includes(d.group));
+
+    chart
+      .selectAll(".evolutionOverallMean")
+      .classed("hide", (d) => hide.includes(d.group));
+
+    chart
+      .selectAll(".evolutionOverallCI")
+      .classed("hide", (d) => hide.includes(d.group));
+
+    chart
       .selectAll(".evolutionMean")
       .classed("hide", (d) => hide.includes(d.group));
 
@@ -469,10 +773,15 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
 function getYRange(
   participantData = [],
   meanData = [],
+  overallMeanData = null,
+  lmmPredictions = [],
   showMeans,
+  showOverallMean,
   showStds,
   showObs,
-  showCIs
+  showCIs,
+  showLmmFit,
+  showLmmCI
 ) {
   const vals = [];
 
@@ -506,6 +815,36 @@ function getYRange(
         if (showCIs && v.value.ci95) {
           const lower = +v.value.ci95.lower;
           const upper = +v.value.ci95.upper;
+          if (Number.isFinite(lower)) vals.push(lower);
+          if (Number.isFinite(upper)) vals.push(upper);
+        }
+      })
+    );
+  }
+
+  if (showOverallMean && overallMeanData?.values) {
+    overallMeanData.values.forEach((value) => {
+      const mean = +value.value.mean;
+      if (Number.isFinite(mean)) vals.push(mean);
+
+      if (showCIs && value.value.ci95) {
+        const lower = +value.value.ci95.lower;
+        const upper = +value.value.ci95.upper;
+        if (Number.isFinite(lower)) vals.push(lower);
+        if (Number.isFinite(upper)) vals.push(upper);
+      }
+    });
+  }
+
+  if ((showLmmFit || showLmmCI) && Array.isArray(lmmPredictions)) {
+    lmmPredictions.forEach((group) =>
+      (group.values || []).forEach((v) => {
+        const fit = +v.fit;
+        if (showLmmFit && Number.isFinite(fit)) vals.push(fit);
+
+        if (showLmmCI && v.ci95) {
+          const lower = +v.ci95.lower;
+          const upper = +v.ci95.upper;
           if (Number.isFinite(lower)) vals.push(lower);
           if (Number.isFinite(upper)) vals.push(upper);
         }

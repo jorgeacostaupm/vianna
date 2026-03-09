@@ -289,6 +289,17 @@ function StatBlock({ title, df1, df2, F, p, eta, centered }) {
   );
 }
 
+function buildCi95(mean, std, n) {
+  if (!Number.isFinite(mean)) return { lower: NaN, upper: NaN };
+  if (!Number.isFinite(std) || !Number.isFinite(n) || n <= 1) {
+    return { lower: mean, upper: mean };
+  }
+  const tCrit = jStat.studentt.inv(0.975, n - 1);
+  if (!Number.isFinite(tCrit)) return { lower: mean, upper: mean };
+  const se = std / Math.sqrt(n);
+  return { lower: mean - tCrit * se, upper: mean + tCrit * se };
+}
+
 export function getLineChartData(
   raw,
   valueVar,
@@ -299,6 +310,8 @@ export function getLineChartData(
   tests = [],
   timeRange = null,
   timeOrderConfig = null,
+  testOptions = null,
+  varTypes = null,
 ) {
   if (!raw || !Array.isArray(raw)) {
     return { meanData: [], participantData: [], tests: [], rmAnova: null };
@@ -422,10 +435,7 @@ export function getLineChartData(
     const std = row.std;
     const n = row.count;
 
-    // IC95% usando t de Student
-    const tCrit = jStat.studentt.inv(0.975, n - 1); // 95% CI
-    const se = std / Math.sqrt(n);
-    const ci95 = { lower: mean - tCrit * se, upper: mean + tCrit * se };
+    const ci95 = buildCi95(mean, std, n);
 
     const v = { mean, std, count: n, ci95 };
 
@@ -437,6 +447,37 @@ export function getLineChartData(
     group,
     values: values.sort((a, b) => compareByTimeRank(a.time, b.time)),
   }));
+
+  const overallAggregated = table
+    .groupby(timeVar)
+    .rollup({
+      mean: aq.op.mean(valueVar),
+      std: aq.op.stdev(valueVar),
+      count: aq.op.count(),
+    })
+    .objects();
+
+  const overallMeanData = {
+    group: "All",
+    label: "All",
+    values: overallAggregated
+      .map((row) => {
+        const time = String(row[timeVar]);
+        const mean = row.mean;
+        const std = row.std;
+        const count = row.count;
+        return {
+          time,
+          value: {
+            mean,
+            std,
+            count,
+            ci95: buildCi95(mean, std, count),
+          },
+        };
+      })
+      .sort((a, b) => compareByTimeRank(a.time, b.time)),
+  };
 
   const testResults = Array.isArray(tests)
     ? tests.map((test) => {
@@ -463,13 +504,16 @@ export function getLineChartData(
 
         try {
           const result = test.run({
+            rawRows: raw,
             participantData,
             times: allTimes,
             groupVar,
             timeVar,
             idVar,
             variable: valueVar,
+            varTypes,
             timeRange,
+            testOptions,
           });
           const error = result?.error;
           return { ...meta, result, error };
@@ -488,12 +532,17 @@ export function getLineChartData(
 
   const rmAnova =
     testResults.find((test) => test.id === "rm-anova")?.result || null;
+  const lmm =
+    testResults.find((test) => test.id === "lmm-random-intercept")?.result ||
+    null;
 
   return {
     meanData,
+    overallMeanData,
     participantData,
     tests: testResults,
     rmAnova,
+    lmm,
     times: allTimes,
   };
 }

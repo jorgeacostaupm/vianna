@@ -3,6 +3,7 @@ import { friedmanTest } from "@/utils/tests/numerical/friedman";
 import { mauchlyTest } from "@/utils/tests/numerical/Mauchly";
 import { pairedTTest } from "@/utils/tests/numerical/PairedStudentT";
 import { signTest } from "@/utils/tests/numerical/SignTest";
+import { fitRandomInterceptLmm } from "@/utils/evolution_lmm";
 import { ownMean } from "./OwnMean";
 
 const UNKNOWN_GROUP = "All";
@@ -169,7 +170,7 @@ const rmAnovaTest = {
   description:
     "Two-way repeated-measures ANOVA with group, time, and interaction effects.",
   referenceUrl: "https://search.r-project.org/R/refmans/stats/html/aov.html",
-  scope: "Group × Time",
+  scope: null,
   variant: "rm-anova",
   minTimepoints: 2,
   minSubjects: 2,
@@ -181,6 +182,102 @@ const rmAnovaTest = {
       return { error: "No time points available for this test." };
     }
     return runRMAnova(participantData, times);
+  },
+};
+
+const lmmRandomIntercept = {
+  id: "lmm-random-intercept",
+  label: "LMM (Random Intercept)",
+  description:
+    "Random-intercept mixed model (REML) with fixed time, optional group interaction, and user-selected covariates.",
+  referenceUrl:
+    "https://en.wikipedia.org/wiki/Mixed_model#Linear_mixed_model",
+  scope: null,
+  variant: "lmm",
+  minTimepoints: 2,
+  minSubjects: 2,
+  // Supported formula in this first version:
+  // y ~ time + group + covariates + optional(time:group) + (1|subject)
+  // Out of scope: random slopes, nested random effects, complex residual covariance,
+  // free-form formulas and automatic model selection/imputation.
+  run: ({ participantData, times, testOptions, rawRows, groupVar, timeVar, idVar, variable, varTypes }) => {
+    if (!participantData || participantData.length === 0) {
+      return { error: "No data available for this test." };
+    }
+    if (!times || times.length === 0) {
+      return { error: "No time points available for this test." };
+    }
+
+    const rows = Array.isArray(rawRows) ? rawRows : [];
+    if (!rows.length) {
+      return { error: "No data available for this test." };
+    }
+
+    if (!variable || !idVar || !timeVar) {
+      return { error: "Missing required model variables (outcome, subject ID, or time)." };
+    }
+
+    const configuredCovariates = Array.isArray(testOptions?.lmmCovariates)
+      ? testOptions.lmmCovariates
+      : [];
+    const blocked = new Set([variable, idVar, timeVar, groupVar].filter(Boolean));
+    const covariates = configuredCovariates.filter((name) => !blocked.has(name));
+
+    if (covariates.length !== configuredCovariates.length) {
+      return {
+        error:
+          "Invalid covariate selection. Outcome, Subject ID, Time, and Group cannot be selected as covariates.",
+      };
+    }
+
+    const includeInteraction = Boolean(testOptions?.lmmIncludeInteraction && groupVar);
+    const requestedTimeCoding =
+      testOptions?.lmmTimeCoding === "continuous" ||
+      testOptions?.lmmTimeCoding === "ordered-index"
+        ? testOptions.lmmTimeCoding
+        : "auto";
+
+    const selectedGroup =
+      testOptions?.lmmReferenceGroup != null &&
+      String(testOptions.lmmReferenceGroup).trim() !== ""
+        ? String(testOptions.lmmReferenceGroup)
+        : UNKNOWN_GROUP;
+
+    if (
+      selectedGroup !== UNKNOWN_GROUP &&
+      !participantData.some(
+        (participant) =>
+          String(participant?.group ?? UNKNOWN_GROUP) === selectedGroup,
+      )
+    ) {
+      return {
+        error: `Selected LMM group does not exist in current data: ${selectedGroup}.`,
+      };
+    }
+
+    const result = fitRandomInterceptLmm({
+      rawRows: rows,
+      times,
+      outcomeVar: variable,
+      idVar,
+      timeVar,
+      groupVar,
+      includeGroupEffect: Boolean(groupVar),
+      covariates,
+      includeTimeGroupInteraction: includeInteraction,
+      timeCoding: requestedTimeCoding,
+      declaredVarTypes: varTypes || null,
+      referenceGroup:
+        selectedGroup === UNKNOWN_GROUP ? null : selectedGroup,
+      referenceMode: selectedGroup === UNKNOWN_GROUP ? "all" : "group",
+    });
+
+    return {
+      ...result,
+      selectedGroup,
+      covariates,
+      selectionMode: selectedGroup === UNKNOWN_GROUP ? "all" : "group",
+    };
   },
 };
 
@@ -246,6 +343,7 @@ const signTestEvolution = {
 };
 
 const evolutionTests = [
+  lmmRandomIntercept,
   rmAnovaTest,
   friedmanEvolution,
   mauchlyEvolution,

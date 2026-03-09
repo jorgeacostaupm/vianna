@@ -14,6 +14,7 @@ import {
   DEFAULT_GROUP_VARIABLE,
   DEFAULT_TIMESTAMP_VARIABLE,
 } from "@/utils/Constants";
+import AnalysisContextStats from "@/components/ui/AnalysisContextStats";
 import styles from "@/styles/App.module.css";
 import TimeOrderModal from "./TimeOrderModal";
 
@@ -23,6 +24,7 @@ export default function ContextSelector() {
   const dispatch = useDispatch();
   const groupVar = useSelector((s) => s.evolution.groupVar);
   const timeVar = useSelector((s) => s.evolution.timeVar);
+  const idVar = useSelector((s) => s.cantab.present.idVar);
   const categoricalVars = useSelector(selectCategoricalVars);
   const navioVars = useSelector(selectNavioVars);
 
@@ -90,6 +92,8 @@ export default function ContextSelector() {
         </Select>
         <TimeOrderModal timeVar={timeVar} />
       </div>
+
+      <AnalysisContextStats groupVar={groupVar} timeVar={timeVar} idVar={idVar} />
     </>
   );
 }

@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 
 import { getLineChartData } from "@/utils/functionsEvolution";
 import evolutionTests from "@/utils/evolution_tests";
-import { selectNumericVars } from "@/store/slices/cantabSlice";
+import { selectNumericVars, selectVarTypes } from "@/store/slices/cantabSlice";
 import { notifyError } from "@/utils/notifications";
 
 export default function useLineChartData(
@@ -11,7 +11,8 @@ export default function useLineChartData(
   isSync = true,
   showComplete = true,
   testIds = [],
-  timeRange = null
+  timeRange = null,
+  testOptions = null
 ) {
   const [data, setData] = useState([]);
   const lastErrorRef = useRef(null);
@@ -23,6 +24,7 @@ export default function useLineChartData(
   );
   const idVar = useSelector((s) => s.cantab.present.idVar);
   const variables = useSelector(selectNumericVars);
+  const varTypes = useSelector(selectVarTypes);
 
   const selectedTests = useMemo(() => {
     const ids = Array.isArray(testIds) ? testIds : [];
@@ -48,6 +50,7 @@ export default function useLineChartData(
         idVar,
         showComplete,
         selectedTests: selectedTests.map((test) => test.id),
+        testOptions,
       });
 
       const result = getLineChartData(
@@ -59,15 +62,21 @@ export default function useLineChartData(
         showComplete,
         selectedTests,
         timeRange,
-        timeOrderConfig
+        timeOrderConfig,
+        testOptions,
+        varTypes
       );
       console.log("[Evolution] Line chart data ready", {
         meanGroups: Array.isArray(result?.meanData) ? result.meanData.length : null,
+        hasOverallMean: Array.isArray(result?.overallMeanData?.values)
+          ? result.overallMeanData.values.length > 0
+          : false,
         participants: Array.isArray(result?.participantData)
           ? result.participantData.length
           : null,
         tests: Array.isArray(result?.tests) ? result.tests.length : null,
         hasRmAnova: Boolean(result?.rmAnova),
+        hasLmm: Boolean(result?.lmm),
         times: Array.isArray(result?.times) ? result.times.length : null,
       });
       setData(result);
@@ -108,6 +117,13 @@ export default function useLineChartData(
     Array.isArray(timeOrderConfig?.manualOrder)
       ? timeOrderConfig.manualOrder.join("|")
       : "",
+    testOptions?.lmmReferenceGroup,
+    testOptions?.lmmIncludeInteraction,
+    testOptions?.lmmTimeCoding,
+    Array.isArray(testOptions?.lmmCovariates)
+      ? testOptions.lmmCovariates.join("|")
+      : "",
+    varTypes,
     variables,
   ]);
 

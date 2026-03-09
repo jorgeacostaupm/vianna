@@ -187,3 +187,64 @@
   font-size: var(--font-size-xs);
   color: var(--color-ink-secondary);
 }
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.effectsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-xs);
+}
+
+.effectsTable th,
+.effectsTable td {
+  border: 1px solid var(--color-border);
+  padding: 4px 6px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.effectsTable th {
+  background: var(--color-surface-muted);
+  color: var(--color-ink-secondary);
+  font-weight: 700;
+}
+
+.histogram {
+  height: 120px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: var(--space-2);
+}
+
+.histBarWrap {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.histBar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  background: linear-gradient(
+    180deg,
+    var(--color-brand-soft) 0%,
+    var(--color-brand) 100%
+  );
+}
+
+.histAxis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-ink-tertiary);
+}

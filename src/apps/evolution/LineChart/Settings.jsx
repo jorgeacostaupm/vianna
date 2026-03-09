@@ -5,13 +5,31 @@ import evolutionTests from "@/utils/evolution_tests";
 
 const { Text } = Typography;
 
-export default function Settings({ config, setConfig, availableTimes = [] }) {
+export default function Settings({
+  config,
+  setConfig,
+  availableTimes = [],
+  availableGroups = [],
+  variable,
+  idVar,
+  timeVar,
+  groupVar,
+  variableOptions = [],
+  varTypes = {},
+}) {
   const {
     showObs,
     showMeans,
+    showOverallMean,
     showStds,
     showCIs,
+    showLmmFit,
+    showLmmCI,
     showComplete,
+    lmmReferenceGroup,
+    lmmCovariates = [],
+    lmmIncludeInteraction,
+    lmmTimeCoding,
     meanPointSize,
     subjectPointSize,
     meanStrokeWidth,
@@ -22,6 +40,7 @@ export default function Settings({ config, setConfig, availableTimes = [] }) {
     testTimeFrom,
     testTimeTo,
   } = config;
+  const lmmSelected = testIds.includes("lmm-random-intercept");
   const update = (field, value) =>
     setConfig((prev) => ({ ...prev, [field]: value }));
   const toggleTest = (testId, checked) => {
@@ -35,6 +54,50 @@ export default function Settings({ config, setConfig, availableTimes = [] }) {
     label: t,
     value: t,
   }));
+  const groupOptions = [
+    { label: "All", value: "All" },
+    ...availableGroups
+      .filter((group) => group !== "All")
+      .map((group) => ({
+        label: group,
+        value: group,
+      })),
+  ];
+  const blockedCovariates = new Set([variable, idVar, timeVar, groupVar].filter(Boolean));
+  const covariateOptions = (variableOptions || [])
+    .filter((name) => !blockedCovariates.has(name))
+    .map((name) => {
+      const type = varTypes?.[name] === "number" ? "num" : "cat";
+      return {
+        label: `${name} (${type})`,
+        value: name,
+      };
+    });
+  const timeIsNumeric = varTypes?.[timeVar] === "number";
+  const timeCodingOptions = [
+    { label: "ordered-index", value: "ordered-index" },
+    { label: "continuous", value: "continuous", disabled: !timeIsNumeric },
+  ];
+  const interactionDisabled = !groupVar;
+  const lmmTestId = "lmm-random-intercept";
+  const baseTests = evolutionTests.filter(
+    (test) => test.variant !== "paired" && test.id !== lmmTestId,
+  );
+  const pairedTests = evolutionTests.filter((test) => test.variant === "paired");
+  const lmmTests = evolutionTests.filter((test) => test.id === lmmTestId);
+
+  const renderTestOption = (test) => (
+    <div key={test.id} className={panelStyles.optionItem}>
+      <Checkbox
+        checked={testIds.includes(test.id)}
+        onChange={(e) => toggleTest(test.id, e.target.checked)}
+      />
+      <div className={panelStyles.optionBody}>
+        <div className={panelStyles.optionTitle}>{test.label}</div>
+        <div className={panelStyles.optionDesc}>{test.description}</div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={panelStyles.panel}>
@@ -45,12 +108,35 @@ export default function Settings({ config, setConfig, availableTimes = [] }) {
           <Switch checked={showMeans} onChange={(v) => update("showMeans", v)} />
         </div>
         <div className={panelStyles.row}>
+          <Text className={panelStyles.label}>Overall mean</Text>
+          <Switch
+            checked={showOverallMean}
+            onChange={(v) => update("showOverallMean", v)}
+          />
+        </div>
+        <div className={panelStyles.row}>
           <Text className={panelStyles.label}>STDs</Text>
           <Switch checked={showStds} onChange={(v) => update("showStds", v)} />
         </div>
         <div className={panelStyles.row}>
           <Text className={panelStyles.label}>95% CIs</Text>
           <Switch checked={showCIs} onChange={(v) => update("showCIs", v)} />
+        </div>
+        <div className={panelStyles.row}>
+          <Text className={panelStyles.label}>LMM fit</Text>
+          <Switch
+            checked={showLmmFit}
+            disabled={!lmmSelected}
+            onChange={(v) => update("showLmmFit", v)}
+          />
+        </div>
+        <div className={panelStyles.row}>
+          <Text className={panelStyles.label}>LMM 95% CIs</Text>
+          <Switch
+            checked={showLmmCI}
+            disabled={!lmmSelected}
+            onChange={(v) => update("showLmmCI", v)}
+          />
         </div>
         <div className={panelStyles.row}>
           <Text className={panelStyles.label}>Observations</Text>
@@ -102,56 +188,128 @@ export default function Settings({ config, setConfig, availableTimes = [] }) {
         <div className={panelStyles.helper}>
           Select one or more tests to compute for the evolution view.
         </div>
-        <div className={panelStyles.optionList}>
-          {evolutionTests.map((test) => (
-            <div key={test.id} className={panelStyles.optionItem}>
-              <Checkbox
-                checked={testIds.includes(test.id)}
-                onChange={(e) => toggleTest(test.id, e.target.checked)}
-              />
-              <div className={panelStyles.optionBody}>
-                <div className={panelStyles.optionTitle}>{test.label}</div>
-                <div className={panelStyles.optionDesc}>
-                  {test.description}
-                </div>
+        {!!baseTests.length && (
+          <div className={panelStyles.optionList}>
+            {baseTests.map(renderTestOption)}
+          </div>
+        )}
+
+        {!!pairedTests.length && (
+          <>
+            <div className={panelStyles.rowStack}>
+              <Text className={panelStyles.label}>Paired Tests</Text>
+              <div className={panelStyles.optionList}>
+                {pairedTests.map(renderTestOption)}
               </div>
             </div>
-          ))}
-        </div>
 
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Paired timepoints</Text>
-          <Text className={panelStyles.helper}>
-            Used by paired tests to compare two time points within each group.
-          </Text>
-          <div className={panelStyles.inline}>
-            <Select
-              className={panelStyles.control}
-              options={timeOptions}
-              placeholder="Time A"
-              value={
-                availableTimes.includes(testTimeFrom) ? testTimeFrom : undefined
-              }
-              onChange={(value) => update("testTimeFrom", value)}
-              disabled={timeOptions.length < 2}
-            />
-            <Select
-              className={panelStyles.control}
-              options={timeOptions}
-              placeholder="Time B"
-              value={
-                availableTimes.includes(testTimeTo) ? testTimeTo : undefined
-              }
-              onChange={(value) => update("testTimeTo", value)}
-              disabled={timeOptions.length < 2}
-            />
-          </div>
-          {availableTimes.length < 2 && (
-            <Text className={panelStyles.helper}>
-              At least two time points are needed to run paired tests.
-            </Text>
-          )}
-        </div>
+            <div className={panelStyles.rowStack}>
+              <Text className={panelStyles.label}>Paired timepoints</Text>
+              <Text className={panelStyles.helper}>
+                Used by paired tests to compare two time points within each group.
+              </Text>
+              <div className={panelStyles.inline}>
+                <Select
+                  className={panelStyles.control}
+                  options={timeOptions}
+                  placeholder="Time A"
+                  value={
+                    availableTimes.includes(testTimeFrom) ? testTimeFrom : undefined
+                  }
+                  onChange={(value) => update("testTimeFrom", value)}
+                  disabled={timeOptions.length < 2}
+                />
+                <Select
+                  className={panelStyles.control}
+                  options={timeOptions}
+                  placeholder="Time B"
+                  value={
+                    availableTimes.includes(testTimeTo) ? testTimeTo : undefined
+                  }
+                  onChange={(value) => update("testTimeTo", value)}
+                  disabled={timeOptions.length < 2}
+                />
+              </div>
+              {availableTimes.length < 2 && (
+                <Text className={panelStyles.helper}>
+                  At least two time points are needed to run paired tests.
+                </Text>
+              )}
+            </div>
+          </>
+        )}
+
+        {!!lmmTests.length && (
+          <>
+            <div className={panelStyles.rowStack}>
+              <Text className={panelStyles.label}>LMM</Text>
+              <div className={panelStyles.optionList}>
+                {lmmTests.map(renderTestOption)}
+              </div>
+            </div>
+
+            <div className={panelStyles.rowStack}>
+              <Text className={panelStyles.label}>Mixed Model (LMM)</Text>
+              <Text className={panelStyles.helper}>
+                Random intercept by subject, fixed time and group, optional covariates and Time × Group interaction.
+              </Text>
+
+              <Text className={panelStyles.label}>Group reference</Text>
+              <Select
+                className={panelStyles.control}
+                options={groupOptions}
+                value={lmmReferenceGroup}
+                onChange={(value) => update("lmmReferenceGroup", value)}
+                disabled={!lmmSelected}
+              />
+
+              <Text className={panelStyles.label}>Covariates</Text>
+              <Select
+                mode="multiple"
+                className={panelStyles.control}
+                options={covariateOptions}
+                value={lmmCovariates}
+                onChange={(value) => update("lmmCovariates", value)}
+                placeholder="Select fixed-effect covariates"
+                disabled={!lmmSelected}
+              />
+
+              <div className={panelStyles.row}>
+                <Text className={panelStyles.label}>Include Time × Group interaction</Text>
+                <Switch
+                  checked={Boolean(lmmIncludeInteraction)}
+                  disabled={!lmmSelected || interactionDisabled}
+                  onChange={(value) => update("lmmIncludeInteraction", value)}
+                />
+              </div>
+              {interactionDisabled && (
+                <Text className={panelStyles.helper}>
+                  Interaction is available only when a group variable is selected.
+                </Text>
+              )}
+
+              <Text className={panelStyles.label}>Time coding</Text>
+              <Select
+                className={panelStyles.control}
+                options={timeCodingOptions}
+                value={lmmTimeCoding}
+                onChange={(value) => update("lmmTimeCoding", value)}
+                disabled={!lmmSelected}
+              />
+              {!timeIsNumeric && (
+                <Text className={panelStyles.helper}>
+                  Current time variable is not numeric; ordered-index will be used.
+                </Text>
+              )}
+
+              {!lmmSelected && (
+                <Text className={panelStyles.helper}>
+                  Enable the LMM test to run mixed model analysis.
+                </Text>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className={panelStyles.section}>

@@ -227,6 +227,7 @@ export const metaSlice = createSlice({
           ...state.attributes[targetIdx].related.filter((n) => n !== sourceID),
           sourceID,
         ];
+        state.attributes[targetIdx].isShown = true;
 
         if (state.attributes[sourceIdx].type === "aggregation") {
           const usedAttributes = state.attributes[

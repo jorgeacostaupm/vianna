@@ -23,7 +23,7 @@ export default function Grid({
   useRootStyles(setInit, APP_NAME + " - " + componentName);
   const isInlineLeftPanel = Boolean(panel) && panelPlacement === "left";
   const initialPanelRows =
-    componentName === "Comparison" ? 10 : componentName === "Evolution" ? 5 : 4;
+    componentName === "Comparison" ? 10 : componentName === "Evolution" ? 6 : 4;
   const [panelLayout, setPanelLayout] = useState({
     i: PANEL_LAYOUT_ID,
     x: 0,
@@ -38,11 +38,15 @@ export default function Grid({
     isResizable: true,
   });
 
-  const { views, layout, setLayout, addView, removeView } = useGridViews(3, 4, {
-    topOffsetRows: 0,
-    leftOffsetCols: isInlineLeftPanel ? panelLayout.w : 0,
-    totalCols: GRID_COLS,
-  });
+  const { views, layout, setLayout, addView, removeView } = useGridViews(
+    10,
+    4,
+    {
+      topOffsetRows: 0,
+      leftOffsetCols: isInlineLeftPanel ? panelLayout.w : 0,
+      totalCols: GRID_COLS,
+    },
+  );
   const panelNode = panel ? panel(addView) : null;
 
   const renderView = createViewRenderer(registry, removeView);

@@ -5,6 +5,7 @@ import { Select } from "antd";
 import { selectCategoricalVars } from "@/store/slices/cantabSlice";
 import { setGroupVar as setCompareGroupVar } from "@/store/slices/compareSlice";
 import { DEFAULT_GROUP_VARIABLE } from "@/utils/Constants";
+import AnalysisContextStats from "@/components/ui/AnalysisContextStats";
 import styles from "@/styles/App.module.css";
 
 const { Option } = Select;
@@ -12,6 +13,8 @@ const { Option } = Select;
 export default function ContextSelector() {
   const dispatch = useDispatch();
   const groupVar = useSelector((s) => s.compare.groupVar);
+  const timeVar = useSelector((s) => s.evolution.timeVar);
+  const idVar = useSelector((s) => s.cantab.present.idVar);
   const categoricalVars = useSelector(selectCategoricalVars);
 
   useEffect(() => {
@@ -28,24 +31,28 @@ export default function ContextSelector() {
   };
 
   return (
-    <div className={styles.selectorField}>
-      <span className={styles.selectorLabel}>Group variable</span>
-      <Select
-        className={styles.selectorControl}
-        value={groupVar}
-        onChange={(v) => dispatch(setCompareGroupVar(v))}
-        placeholder="Select group variable"
-        showSearch={true}
-        filterOption={filterOption}
-        optionFilterProp="children"
-        notFoundContent="No variables found"
-      >
-        {categoricalVars.map((v) => (
-          <Option key={v} value={v}>
-            {v}
-          </Option>
-        ))}
-      </Select>
-    </div>
+    <>
+      <div className={styles.selectorField}>
+        <span className={styles.selectorLabel}>Group variable</span>
+        <Select
+          className={styles.selectorControl}
+          value={groupVar}
+          onChange={(v) => dispatch(setCompareGroupVar(v))}
+          placeholder="Select group variable"
+          showSearch={true}
+          filterOption={filterOption}
+          optionFilterProp="children"
+          notFoundContent="No variables found"
+        >
+          {categoricalVars.map((v) => (
+            <Option key={v} value={v}>
+              {v}
+            </Option>
+          ))}
+        </Select>
+      </div>
+
+      <AnalysisContextStats groupVar={groupVar} timeVar={timeVar} idVar={idVar} />
+    </>
   );
 }
