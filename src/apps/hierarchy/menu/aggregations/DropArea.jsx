@@ -142,37 +142,27 @@ const DropArea = ({
         {errors?.info?.formula}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-evenly" }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
         <Tooltip title={"Add all variables"}>
           <Button
             shape="circle"
-            className={buttonStyles.barButton}
+            size="large"
+            className={buttonStyles.coloredButton}
             onClick={() => modeAllNodes(true)}
-            style={{
-              height: "auto",
-              padding: "10px",
-              border: "2px solid",
-            }}
-          >
-            <CopyOutlined style={{ fontSize: "20px" }} />
-          </Button>
+            icon={<CopyOutlined />}
+          />
         </Tooltip>
 
         {save}
 
         <Tooltip title={"Delete all variables"}>
           <Button
-            className={buttonStyles.barButton}
+            className={buttonStyles.coloredButton}
             shape="circle"
+            size="large"
             onClick={() => modeAllNodes(false)}
-            style={{
-              height: "auto",
-              padding: "10px",
-              border: "2px solid",
-            }}
-          >
-            <DeleteOutlined style={{ fontSize: "20px" }} />
-          </Button>
+            icon={<DeleteOutlined />}
+          />
         </Tooltip>
       </div>
     </>

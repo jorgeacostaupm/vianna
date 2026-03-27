@@ -27,7 +27,7 @@ export default function Settings({ config, setConfig, params, setParams }) {
         <div className={panelStyles.sectionTitle}>Variables</div>
         <div className={panelStyles.rowStack}>
           <Text className={panelStyles.label}>Included variables</Text>
-          <Select
+          <Select size="small"
             mode="multiple"
             value={params.variables}
             onChange={onVariablesChange}
@@ -43,41 +43,52 @@ export default function Settings({ config, setConfig, params, setParams }) {
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Points</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Size</Text>
-          <Text className={panelStyles.value}>{config.pointSize}px</Text>
-          <Slider
-            min={1}
-            max={20}
-            value={config.pointSize}
-            onChange={(v) => update("pointSize", v)}
-          />
-        </div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Opacity</Text>
-          <Text className={panelStyles.value}>
-            {Math.round(config.pointOpacity * 100)}%
-          </Text>
-          <Slider
-            min={0.2}
-            max={1}
-            step={0.05}
-            value={config.pointOpacity}
-            onChange={(v) => update("pointOpacity", v)}
-          />
-        </div>
+        <SliderControl
+          label="Size"
+          valueLabel={`${config.pointSize}px`}
+          min={1}
+          max={20}
+          value={config.pointSize}
+          onChange={(v) => update("pointSize", v)}
+        />
+        <SliderControl
+          label="Opacity"
+          valueLabel={`${Math.round(config.pointOpacity * 100)}%`}
+          min={0.2}
+          max={1}
+          step={0.05}
+          value={config.pointOpacity}
+          onChange={(v) => update("pointOpacity", v)}
+        />
       </div>
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Legend</div>
         <div className={panelStyles.row}>
           <Text className={panelStyles.label}>Show legend</Text>
-          <Switch
+          <Switch size="small"
             checked={config.showLegend}
             onChange={(v) => update("showLegend", v)}
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function SliderControl({ label, valueLabel, min, max, step, value, onChange }) {
+  return (
+    <div className={panelStyles.sliderInlineRow}>
+      <Text className={panelStyles.label}>{label}</Text>
+      <Text className={panelStyles.value}>{valueLabel}</Text>
+      <Slider
+        className={panelStyles.sliderInlineControl}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={onChange}
+      />
     </div>
   );
 }

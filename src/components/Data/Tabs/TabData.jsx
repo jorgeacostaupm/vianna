@@ -4,23 +4,10 @@ import { Select, Typography, Divider } from "antd";
 import DragDropData from "../DragDrop/DragDropData";
 import NullifyValuesPanel from "../NullifyValuesPanel";
 import { setIdVar } from "@/store/slices/cantabSlice";
-import {
-  selectNavioVars,
-  selectCategoricalVars,
-  selectNumericVars,
-  selectUnkownVars,
-} from "@/store/slices/cantabSlice";
+import { selectNavioVars } from "@/store/slices/cantabSlice";
 import styles from "../Data.module.css";
 
 const { Title, Text } = Typography;
-const formatPreview = (arr, max = 12) => {
-  if (!arr || arr.length === 0) return "—";
-  const preview = arr.slice(0, max);
-  const remaining = arr.length - preview.length;
-  return remaining > 0
-    ? `${preview.join(", ")} (+${remaining} more)`
-    : preview.join(", ");
-};
 
 const Info = () => {
   const dispatch = useDispatch();
@@ -28,9 +15,6 @@ const Info = () => {
   const filename = useSelector((state) => state.dataframe.present.filename);
   const dt = useSelector((state) => state.dataframe.present.dataframe);
   const vars = useSelector(selectNavioVars);
-  const numericVars = useSelector(selectNumericVars);
-  const categoricalVars = useSelector(selectCategoricalVars);
-  const unknownVars = useSelector(selectUnkownVars);
   const handleChange = useCallback(
     (setter) => (value) => dispatch(setter(value)),
     [dispatch],
@@ -58,45 +42,13 @@ const Info = () => {
       <Divider style={{ margin: "1rem 0" }} />
 
       <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
-        Summary
-      </Title>
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          Numeric:
-        </Text>{" "}
-        <Text type="secondary">{numericVars?.length || 0}</Text>
-      </div>
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          Categorical:
-        </Text>{" "}
-        <Text type="secondary">{categoricalVars?.length || 0}</Text>
-      </div>
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          Unknown:
-        </Text>{" "}
-        <Text type="secondary">{unknownVars?.length || 0}</Text>
-      </div>
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          Visible measurements:
-        </Text>{" "}
-        <Text type="secondary">{formatPreview(vars)}</Text>
-      </div>
-
-      <Divider style={{ margin: "1rem 0" }} />
-
-      <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
-        Configuration Measurements
+        ID Attribute
       </Title>
       <Text type="secondary">
         Set the unique identifier used across analysis views.
       </Text>
 
-      {[
-        ["ID measurement", idVar, setIdVar],
-      ].map(([label, value, setter]) => (
+      {[["ID measurement", idVar, setIdVar]].map(([label, value, setter]) => (
         <div
           key={label}
           style={{
@@ -120,7 +72,10 @@ const Info = () => {
 
       <Divider style={{ margin: "1rem 0" }} />
 
-      <Title level={4} style={{ marginBottom: 4, color: "var(--primary-color)" }}>
+      <Title
+        level={4}
+        style={{ marginBottom: 4, color: "var(--primary-color)" }}
+      >
         Nullify Values
       </Title>
       <Text type="secondary">

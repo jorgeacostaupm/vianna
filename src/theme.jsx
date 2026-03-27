@@ -5,7 +5,7 @@ export const theme = {
     colorPrimaryBgHover: "#DCE0EC",
     colorPrimaryBorder: "#C2CCE0",
     colorInfo: "#4E6698",
-    colorSuccess: "#2F7F6F",
+    colorSuccess: "#26A88E",
     colorWarning: "#B07A2A",
     colorError: "#B2545A",
     colorText: "#25324A",

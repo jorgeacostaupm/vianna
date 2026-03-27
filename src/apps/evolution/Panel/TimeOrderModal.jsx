@@ -59,14 +59,14 @@ export default function TimeOrderModal({ timeVar }) {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
   const selection = useSelector(
-    (s) => s.dataframe.present.selection ?? EMPTY_SELECTION
+    (s) => s.dataframe.present.selection ?? EMPTY_SELECTION,
   );
   const storedConfig = useSelector((s) =>
-    timeVar ? s.evolution.timeOrderByVar?.[timeVar] : null
+    timeVar ? s.evolution.timeOrderByVar?.[timeVar] : null,
   );
 
   const [draftConfig, setDraftConfig] = useState(
-    normalizeTimeOrderConfig(storedConfig)
+    normalizeTimeOrderConfig(storedConfig),
   );
 
   useEffect(() => {
@@ -81,32 +81,32 @@ export default function TimeOrderModal({ timeVar }) {
 
   const normalizedStoredConfig = useMemo(
     () => normalizeTimeOrderConfig(storedConfig),
-    [storedConfig]
+    [storedConfig],
   );
 
   const resolvedStoredMode = useMemo(
     () => resolveTimeOrderMode(values, normalizedStoredConfig),
-    [values, normalizedStoredConfig]
+    [values, normalizedStoredConfig],
   );
 
   const storedPreview = useMemo(
     () => sortTimeValues(values, normalizedStoredConfig),
-    [values, normalizedStoredConfig]
+    [values, normalizedStoredConfig],
   );
 
   const resolvedDraftMode = useMemo(
     () => resolveTimeOrderMode(values, draftConfig),
-    [values, draftConfig]
+    [values, draftConfig],
   );
 
   const autoDraftPreview = useMemo(
     () => sortTimeValues(values, { ...draftConfig, useManualOrder: false }),
-    [values, draftConfig]
+    [values, draftConfig],
   );
 
   const manualPreview = useMemo(
     () => buildManualList(values, draftConfig),
-    [values, draftConfig]
+    [values, draftConfig],
   );
 
   const displayPreview = draftConfig.useManualOrder
@@ -153,7 +153,7 @@ export default function TimeOrderModal({ timeVar }) {
       setTimeOrderConfig({
         timeVar,
         config: normalizeTimeOrderConfig(draftConfig),
-      })
+      }),
     );
     setOpen(false);
   };
@@ -178,15 +178,15 @@ export default function TimeOrderModal({ timeVar }) {
           onClick={() => setOpen(true)}
           disabled={!timeVar}
         >
-          Configure time order
+          Time Order
         </Button>
         <div className={styles.meta}>
           <Tag color="blue">
             {normalizedStoredConfig.useManualOrder
               ? "Manual"
               : normalizedStoredConfig.valueMode === TimeOrderMode.AUTO
-              ? `Auto (${getModeLabel(resolvedStoredMode)})`
-              : getModeLabel(normalizedStoredConfig.valueMode)}
+                ? `Auto (${getModeLabel(resolvedStoredMode)})`
+                : getModeLabel(normalizedStoredConfig.valueMode)}
           </Tag>
           <Tag>
             {normalizedStoredConfig.direction === TimeOrderDirection.ASC
@@ -207,14 +207,24 @@ export default function TimeOrderModal({ timeVar }) {
         }
         open={open}
         onCancel={() => setOpen(false)}
-        onOk={applyChanges}
-        okText="Apply"
-        width={760}
+        width={680}
+        footer={
+          <div className={styles.modalFooter}>
+            <Button onClick={resetCurrentVariable}>
+              Reset variable settings
+            </Button>
+            <Button type="primary" onClick={applyChanges}>
+              Apply
+            </Button>
+            <Button onClick={() => setOpen(false)}>Cancel</Button>
+          </div>
+        }
       >
         <div className={styles.controls}>
           <div className={styles.control}>
             <Text className={styles.label}>Interpret values as</Text>
             <Select
+              size="small"
               value={draftConfig.valueMode}
               options={modeOptions}
               onChange={(value) =>
@@ -227,7 +237,9 @@ export default function TimeOrderModal({ timeVar }) {
                   Auto resolved as <b>{getModeLabel(resolvedDraftMode)}</b>.
                 </>
               ) : (
-                <>Mode fixed to <b>{getModeLabel(draftConfig.valueMode)}</b>.</>
+                <>
+                  Mode fixed to <b>{getModeLabel(draftConfig.valueMode)}</b>.
+                </>
               )}
             </Text>
           </div>
@@ -235,6 +247,7 @@ export default function TimeOrderModal({ timeVar }) {
           <div className={styles.control}>
             <Text className={styles.label}>Direction</Text>
             <Select
+              size="small"
               value={draftConfig.direction}
               options={directionOptions}
               onChange={(value) =>
@@ -245,13 +258,14 @@ export default function TimeOrderModal({ timeVar }) {
 
           <div className={styles.control}>
             <Text className={styles.label}>Manual order</Text>
-            <Switch
-              checked={draftConfig.useManualOrder}
-              onChange={onToggleManualOrder}
-            />
-            <Text className={styles.helper}>
-              Enable to manually move each value up or down.
-            </Text>
+            <div className={styles.manualControlInput}>
+              <Switch
+                className={styles.manualSwitch}
+                size="small"
+                checked={draftConfig.useManualOrder}
+                onChange={onToggleManualOrder}
+              />
+            </div>
           </div>
         </div>
 
@@ -289,10 +303,6 @@ export default function TimeOrderModal({ timeVar }) {
               ))}
             </div>
           )}
-        </div>
-
-        <div className={styles.footer}>
-          <Button onClick={resetCurrentVariable}>Reset variable settings</Button>
         </div>
       </Modal>
     </>

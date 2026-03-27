@@ -10,21 +10,35 @@ import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
 import styles from "@/styles/Charts.module.css";
 import { moveTooltip } from "@/utils/functions";
+import { ORDER_VARIABLE } from "@/utils/Constants";
 import ChartBar from "@/components/charts/ChartBar";
 import tests from "@/utils/tests";
+import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import { notifyError } from "@/utils/notifications";
 import { CHART_GRID, CHART_OUTLINE, CHART_ZERO_LINE } from "@/utils/chartTheme";
 import {
   attachTickLabelGridHover,
   paintLayersInOrder,
 } from "@/utils/gridInteractions";
+import {
+  extractOrderValues,
+  isFiniteNumericValue,
+  uniqueColumns,
+} from "@/utils/viewRecords";
 
-export default function PointRange({ id, variable, test, remove }) {
+export default function PointRange({
+  id,
+  variable,
+  test,
+  remove,
+  sourceOrderValues = [],
+}) {
   const containerRef = useRef();
   const dims = useResizeObserver(containerRef);
 
   const selection = useSelector((s) => s.dataframe.present.selection);
   const groupVar = useSelector((s) => s.compare.groupVar);
+  const attributes = useSelector((s) => s.metadata.attributes);
 
   const [result, setResult] = useState(null);
   const summaryGroups = result?.summaries?.map((entry) => entry.name) || [];
@@ -39,11 +53,33 @@ export default function PointRange({ id, variable, test, remove }) {
     sortBy: "name",
   });
 
+  const liveOrderValues = React.useMemo(
+    () =>
+      extractOrderValues(selection, (row) => {
+        const groupValue = row?.[groupVar];
+        const value = row?.[variable];
+        return groupValue != null && isFiniteNumericValue(value);
+      }),
+    [selection, groupVar, variable],
+  );
+
+  const recordOrders = useViewRecordSnapshot({
+    isSync: config.isSync,
+    liveOrderValues,
+    initialOrderValues: sourceOrderValues,
+  });
+
+  const requiredVariables = React.useMemo(
+    () => uniqueColumns([groupVar, variable, ORDER_VARIABLE]),
+    [groupVar, variable],
+  );
+
   useEffect(() => {
-    if (!variable || !test || !groupVar || !config.isSync) {
+    if (!variable || !test || !groupVar) {
       setResult(null);
       return;
     }
+    if (!config.isSync) return;
     try {
       const table = aq.from(selection);
       const gTable = table.groupby(groupVar);
@@ -60,7 +96,7 @@ export default function PointRange({ id, variable, test, remove }) {
             !Number.isFinite(v)
           ) {
             errors.push(
-              `Invalid value in column "${variable}" group "${name}" value: "${v}"`
+              `Invalid value in column "${variable}" group "${name}" value: "${v}"`,
             );
           }
         });
@@ -68,7 +104,7 @@ export default function PointRange({ id, variable, test, remove }) {
       if (errors.length) {
         throw new Error(
           `Invalid values found:\n` +
-            errors.map((msg) => ` • ${msg}`).join("\n")
+            errors.map((msg) => ` • ${msg}`).join("\n"),
         );
       }
 
@@ -162,12 +198,10 @@ export default function PointRange({ id, variable, test, remove }) {
       .append("g")
       .attr("class", "grid y-grid")
       .call(
-        d3.axisLeft(y).ticks(yTickCount).tickSize(-chartWidth).tickFormat("")
+        d3.axisLeft(y).ticks(yTickCount).tickSize(-chartWidth).tickFormat(""),
       );
     yGridG.select(".domain").remove();
-    yGridG
-      .selectAll(".tick line")
-      .attr("stroke", CHART_GRID);
+    yGridG.selectAll(".tick line").attr("stroke", CHART_GRID);
 
     const yAxisG = chart.append("g").call(d3.axisLeft(y).ticks(yTickCount));
     yAxisG.select(".domain").remove();
@@ -207,9 +241,9 @@ export default function PointRange({ id, variable, test, remove }) {
         tooltip
           .html(
             `<strong>${d.name}</strong><br/>${d.measure}: ${d.value.toFixed(
-              2
+              2,
             )}<br/>` +
-              `CI: [${d.ci95.lower.toFixed(2)}, ${d.ci95.upper.toFixed(2)}]`
+              `CI: [${d.ci95.lower.toFixed(2)}, ${d.ci95.upper.toFixed(2)}]`,
           )
           .style("visibility", "visible");
       })
@@ -277,9 +311,9 @@ export default function PointRange({ id, variable, test, remove }) {
         tooltip
           .html(
             `<strong>${d.name}</strong><br/>${d.measure}: ${d.value.toFixed(
-              2
+              2,
             )}<br/>` +
-              `CI: [${d.ci95.lower.toFixed(2)}, ${d.ci95.upper.toFixed(2)}]`
+              `CI: [${d.ci95.lower.toFixed(2)}, ${d.ci95.upper.toFixed(2)}]`,
           )
           .style("visibility", "visible");
       })
@@ -302,7 +336,8 @@ export default function PointRange({ id, variable, test, remove }) {
     result?.shortDescription ||
     result?.referenceUrl ||
     result?.applicability ||
-    (Array.isArray(result?.reportedMeasures) && result.reportedMeasures.length > 0) ||
+    (Array.isArray(result?.reportedMeasures) &&
+      result.reportedMeasures.length > 0) ||
     result?.postHoc ? (
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         {result?.shortDescription && <div>{result.shortDescription}</div>}
@@ -343,17 +378,27 @@ export default function PointRange({ id, variable, test, remove }) {
 
   const summaryLabel = result?.summariesTitle || "Summary";
   const title = [test, summaryLabel, variable].filter(Boolean).join(" · ");
+  const variableDescription = React.useMemo(() => {
+    const description = attributes?.find((attr) => attr?.name === variable)?.desc;
+    return typeof description === "string" ? description.trim() : "";
+  }, [attributes, variable]);
 
   return (
     <div className={styles.viewContainer} data-view-container>
       <ChartBar
         title={title}
+        hoverTitle={variableDescription || undefined}
         info={infoContent}
         svgIDs={[id]}
         remove={remove}
         config={config}
         setConfig={setConfig}
         settings={<Settings config={config} setConfig={setConfig}></Settings>}
+        recordsExport={{
+          filename: `summary_${variable || "view"}`,
+          recordOrders,
+          requiredVariables,
+        }}
       />
       <div ref={containerRef} className={styles.chartContainer}></div>
     </div>
@@ -387,13 +432,14 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
     <div className={panelStyles.panel}>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Markers</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Shape</Text>
+        <div className={panelStyles.controlInlineRow}>
           <Radio.Group
+            className={panelStyles.radioGroupCompact}
             disabled={disabled}
             optionType="button"
             buttonStyle="solid"
             value={markerShape}
+            size="small"
             onChange={(e) => update("markerShape", e.target.value)}
           >
             <Radio.Button value="circle">Circle</Radio.Button>
@@ -401,18 +447,16 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
             <Radio.Button value="diamond">Diamond</Radio.Button>
           </Radio.Group>
         </div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Size</Text>
-          <Text className={panelStyles.value}>{markerSize}px</Text>
-          <Slider
-            min={4}
-            max={20}
-            step={1}
-            value={markerSize}
-            disabled={disabled}
-            onChange={(v) => update("markerSize", v)}
-          />
-        </div>
+        <SliderControl
+          label="Size"
+          valueLabel={`${markerSize}px`}
+          min={4}
+          max={20}
+          step={1}
+          value={markerSize}
+          disabled={disabled}
+          onChange={(v) => update("markerSize", v)}
+        />
       </div>
 
       <div className={panelStyles.section}>
@@ -420,23 +464,22 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
         <div className={panelStyles.row}>
           <Text className={panelStyles.label}>Caps</Text>
           <Switch
+            size="small"
             checked={showCaps}
             disabled={disabled}
             onChange={(v) => update("showCaps", v)}
           />
         </div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Cap size</Text>
-          <Text className={panelStyles.value}>{capSize}px</Text>
-          <Slider
-            min={0}
-            max={20}
-            step={1}
-            value={capSize}
-            disabled={disabled}
-            onChange={(v) => update("capSize", v)}
-          />
-        </div>
+        <SliderControl
+          label="Cap size"
+          valueLabel={`${capSize}px`}
+          min={0}
+          max={20}
+          step={1}
+          value={capSize}
+          disabled={disabled}
+          onChange={(v) => update("capSize", v)}
+        />
       </div>
 
       <div className={panelStyles.section}>
@@ -445,6 +488,7 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
           <div className={panelStyles.row}>
             <Text className={panelStyles.label}>Zero line</Text>
             <Switch
+              size="small"
               checked={showZeroLine}
               disabled={disabled}
               onChange={(v) => update("showZeroLine", v)}
@@ -455,6 +499,7 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
           <div className={panelStyles.row}>
             <Text className={panelStyles.label}>Positive effects only</Text>
             <Switch
+              size="small"
               checked={positiveOnly}
               disabled={disabled}
               onChange={(v) => update("positiveOnly", v)}
@@ -465,6 +510,7 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
           <div className={panelStyles.row}>
             <Text className={panelStyles.label}>Sort descending</Text>
             <Switch
+              size="small"
               checked={sortDescending}
               disabled={disabled}
               onChange={(v) => update("sortDescending", v)}
@@ -474,13 +520,13 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
         {variant === "pairwise" && (
           <div className={panelStyles.row}>
             <Text className={panelStyles.label}>Grid lines</Text>
-            <Switch checked disabled />
+            <Switch size="small" checked disabled />
           </div>
         )}
         {variant !== "pairwise" && (
-          <div className={panelStyles.rowStack}>
+          <div className={panelStyles.row}>
             <Text className={panelStyles.label}>Sort by</Text>
-            <Select
+            <Select size="small"
               value={sortBy}
               onChange={(v) => update("sortBy", v)}
               options={sortOptions}
@@ -489,6 +535,33 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function SliderControl({
+  label,
+  valueLabel,
+  min,
+  max,
+  step,
+  value,
+  onChange,
+  disabled,
+}) {
+  return (
+    <div className={panelStyles.sliderInlineRow}>
+      <Text className={panelStyles.label}>{label}</Text>
+      <Text className={panelStyles.value}>{valueLabel}</Text>
+      <Slider
+        className={panelStyles.sliderInlineControl}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        disabled={disabled}
+        onChange={onChange}
+      />
     </div>
   );
 }

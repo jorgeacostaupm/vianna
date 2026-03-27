@@ -24,7 +24,7 @@ const NodeAggregationConfig = ({ aggOp, nodes, vals, save }) => {
         <Text strong>Operation type:</Text>
         <Field name="info.operation">
           {({ field, form }) => (
-            <Select
+            <Select size="small"
               id="info.operation"
               style={selectStyle}
               value={vals?.info?.operation || "sum"}

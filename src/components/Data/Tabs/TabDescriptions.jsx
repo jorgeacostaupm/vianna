@@ -49,12 +49,6 @@ const Info = () => {
         <Text type="secondary">{attributes.length}</Text>
       </div>
 
-      <Divider style={{ margin: "1rem 0" }} />
-
-      <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
-        Summary
-      </Title>
-
       <div>
         <Text strong style={{ color: "var(--primary-color)" }}>
           Measurements with description:

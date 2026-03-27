@@ -30,7 +30,7 @@ export default function VariableSelector({ generateEvolution }) {
       <div className={styles.selectorField}>
         <span className={styles.selectorLabel}>Variable</span>
         <Select
-          className={styles.selectorControl}
+          size="small"
           value={selectedVar}
           onChange={(v) => dispatch(setSelectedVar(v))}
           placeholder="Search or select variable"

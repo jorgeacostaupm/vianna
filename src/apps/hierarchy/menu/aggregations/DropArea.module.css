@@ -24,6 +24,8 @@
 }
 
 .attributeItem {
+  max-width: 220px; /* o width: 100% dentro de un padre limitado */
+  min-width: 0;
   flex: 0 1 auto;
   text-align: center;
   cursor: grab;
@@ -66,4 +68,61 @@
 .attributeItem:active {
   cursor: grabbing;
   opacity: 0.6;
+}
+
+.inputAttributeItem {
+  width: 100%;
+  max-width: 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  cursor: grab;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.inputAttributeItem:hover {
+  border-color: var(--color-brand);
+  box-shadow: var(--shadow-sm);
+}
+
+.inputAttributeName {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.inputAttributeRow {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inputAttributeLabel {
+  flex: 0 0 auto;
+}
+
+.inputAttributeWeightInput {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.inputAttributeWeightInput :global(.ant-input-number-input-wrap) {
+  overflow: hidden;
+}
+
+.inputAttributeWeightInput :global(.ant-input-number-input) {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
 }

@@ -1,10 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import {
-  DragOutlined,
-  DownloadOutlined,
-  SettingOutlined,
-} from "@ant-design/icons";
+import { DownloadOutlined, SettingOutlined } from "@ant-design/icons";
 
 import LegendButton from "./LegendButton";
 import { Bar } from "@/components/charts/ChartBar";
@@ -28,13 +24,11 @@ export default function HierarchyBar({
   onOrientationChange,
   linkStyle = "smooth",
   onLinkStyleChange,
-  onActivateBrushSelection,
   viewConfig,
   onViewConfigChange,
 }) {
   const hierarchy = useSelector(hierarchySelector);
   const hierarchyFilename = useSelector((state) => state.metadata.filename);
-  const hasHierarchy = Array.isArray(hierarchy) && hierarchy.length > 0;
   const hierarchyTitle = hierarchyFilename
     ? `Hierarchy Editor · ${hierarchyFilename}`
     : "Hierarchy Editor";
@@ -44,13 +38,6 @@ export default function HierarchyBar({
       <Bar title={hierarchyTitle} drag={false}>
         {/* <UndoRedoButtons></UndoRedoButtons>
         <div className={styles.separator} /> */}
-
-        <BarButton
-          title="Activate brush selection (b)"
-          onClick={() => onActivateBrushSelection?.()}
-          icon={<DragOutlined />}
-          disabled={!hasHierarchy}
-        />
 
         <LegendButton />
 
@@ -79,7 +66,6 @@ export default function HierarchyBar({
         /> */}
 
         <PopoverButton
-          title="Hierarchy settings"
           icon={<SettingOutlined />}
           content={
             <HierarchyViewSettings

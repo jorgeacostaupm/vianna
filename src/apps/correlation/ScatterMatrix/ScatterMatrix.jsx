@@ -6,6 +6,13 @@ import useScatter from "./useScatter";
 import useScatterData from "./useScatterData";
 import ViewContainer from "@/components/charts/ViewContainer";
 import ChartWithLegend from "@/components/charts/ChartWithLegend";
+import { ORDER_VARIABLE } from "@/utils/Constants";
+import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
+import {
+  extractOrderValues,
+  isFiniteNumericValue,
+  uniqueColumns,
+} from "@/utils/viewRecords";
 
 function Chart({ data, id, config }) {
   const chartRef = useRef(null);
@@ -23,8 +30,13 @@ function Chart({ data, id, config }) {
   );
 }
 
-export default function ScatterMatrix({ id, remove }) {
+export default function ScatterMatrix({
+  id,
+  remove,
+  sourceOrderValues = [],
+}) {
   const groupVar = useSelector((s) => s.correlation.groupVar);
+  const selection = useSelector((s) => s.dataframe.present.selection);
 
   const [config, setConfig] = useState({
     isSync: true,
@@ -43,6 +55,27 @@ export default function ScatterMatrix({ id, remove }) {
 
   const [data] = useScatterData(config.isSync, config);
 
+  const liveOrderValues = useMemo(
+    () =>
+      extractOrderValues(selection, (row) => {
+        const vars = Array.isArray(config.variables) ? config.variables : [];
+        if (vars.length < 2) return false;
+        return vars.every((name) => isFiniteNumericValue(row?.[name]));
+      }),
+    [selection, Array.isArray(config.variables) ? config.variables.join("|") : ""],
+  );
+
+  const recordOrders = useViewRecordSnapshot({
+    isSync: config.isSync,
+    liveOrderValues,
+    initialOrderValues: sourceOrderValues,
+  });
+
+  const requiredVariables = useMemo(
+    () => uniqueColumns([groupVar, ...(config.variables || []), ORDER_VARIABLE]),
+    [groupVar, Array.isArray(config.variables) ? config.variables.join("|") : ""],
+  );
+
   const chart = useMemo(() => {
     return <Chart data={data} config={config} id={id} />;
   }, [config, data]);
@@ -56,6 +89,11 @@ export default function ScatterMatrix({ id, remove }) {
       chart={chart}
       config={config}
       setConfig={setConfig}
+      recordsExport={{
+        filename: "scatter_matrix",
+        recordOrders,
+        requiredVariables,
+      }}
     />
   );
 }

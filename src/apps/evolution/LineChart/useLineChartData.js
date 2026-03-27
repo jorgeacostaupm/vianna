@@ -10,6 +10,7 @@ export default function useLineChartData(
   variable,
   isSync = true,
   showComplete = true,
+  showIncomplete = false,
   testIds = [],
   timeRange = null,
   testOptions = null
@@ -49,6 +50,7 @@ export default function useLineChartData(
         timeVar,
         idVar,
         showComplete,
+        showIncomplete,
         selectedTests: selectedTests.map((test) => test.id),
         testOptions,
       });
@@ -60,6 +62,7 @@ export default function useLineChartData(
         timeVar,
         idVar,
         showComplete,
+        showIncomplete,
         selectedTests,
         timeRange,
         timeOrderConfig,
@@ -108,6 +111,7 @@ export default function useLineChartData(
     timeVar,
     idVar,
     showComplete,
+    showIncomplete,
     selectedTests,
     timeRange?.from,
     timeRange?.to,

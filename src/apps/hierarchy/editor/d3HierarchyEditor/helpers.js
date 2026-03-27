@@ -7,12 +7,37 @@ const dtypeColors = {
   root: "white",
 };
 
+export const hasNodeFormula = (nodeData) => {
+  const formulaCandidates = [
+    nodeData?.info?.formula,
+    nodeData?.formula,
+    nodeData?.info?.exec,
+    nodeData?.exec,
+  ];
+
+  return formulaCandidates.some((value) => {
+    if (typeof value === "string") {
+      return value.trim().length > 0;
+    }
+    return Boolean(value);
+  });
+};
+
 export function colorNode(node) {
   if (node?.data?.isActive === false) {
     return "var(--color-surface-muted)";
   }
-  const dtype = node.data?.dtype || "none";
-  return dtypeColors[dtype];
+
+  const isRootNode = node?.data?.type === "root" || node?.data?.id === 0;
+  const isAggregationWithoutFormula =
+    node?.data?.type === "aggregation" && !hasNodeFormula(node?.data);
+
+  if (isRootNode || isAggregationWithoutFormula) {
+    return dtypeColors.root;
+  }
+
+  const dtype = node?.data?.dtype || DataType.UNKNOWN.dtype;
+  return dtypeColors[dtype] || dtypeColors[DataType.UNKNOWN.dtype];
 }
 
 export const clampNumber = (value, min, max, fallback) => {
@@ -80,6 +105,12 @@ export const computeNavioColumnsFromHierarchy = (root, attrs = []) => {
     const completeAttr = attrsByName.get(attrName);
     if (!completeAttr || completeAttr.isActive === false) return false;
     if (completeAttr.type !== "aggregation") return true;
-    return Boolean(completeAttr.info?.exec && completeAttr.info?.formula !== "");
+
+    const hasExec =
+      typeof completeAttr.info?.exec === "string"
+        ? completeAttr.info.exec.trim().length > 0
+        : Boolean(completeAttr.info?.exec);
+
+    return hasExec && hasNodeFormula(completeAttr);
   });
 };

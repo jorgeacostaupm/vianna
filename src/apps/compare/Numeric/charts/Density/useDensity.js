@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
 import { notifyInfo } from "@/utils/notifications";
+import { moveTooltip } from "@/utils/functions";
 import { CHART_OUTLINE } from "@/utils/chartTheme";
 import {
   attachTickLabelGridHover,
@@ -13,6 +14,8 @@ import {
 } from "@/utils/gridInteractions";
 
 export const numMargin = { top: 50, right: 50, bottom: 50, left: 90 };
+const DEFAULT_DISTRIBUTION_OPACITY = 0.5;
+const FOCUSED_DISTRIBUTION_OPACITY = 1;
 
 export default function useDensity({ chartRef, legendRef, data, config }) {
   const dimensions = useResizeObserver(chartRef);
@@ -26,24 +29,42 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
   );
   const groupsKey = selectionGroups.join("|");
   const [hide, setHide] = useState([]);
-  const [blur, setBlur] = useState(selectionGroups);
+  const [hoverGroup, setHoverGroup] = useState(null);
+  const [selectedGroups, setSelectedGroups] = useState([]);
 
   useEffect(() => {
     setHide([]);
-    setBlur(selectionGroups);
+    setHoverGroup(null);
+    setSelectedGroups([]);
   }, [groupsKey]);
 
   useEffect(() => {
     if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
 
     const { width, height } = dimensions;
-    const { nPoints, useCustomRange, range, margin, showLegend, showGrid } =
-      config;
+    const {
+      nPoints,
+      useCustomRange,
+      range,
+      margin,
+      showLegend,
+      showGrid,
+      showGroupCountInLegend = true,
+      scaleDensityStrokeByGroupSize = true,
+    } = config;
     const [xMin, xMax] = getNumericDomain(data, {
       margin,
       useCustomRange,
       range,
     });
+    const groupCounts = getGroupCounts(data, selectionGroups);
+    const strokeWidthByGroup = scaleDensityStrokeByGroupSize
+      ? createGroupSizeScale(groupCounts, {
+        min: 1,
+        max: 2.2,
+      })
+      : () => 1;
+    const groupedValues = d3.group(data, (d) => d.type);
     const pointEstimator = computeEstimator(nPoints, xMin, xMax);
     const densities = getDensities(data, selectionGroups, pointEstimator);
     const yMax = getYMax(densities);
@@ -57,6 +78,10 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
 
     const svg = d3.select(chartRef.current);
     const legend = d3.select(legendRef.current);
+    let tooltip = d3.select("body").select("div.tooltip");
+    if (tooltip.empty()) {
+      tooltip = d3.select("body").append("div").attr("class", "tooltip");
+    }
 
     const chart = svg
       .append("g")
@@ -93,14 +118,18 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
       });
     }
 
-    chart
+    const densityLayer = chart.append("g").attr("class", "density-layer");
+
+    densityLayer
       .selectAll(".density")
       .data(densities)
       .join("path")
       .attr("class", "density")
+      .attr("data-group", (d) => d.group)
       .attr("fill", (d) => color(d.group))
+      .attr("stroke-width", (d) => strokeWidthByGroup(d.group))
+      .attr("opacity", DEFAULT_DISTRIBUTION_OPACITY)
       .classed("hide", (d) => hide.includes(d.group))
-      .classed("blur", (d) => blur.includes(d.group))
       .attr("d", (d) =>
         d3
           .line()
@@ -113,37 +142,72 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
           .curve(d3.curveBasis)(d.value),
       )
       .on("mouseover", function (e, d) {
-        chart.selectAll(".density").classed("tmp-blur", true);
-        d3.select(this).classed("tmp-noblur", true).raise();
-
         showStats(d.group);
-
-        if (showGrid && yGridG) {
-          paintLayersInOrder({
-            chartGroup: chart,
-            layers: [xAxisG, yAxisG, yGridG],
-          });
+        const values = (groupedValues.get(d.group) || []).map((pt) => +pt.value);
+        if (values.length) {
+          tooltip
+            .style("visibility", "visible")
+            .style("opacity", 1)
+            .html(
+              `
+              <strong>${d.group}</strong><br/>
+              <strong>n = ${values.length}</strong><br/>
+              Min: ${d3.min(values).toFixed(2)}<br/>
+              Mean: ${d3.mean(values).toFixed(2)}<br/>
+              Max: ${d3.max(values).toFixed(2)}
+            `,
+            );
         }
       })
+      .on("mousemove", function (e) {
+        moveTooltip(e, tooltip, chart);
+      })
       .on("mouseout", function () {
+        tooltip.style("visibility", "hidden");
         hideStats();
-        chart
-          .selectAll(".density")
-          .classed("tmp-blur", false)
-          .classed("tmp-noblur", false);
       });
+
+    const focusGroupInFront = (group) => {
+      if (!group) return;
+      densityLayer
+        .selectAll(".density")
+        .filter((d) => d.group === group)
+        .raise();
+
+      if (showGrid && yGridG) {
+        paintLayersInOrder({
+          chartGroup: chart,
+          layers: [xAxisG, yAxisG, yGridG],
+        });
+      }
+    };
 
     if (showLegend !== false) {
       renderLegend(
         legend,
         selectionGroups,
         color,
-        blur,
-        setBlur,
-        hide,
-        setHide,
-        showStats,
-        hideStats,
+        {
+          hide,
+          setHide,
+          showStats,
+          hideStats,
+          getCircleOpacity: (group) =>
+            getDistributionOpacity(group, selectedGroups, hoverGroup),
+          labelByGroup: showGroupCountInLegend
+            ? (group) => formatGroupCountLabel(group, groupCounts)
+            : undefined,
+          onHoverGroupChange: (group) => setHoverGroup(group),
+          onCircleClick: (group) => {
+            setSelectedGroups((prev) =>
+              prev.includes(group)
+                ? prev.filter((g) => g !== group)
+                : [...prev, group],
+            );
+            setHoverGroup(null);
+            focusGroupInFront(group);
+          },
+        },
       );
     }
 
@@ -160,9 +224,8 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
     }
 
     function showStats(group) {
-      const vals = data
-        .filter((pt) => pt.type === group)
-        .map((pt) => +pt.value);
+      const vals = (groupedValues.get(group) || []).map((pt) => +pt.value);
+      if (!vals.length) return;
 
       const mean = jstat.mean(vals);
       const std = jstat.stdev(vals);
@@ -217,14 +280,55 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
   }, [data, config, dimensions, groupsKey, colorDomain]);
 
   useEffect(() => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || !legendRef.current) return;
 
     const chart = d3.select(chartRef.current);
+    const legend = d3.select(legendRef.current);
+
     chart
       .selectAll(".density")
       .classed("hide", (d) => hide.includes(d.group))
-      .classed("blur", (d) => blur.includes(d.group));
-  }, [hide, blur]);
+      .attr("opacity", (d) =>
+        getDistributionOpacity(d.group, selectedGroups, hoverGroup),
+      );
+
+    legend
+      .selectAll(".legend-item")
+      .attr("opacity", function () {
+        const group = d3.select(this).attr("data-group");
+        return getDistributionOpacity(group, selectedGroups, hoverGroup);
+      });
+
+    legend
+      .selectAll(".legend-circle")
+      .attr("opacity", function () {
+        const group = d3.select(this).attr("data-group");
+        return getDistributionOpacity(group, selectedGroups, hoverGroup);
+      });
+
+    const groupsToFront = [...selectedGroups];
+    if (hoverGroup && !groupsToFront.includes(hoverGroup)) {
+      groupsToFront.push(hoverGroup);
+    }
+
+    if (groupsToFront.length) {
+      const densityLayer = chart.select(".density-layer");
+      groupsToFront.forEach((group) => {
+        densityLayer
+          .selectAll(".density")
+          .filter((d) => d.group === group)
+          .raise();
+      });
+    }
+  }, [hide, hoverGroup, selectedGroups, chartRef, legendRef]);
+}
+
+function getDistributionOpacity(group, selectedGroups, hoverGroup) {
+  const isSelected = selectedGroups.includes(group);
+  const isHovered = hoverGroup === group;
+  return isSelected || isHovered
+    ? FOCUSED_DISTRIBUTION_OPACITY
+    : DEFAULT_DISTRIBUTION_OPACITY;
 }
 
 export function getNumericDomain(
@@ -311,7 +415,7 @@ export function getDensities(data, selectionGroups, pointEstimator) {
         return +d.value;
       });
     const density = pointEstimator(values, group);
-    return { value: density, group: group };
+    return { value: density, group: group, n: values.length };
   });
 
   return densities;
@@ -330,12 +434,18 @@ export function renderLegend(
   legend,
   groups,
   color,
-  blur,
-  setBlur,
-  hide,
-  setHide,
-  showStats,
-  hideStats,
+  {
+    blur,
+    setBlur,
+    hide,
+    setHide,
+    showStats,
+    hideStats,
+    getCircleOpacity,
+    labelByGroup,
+    onHoverGroupChange,
+    onCircleClick,
+  } = {},
 ) {
   const circleSize = 10;
   const padding = 6;
@@ -354,29 +464,51 @@ export function renderLegend(
     const legendItem = legendGroup
       .append("g")
       .attr("class", "legend-item")
+      .attr("data-group", group)
+      .attr(
+        "opacity",
+        getCircleOpacity ? getCircleOpacity(group) : 1,
+      )
       .attr("transform", `translate(0,${y})`);
 
     const circles = legendItem
       .append("circle")
       .attr("class", "legend-circle")
+      .attr("data-group", group)
       .attr("cx", circleSize + 10)
       .attr("cy", 0)
       .attr("r", circleSize)
+      .attr(
+        "opacity",
+        getCircleOpacity ? getCircleOpacity(group) : 1,
+      )
       .style("fill", color(group));
 
-    if (blur)
-      circles.classed("blur", blur.includes(group)).on("mousedown", (e) => {
+    if (blur && setBlur) {
+      circles.classed("blur", blur.includes(group)).on("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         const item = d3.select(e.currentTarget);
-        const isBlur = item.classed("blur");
+        const isInactive = item.classed("blur");
+
         setBlur((prev) =>
-          prev.includes(group)
-            ? prev.filter((g) => g !== group)
-            : [...prev, group],
+          isInactive ? prev.filter((g) => g !== group) : [...prev, group],
         );
-        item.classed("blur", !isBlur);
+        item.classed("blur", !isInactive);
+
+        // Click has priority over transient hover preview.
+        if (onHoverGroupChange) onHoverGroupChange(null);
+
+        // Notify as an activation toggle: true => opacity 1, false => back to low opacity.
+        if (onCircleClick) onCircleClick(group, isInactive);
       });
+    } else if (onCircleClick) {
+      circles.on("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onCircleClick(group);
+      });
+    }
 
     const labels = legendItem
       .append("text")
@@ -385,9 +517,9 @@ export function renderLegend(
       .attr("x", circleSize * 2 + 15)
       .attr("y", 4)
       .datum(group)
-      .text(group);
+      .text(labelByGroup ? labelByGroup(group) : group);
 
-    if (hide) {
+    if (hide && setHide) {
       labels.classed("cross", hide.includes(group)).on("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -400,22 +532,22 @@ export function renderLegend(
             : [...prev, group],
         );
 
-        if (!isHide && hideStats) hideStats(group);
+        if (!isHide && hideStats) hideStats();
 
         sel.classed("cross", !isHide);
       });
+    }
 
+    if (onHoverGroupChange || showStats || hideStats) {
+      // Hover is a transient focus preview; persistent visibility is click-only.
       legendItem
-        .on("mouseover", () => {
-          const hideGroups = orderedGroups.filter((d) => d !== group);
-          setHide(hideGroups);
+        .on("mouseenter", () => {
+          if (onHoverGroupChange) onHoverGroupChange(group);
           if (showStats) showStats(group);
         })
-        .on("mouseout", () => {
-          const hideGroups = legend.selectAll(".cross").data();
-
-          setHide(hideGroups);
-          if (hideStats) hideStats(group);
+        .on("mouseleave", () => {
+          if (onHoverGroupChange) onHoverGroupChange(null);
+          if (hideStats) hideStats();
         });
     }
   });
@@ -434,4 +566,44 @@ export function renderLegend(
   legend
     .attr("width", bbox.x + bbox.width)
     .attr("height", bbox.y + bbox.height);
+}
+
+export function getGroupCounts(data, groups) {
+  const groupCounts = new Map((groups || []).map((group) => [group, 0]));
+
+  (data || []).forEach((row) => {
+    if (groupCounts.has(row.type)) {
+      groupCounts.set(row.type, groupCounts.get(row.type) + 1);
+    }
+  });
+
+  return groupCounts;
+}
+
+export function formatGroupCountLabel(group, groupCounts) {
+  const n = groupCounts.get(group) || 0;
+  return `${group} (n=${n})`;
+}
+
+export function createGroupSizeScale(
+  groupCounts,
+  { min = 0.55, max = 1, scaleType = "sqrt" } = {},
+) {
+  const values = Array.from(groupCounts.values()).filter((n) => n > 0);
+  if (values.length === 0) {
+    return () => max;
+  }
+
+  const [countMin, countMax] = d3.extent(values);
+  if (countMin === countMax) {
+    return () => max;
+  }
+
+  const scaleFactory = scaleType === "linear" ? d3.scaleLinear : d3.scaleSqrt;
+  const scale = scaleFactory().domain([countMin, countMax]).range([min, max]);
+  return (group) => {
+    const n = groupCounts.get(group);
+    if (!Number.isFinite(n) || n <= 0) return min;
+    return scale(n);
+  };
 }

@@ -1,13 +1,32 @@
 import React, { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Card, Input, Modal, Space, Tag, Typography } from "antd";
+import { Card, Input, Space, Tag, Typography } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 
 import ColoredButton from "@/components/ui/ColoredButton";
 import { replaceValuesWithNull } from "@/store/async/dataAsyncReducers";
-import { notifyError, notifyInfo, notifySuccess } from "@/utils/notifications";
+import { notifyError, notifySuccess } from "@/utils/notifications";
 
 const { Text } = Typography;
+const VALUE_SEPARATOR_REGEX = /[\n;]/;
+
+const parseNullifyValues = (rawInput) =>
+  [...new Set(
+    String(rawInput ?? "")
+      .split(VALUE_SEPARATOR_REGEX)
+      .map((value) => value.trim())
+      .filter(Boolean),
+  )];
+
+const normalizeComparableValue = (value) => String(value ?? "").trim();
+const isSameValue = (rowValue, candidate) => {
+  if (rowValue == null) return false;
+  const normalizedRowValue = normalizeComparableValue(rowValue);
+  const normalizedCandidate = normalizeComparableValue(candidate);
+  return (
+    normalizedRowValue === normalizedCandidate || rowValue == normalizedCandidate
+  );
+};
 
 export default function NullifyValuesPanel() {
   const dispatch = useDispatch();
@@ -20,62 +39,49 @@ export default function NullifyValuesPanel() {
   const quarantineData =
     useSelector((state) => state.cantab.present.quarantineData) || [];
 
-  const trimmedValue = inputValue.trim();
+  const nullifyValues = useMemo(() => parseNullifyValues(inputValue), [inputValue]);
+  const hasInputValues = nullifyValues.length > 0;
   const matchesCount = useMemo(() => {
-    if (!trimmedValue) return 0;
+    if (!hasInputValues) return 0;
 
     const countMatches = (rows) =>
       rows.reduce((acc, row) => {
         if (!row || typeof row !== "object") return acc;
         const rowMatches = Object.values(row).filter(
-          (value) => value == trimmedValue,
+          (value) => nullifyValues.some((candidate) => isSameValue(value, candidate)),
         ).length;
         return acc + rowMatches;
       }, 0);
 
     return countMatches(dataframe) + countMatches(quarantineData);
-  }, [dataframe, quarantineData, trimmedValue]);
-
-  const confirmNullify = () => {
-    Modal.confirm({
-      title: `Replace "${trimmedValue}" with null?`,
-      content: `This will replace ${matchesCount} matching value(s) in data and quarantine.`,
-      okText: "Replace values",
-      cancelText: "Cancel",
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        setIsSubmitting(true);
-        try {
-          await dispatch(replaceValuesWithNull(trimmedValue)).unwrap();
-          notifySuccess({
-            message: "Values replaced with null",
-            description: `${matchesCount} value(s) were replaced.`,
-          });
-          setInputValue("");
-        } catch (error) {
-          notifyError({
-            message: "Could not nullify values",
-            error,
-            fallback: "Failed to replace selected values with null.",
-          });
-        } finally {
-          setIsSubmitting(false);
-        }
-      },
-    });
-  };
+  }, [dataframe, hasInputValues, nullifyValues, quarantineData]);
 
   const onReplaceValues = () => {
-    if (!trimmedValue) return;
-    if (matchesCount === 0) {
-      notifyInfo({
-        message: "No matching values",
-        description: `No values equal to "${trimmedValue}" were found.`,
+    if (!hasInputValues) return;
+    const selectedValuesText = nullifyValues.join(", ");
+    setIsSubmitting(true);
+    dispatch(replaceValuesWithNull(nullifyValues))
+      .unwrap()
+      .then((result) => {
+        const replacedCount = Number.isFinite(result?.replacedCount)
+          ? result.replacedCount
+          : matchesCount;
+        notifySuccess({
+          message: "Values replaced with null",
+          description: `${replacedCount} value(s) were replaced for: ${selectedValuesText}`,
+        });
+        setInputValue("");
+      })
+      .catch((error) => {
+        notifyError({
+          message: "Could not nullify values",
+          error,
+          fallback: "Failed to replace selected values with null.",
+        });
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-      return;
-    }
-
-    confirmNullify();
   };
 
   return (
@@ -84,17 +90,17 @@ export default function NullifyValuesPanel() {
         <Input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          placeholder="Value to nullify"
+          placeholder="Values to nullify (semicolon or new line separated)"
           style={{ flex: 1 }}
         />
         <ColoredButton
-          title={`Replace ${inputValue} with null`}
+          title={`Replace selected values with null`}
           shape="default"
           icon={<EditOutlined />}
           onClick={onReplaceValues}
           placement="bottom"
           loading={isSubmitting}
-          disabled={isSubmitting || trimmedValue.length === 0}
+          disabled={isSubmitting || !hasInputValues}
         />
       </div>
       <Text type="secondary">
@@ -103,7 +109,11 @@ export default function NullifyValuesPanel() {
 
       <Card
         size="small"
-        title="Nullified Values"
+        title={
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Nullified Values
+          </Text>
+        }
         style={{ marginTop: 12, borderRadius: 8 }}
       >
         <Space wrap>

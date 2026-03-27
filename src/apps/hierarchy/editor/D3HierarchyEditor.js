@@ -18,7 +18,10 @@ import {
   clearSelection,
   getSelectedNodes,
   getSelectedNodesToModify,
+  isRootNodeId,
   resetDragVisualState,
+  setNodeSelection,
+  toggleNodeSelection,
 } from "./d3HierarchyEditor/selection";
 import { drawHierarchy, drawLinks, drawNodes } from "./d3HierarchyEditor/rendering";
 import {
@@ -35,6 +38,7 @@ import {
   destroy,
   focusNode,
   inspectNode,
+  onNodeMenuVisibilityChanged,
   onChangeHierarchy,
   onChangeOrder,
   onResize,
@@ -49,14 +53,23 @@ export default class D3HierarchyEditor {
   orientation = "vertical";
   linkStyle = "smooth";
   viewConfig = defaultViewConfig;
+  selectionMode = "none";
+  isClickSelectionMode = false;
   targetNode = null;
   nodesDragged = [];
   navioSyncTimeout = null;
   subscriptionHandlers = {};
+  isNodeMenuOpen = false;
 
   getSelectedNodes = getSelectedNodes;
 
   getSelectedNodesToModify = getSelectedNodesToModify;
+
+  isRootNodeId = isRootNodeId;
+
+  setNodeSelection = setNodeSelection;
+
+  toggleNodeSelection = toggleNodeSelection;
 
   clearSelection = clearSelection;
 
@@ -98,6 +111,8 @@ export default class D3HierarchyEditor {
 
   focusNode = focusNode;
 
+  onNodeMenuVisibilityChanged = onNodeMenuVisibilityChanged;
+
   addSubscriptions = addSubscriptions;
 
   destroy = destroy;
@@ -121,6 +136,13 @@ export default class D3HierarchyEditor {
 
     this.svg
       .on("click.editor", (event) => {
+        const clickedOnNode = Boolean(event?.target?.closest?.(".circleG"));
+        if (this.isNodeMenuOpen && clickedOnNode) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
         event.preventDefault();
         event.stopPropagation();
         publish("untoggleEvent", {});
@@ -140,7 +162,7 @@ export default class D3HierarchyEditor {
 
     d3.select(window).on("keydown.hierarchy-editor", (event) => {
       if (event.key === "b" || event.key === "B") {
-        this.activateBrushSelection();
+        this.setSelectionMode("brush");
       }
     });
 
@@ -375,10 +397,39 @@ export default class D3HierarchyEditor {
     this.drawLinks(this.root);
   }
 
+  setClickSelectionMode(enabled) {
+    this.setSelectionMode(enabled ? "click" : "none");
+  }
+
+  setSelectionMode(mode) {
+    const nextMode = mode === "brush" || mode === "click" ? mode : "none";
+    this.selectionMode = nextMode;
+    this.isClickSelectionMode = nextMode === "click";
+    if (this.svg) {
+      this.svg.style("cursor", this.isClickSelectionMode ? "pointer" : "default");
+    }
+
+    if (nextMode === "brush") {
+      this.activateBrushSelection();
+      return;
+    }
+
+    this.deactivateBrushSelection();
+  }
+
   activateBrushSelection() {
     if (!this.svg || !this.brush) return;
     this.svg.selectAll(".brush").remove();
     this.svg.append("g").attr("class", "brush").call(this.brush);
+  }
+
+  deactivateBrushSelection() {
+    if (!this.svg) return;
+    this.svg.selectAll(".brush").remove();
+    this.svg.on(".brush", null);
+    if (this.zoomBehaviour) {
+      this.svg.call(this.zoomBehaviour);
+    }
   }
 
   setSize() {

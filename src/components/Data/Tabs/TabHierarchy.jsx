@@ -10,6 +10,7 @@ import {
   selectDetermineNodes,
   selectAggregationNodes,
 } from "@/store/selectors/metaSelectors";
+import { selectNavioVars } from "@/store/slices/cantabSlice";
 import { addAttribute, removeAttribute } from "@/store/async/metaAsyncReducers";
 import { getRandomInt } from "@/utils/functions";
 import { HIDDEN_VARIABLES, VariableTypes } from "@/utils/Constants";
@@ -352,6 +353,7 @@ const Info = () => {
   const aggregationNodes = useSelector((state) =>
     selectAggregationNodes(state),
   );
+  const visibleMeasurements = useSelector(selectNavioVars);
 
   return (
     <div className={styles.tabColumn}>
@@ -376,12 +378,6 @@ const Info = () => {
         </Text>
       </div>
 
-      <Divider style={{ margin: "1rem 0" }} />
-
-      <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
-        Summary
-      </Title>
-
       <div>
         <Text strong style={{ color: "var(--primary-color)" }}>
           Numeric Attributes:
@@ -391,7 +387,7 @@ const Info = () => {
 
       <div>
         <Text strong style={{ color: "var(--primary-color)" }}>
-          Text Attributes:
+          Categorical Attributes:
         </Text>{" "}
         <Text type="secondary">{textNodes?.length || 0}</Text>
       </div>
@@ -401,6 +397,14 @@ const Info = () => {
           Unknown Attributes:
         </Text>{" "}
         <Text type="secondary">{determineNodes?.length || 0}</Text>
+      </div>
+      <div>
+        <Text strong style={{ color: "var(--primary-color)" }}>
+          Visible measurements:
+        </Text>{" "}
+        <Text type="secondary">
+          {formatListPreview(visibleMeasurements, 12, "—")}
+        </Text>
       </div>
 
       <Divider style={{ margin: "1rem 0" }} />

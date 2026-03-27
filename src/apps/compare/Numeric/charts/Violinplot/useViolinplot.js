@@ -10,6 +10,8 @@ import {
   getDensities,
   getYMax,
   getNumericDomain,
+  getGroupCounts,
+  formatGroupCountLabel,
 } from "../Density/useDensity";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
@@ -35,8 +37,16 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
     if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
 
     const { width, height } = dimensions;
-    const { nPoints, useCustomRange, range, margin, showLegend, showGrid } =
-      config;
+    const {
+      nPoints,
+      useCustomRange,
+      range,
+      margin,
+      showLegend,
+      showGrid,
+      showGroupCountInLegend = true,
+      showGroupCountInAxis = true,
+    } = config;
 
     d3.select(chartRef.current).selectAll("*").remove();
     d3.select(legendRef.current).selectAll("*").remove();
@@ -65,6 +75,8 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
       .domain(selectionGroups)
       .range([0, chartWidth])
       .padding(0.4);
+    const grouped = d3.group(data, (d) => d.type);
+    const groupCounts = getGroupCounts(data, selectionGroups);
 
     const [xMin, xMax] = getNumericDomain(data, {
       margin,
@@ -97,6 +109,9 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
       .call(d3.axisBottom(x));
     xAxisG.select(".domain").remove();
     xAxisG.selectAll(".tick line").remove();
+    xAxisG.selectAll(".tick text").text((group) =>
+      showGroupCountInAxis ? formatGroupCountLabel(group, groupCounts) : group,
+    );
 
     const yAxisG = chart.append("g").call(d3.axisLeft(y).ticks(5));
     yAxisG.select(".domain").remove();
@@ -109,17 +124,10 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
       });
     }
 
-    const violinWidth = d3
+    const baseViolinWidth = d3
       .scaleLinear()
       .range([0, x.bandwidth()])
       .domain([0, maxWidth]);
-
-    const area = d3
-      .area()
-      .x0((d) => -violinWidth(d[1]) / 2)
-      .x1((d) => violinWidth(d[1]) / 2)
-      .y((d) => y(d[0]))
-      .curve(d3.curveCatmullRom);
 
     // Group <g> for each violin
     const groupsG = chart
@@ -133,12 +141,15 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
       const g = d3.select(this);
       const density = d.value;
       const group = d.group;
-
-      const values = data
-        .filter((pt) => pt.type === group)
-        .map((pt) => +pt.value);
+      const values = (grouped.get(group) || []).map((pt) => +pt.value);
 
       if (values.length === 0) return;
+      const area = d3
+        .area()
+        .x0((point) => -baseViolinWidth(point[1]) / 2)
+        .x1((point) => baseViolinWidth(point[1]) / 2)
+        .y((point) => y(point[0]))
+        .curve(d3.curveCatmullRom);
 
       // Draw violin
       g.append("path")
@@ -164,7 +175,11 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
     });
 
     if (showLegend !== false) {
-      renderLegend(legend, selectionGroups, color);
+      renderLegend(legend, selectionGroups, color, {
+        labelByGroup: showGroupCountInLegend
+          ? (group) => formatGroupCountLabel(group, groupCounts)
+          : undefined,
+      });
     }
 
     if (showGrid && yGridG) {

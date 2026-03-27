@@ -389,16 +389,6 @@
   white-space: nowrap;
 }
 
-.selectorControl {
-  min-width: 0;
-  width: 100%;
-}
-
-.selectorControlWide {
-  min-width: 0;
-  width: 100%;
-}
-
 .selectorControl :global(.ant-select-selector) {
   height: 40px !important;
   padding: 0 12px !important;
@@ -419,10 +409,34 @@
   color: var(--color-ink-tertiary);
 }
 
+.compareTestActions {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.compareTestActionCell {
+  flex: 1 1 50%;
+  min-width: 0;
+}
+
+.compareTestActionCell > span {
+  display: flex !important;
+  width: 100%;
+}
+
+.compareTestActionCell :global(.ant-btn) {
+  width: 100%;
+  justify-content: center;
+}
+
 .assumptionsTagsGroup {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  justify-content: center;
+  width: 100%;
 }
 
 .assumptionsTagsGroup :global(.ant-tag) {

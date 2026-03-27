@@ -30,6 +30,7 @@ const BasicAttribute = ({ idx, node, onDragStart, isHidden = false }) => {
             as="div"
             id={`info.usedAttributes.${idx}.name`}
             name={`info.usedAttributes.${idx}.name`}
+            className={styles.inputAttributeName}
           >
             {node.name}
           </Field>

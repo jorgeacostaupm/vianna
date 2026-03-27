@@ -130,6 +130,11 @@ export default function HierarchyContextMenu({ editor }) {
     dispatch(
       setNodeOverviewAccess({ nodeId: node.id, isActive: nextIsActive }),
     );
+    if (node?.data) {
+      node.data.isActive = nextIsActive;
+      editor?.drawHierarchy?.(editor.root, true);
+      editor?.scheduleNavioSync?.(0);
+    }
     notifySuccess({
       message: nextIsActive
         ? "Node activated in Overview"
@@ -159,6 +164,13 @@ export default function HierarchyContextMenu({ editor }) {
     const nodeIds = selectableNodes.map((n) => n.id);
 
     dispatch(setNodesOverviewAccess({ nodeIds, isActive: nextIsActive }));
+    selectableNodes.forEach((selectedNode) => {
+      if (selectedNode?.data) {
+        selectedNode.data.isActive = nextIsActive;
+      }
+    });
+    editor?.drawHierarchy?.(editor.root, true);
+    editor?.scheduleNavioSync?.(0);
     notifySuccess({
       message: nextIsActive
         ? "Selection activated in Overview"
@@ -257,43 +269,53 @@ export default function HierarchyContextMenu({ editor }) {
         <div className={styles.hierarchyMenuSection}>
           <div className={styles.hierarchyMenuSectionTitle}>Node</div>
           <div className={styles.hierarchyMenuActions}>
-            <MenuAction
-              label="Inspect"
-              icon={<EyeOutlined />}
-              onClick={inspectNode}
-            />
-            <MenuAction
-              label="Operate"
-              icon={<ExperimentOutlined />}
-              onClick={openModalSpecial}
-            />
-            {!isSelection && (
+            {isRootNode ? (
               <MenuAction
                 label="Add Child"
                 icon={<SubnodeOutlined />}
                 onClick={addNode}
               />
+            ) : (
+              <>
+                <MenuAction
+                  label="Inspect"
+                  icon={<EyeOutlined />}
+                  onClick={inspectNode}
+                />
+                <MenuAction
+                  label="Operate"
+                  icon={<ExperimentOutlined />}
+                  onClick={openModalSpecial}
+                />
+                {!isSelection && (
+                  <MenuAction
+                    label="Add Child"
+                    icon={<SubnodeOutlined />}
+                    onClick={addNode}
+                  />
+                )}
+                <MenuAction
+                  label={
+                    isNodeActive ? "Deactivate in Overview" : "Activate in Overview"
+                  }
+                  icon={
+                    isNodeActive ? <MinusCircleOutlined /> : <CheckCircleOutlined />
+                  }
+                  onClick={toggleNodeOverviewAccess}
+                  disabled={isRootNode}
+                />
+                <MenuAction
+                  label="Delete"
+                  icon={<DeleteOutlined />}
+                  onClick={removeNodeById}
+                  danger
+                />
+              </>
             )}
-            <MenuAction
-              label={
-                isNodeActive ? "Deactivate in Overview" : "Activate in Overview"
-              }
-              icon={
-                isNodeActive ? <MinusCircleOutlined /> : <CheckCircleOutlined />
-              }
-              onClick={toggleNodeOverviewAccess}
-              disabled={isRootNode}
-            />
-            <MenuAction
-              label="Delete"
-              icon={<DeleteOutlined />}
-              onClick={removeNodeById}
-              danger
-            />
           </div>
         </div>
 
-        {hasSelectedNodes && (
+        {hasSelectedNodes && !isRootNode && (
           <div className={styles.hierarchyMenuSection}>
             <div className={styles.hierarchyMenuSectionTitle}>Selection</div>
             <div className={styles.hierarchyMenuActions}>

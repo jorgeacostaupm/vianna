@@ -8,6 +8,7 @@ import * as aq from "arquero";
 
 import { updateAttribute } from "@/store/async/metaAsyncReducers";
 import processFormula from "@/utils/processFormula";
+import { notifyError } from "@/utils/notifications";
 
 import { NodeBar } from "@/components/charts/ChartBar";
 import styles from "@/styles/Charts.module.css";
@@ -24,6 +25,39 @@ const { subscribe, unsubscribe } = pubsub;
 const PREVIEW_LIMIT = 5;
 const PREVIEW_RESULT_COLUMN = "__preview_result__";
 const PREVIEW_ROW_COLUMN = "__preview_row__";
+const VARIABLE_VALUES_LIMIT = 5;
+
+const isEmptyNumericValue = (value) =>
+  value === null || value === undefined || value === "";
+
+const isValueAtRiskOnNumericCast = (value) =>
+  !isEmptyNumericValue(value) && Number.isNaN(Number(value));
+
+const countValuesAtRisk = (rows, columnName) => {
+  if (!Array.isArray(rows) || !columnName) return 0;
+  return rows.reduce(
+    (count, row) => count + (isValueAtRiskOnNumericCast(row?.[columnName]) ? 1 : 0),
+    0,
+  );
+};
+
+const getFirstFormikError = (value) => {
+  if (typeof value === "string" && value.trim().length > 0) return value;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const msg = getFirstFormikError(item);
+      if (msg) return msg;
+    }
+    return null;
+  }
+  if (value && typeof value === "object") {
+    for (const nested of Object.values(value)) {
+      const msg = getFirstFormikError(nested);
+      if (msg) return msg;
+    }
+  }
+  return null;
+};
 
 const normalizePreviewValue = (value) => {
   if (value == null) return "null";
@@ -37,11 +71,65 @@ const normalizePreviewValue = (value) => {
   return String(value);
 };
 
+const rowHasColumn = (row, columnName) =>
+  Boolean(
+    row &&
+      columnName &&
+      Object.prototype.hasOwnProperty.call(row, columnName),
+  );
+
+const resolveExistingColumnName = (columnCandidates = [], datasets = []) => {
+  const candidates = columnCandidates.filter(Boolean);
+  for (const columnName of candidates) {
+    const exists = datasets.some(
+      (rows) => Array.isArray(rows) && rows.some((row) => rowHasColumn(row, columnName)),
+    );
+    if (exists) return columnName;
+  }
+  return null;
+};
+
+const buildPreviewValueKey = (value) => {
+  if (value == null) return "null";
+  if (typeof value === "object") {
+    try {
+      return `object:${JSON.stringify(value)}`;
+    } catch {
+      return `object:${String(value)}`;
+    }
+  }
+  return `${typeof value}:${String(value)}`;
+};
+
+const getVariableSampleValues = (rows = [], columnName, limit = VARIABLE_VALUES_LIMIT) => {
+  if (!Array.isArray(rows) || !columnName || limit <= 0) return [];
+
+  const values = [];
+  const seen = new Set();
+
+  for (const row of rows) {
+    if (!rowHasColumn(row, columnName)) continue;
+    const value = row[columnName];
+    if (value === undefined) continue;
+    const key = buildPreviewValueKey(value);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    values.push(value);
+    if (values.length >= limit) break;
+  }
+
+  return values;
+};
+
 const NodeMenu = () => {
   const [node, setNode] = useState(null);
   const [nodeId, setNodeId] = useState(null);
   const [openMenu, toggleMenu] = useState(false);
   const attributes = useSelector((state) => state.metadata.attributes);
+  const dataframe = useSelector((state) => state.dataframe.present.dataframe);
+  const quarantineData = useSelector(
+    (state) => state.cantab.present.quarantineData,
+  );
   const attributesRef = useRef(attributes);
 
   const dispatch = useDispatch();
@@ -83,6 +171,10 @@ const NodeMenu = () => {
   }, []);
 
   useEffect(() => {
+    pubsub.publish("nodeMenuVisibilityChanged", { isOpen: openMenu });
+  }, [openMenu]);
+
+  useEffect(() => {
     const handleUnload = () => {
       formRef.current?.handleSubmit();
     };
@@ -96,8 +188,12 @@ const NodeMenu = () => {
     return;
   }
 
-  const onSubmit = async (values) => {
-    dispatch(updateAttribute({ ...values, recover: true }));
+  const onSubmit = async (values, { setSubmitting }) => {
+    try {
+      await dispatch(updateAttribute({ ...values, recover: true })).unwrap();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const availableNodes = node.related
@@ -124,35 +220,57 @@ const NodeMenu = () => {
           validateOnMount={true}
           enableReinitialize={true}
         >
-          {({ values }) => (
-            <Form className={styles.nodeInfoBody} ref={resizeRef}>
-              <NodeName />
+          {({ values }) => {
+            const previewColumn = resolveExistingColumnName(
+              [values?.name, node?.name],
+              [dataframe, quarantineData],
+            );
+            const previewValues = previewColumn
+              ? getVariableSampleValues(dataframe, previewColumn, VARIABLE_VALUES_LIMIT)
+              : [];
 
-              <NodeInfo
-                nChildren={availableNodes.length}
-                nodeType={node.type == null ? "root" : node.type}
-                nodeId={node.id}
-                DType={node.dtype}
-                height={node.height}
-              />
-              <NodeDescriptionField />
+            return (
+              <Form className={styles.nodeInfoBody} ref={resizeRef}>
+                <NodeName />
 
-              {values.type === "aggregation" ? (
-                availableNodes.length === 0 ? (
-                  <CustomMeasure formula={values.info.formula}></CustomMeasure>
-                ) : (
-                  <NodeAggregationConfig
-                    aggOp={values.info.operation || "sum"}
-                    nodes={availableNodes}
-                    vals={values}
-                    save={<SaveButton></SaveButton>}
+                <NodeInfo
+                  nChildren={availableNodes.length}
+                  nodeType={node.type == null ? "root" : node.type}
+                  nodeId={node.id}
+                  DType={node.dtype}
+                  height={node.height}
+                />
+
+                {node?.type === "attribute" ? (
+                  <NodeVariablePreview
+                    values={previewValues}
+                    columnName={previewColumn}
                   />
-                )
-              ) : (
-                <SaveButton></SaveButton>
-              )}
-            </Form>
-          )}
+                ) : null}
+
+                <NodeDescriptionField />
+
+                {values.type === "aggregation" ? (
+                  availableNodes.length === 0 ? (
+                    <CustomMeasure formula={values.info.formula}></CustomMeasure>
+                  ) : (
+                    <NodeAggregationConfig
+                      aggOp={values.info.operation || "sum"}
+                      nodes={availableNodes}
+                      vals={values}
+                      save={<SaveButton></SaveButton>}
+                    />
+                  )
+                ) : (
+                  <div
+                    style={{ display: "flex", justifyContent: "center", gap: 12 }}
+                  >
+                    <SaveButton></SaveButton>
+                  </div>
+                )}
+              </Form>
+            );
+          }}
         </Formik>
       </div>
     )
@@ -162,8 +280,18 @@ const NodeMenu = () => {
 export default NodeMenu;
 
 export function SaveButton() {
-  const { values, isValid } = useFormikContext();
+  const {
+    values,
+    initialValues,
+    isValid,
+    isSubmitting,
+    validateForm,
+    submitForm,
+  } = useFormikContext();
   const dataframe = useSelector((state) => state.dataframe.present.dataframe);
+  const quarantineData = useSelector(
+    (state) => state.cantab.present.quarantineData,
+  );
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewRows, setPreviewRows] = useState([]);
@@ -176,6 +304,55 @@ export function SaveButton() {
 
   const closePreview = () => {
     setPreviewOpen(false);
+  };
+
+  const handleSave = async () => {
+    const errors = await validateForm();
+    const firstError = getFirstFormikError(errors);
+
+    if (firstError) {
+      notifyError({
+        message: "Could not save node",
+        description: firstError,
+        pauseOnHover: true,
+      });
+      return;
+    }
+
+    const isConvertingToNumeric =
+      values?.dtype === "number" && initialValues?.dtype !== "number";
+
+    if (isConvertingToNumeric) {
+      const availableNames = [values?.name, initialValues?.name].filter(Boolean);
+      const resolvedColumnName =
+        availableNames.find((name) =>
+          (Array.isArray(dataframe) &&
+            dataframe.some((row) =>
+              Object.prototype.hasOwnProperty.call(row || {}, name),
+            )) ||
+          (Array.isArray(quarantineData) &&
+            quarantineData.some((row) =>
+              Object.prototype.hasOwnProperty.call(row || {}, name),
+            )),
+        ) ||
+        values?.name ||
+        initialValues?.name ||
+        "this node";
+
+      const riskCount =
+        countValuesAtRisk(dataframe, resolvedColumnName) +
+        countValuesAtRisk(quarantineData, resolvedColumnName);
+
+      const proceed = window.confirm(
+        `Converting "${resolvedColumnName}" to numeric may cause data loss.\n` +
+          `${riskCount} item(s) are at risk of being lost.\n` +
+          `Non-numeric values will be replaced with null.\n\n` +
+          `Do you want to continue?`,
+      );
+      if (!proceed) return;
+    }
+
+    await submitForm();
   };
 
   const handlePreview = () => {
@@ -238,7 +415,7 @@ export function SaveButton() {
 
   return (
     <>
-      <div style={{ justifyContent: "center", display: "flex", gap: 12 }}>
+      <>
         {isAggregation ? (
           <AutoCloseTooltip title={`Preview ${PREVIEW_LIMIT} rows`}>
             <Button
@@ -257,12 +434,13 @@ export function SaveButton() {
             shape="circle"
             size="large"
             className={buttonStyles.coloredButton}
-            htmlType="submit"
-            disabled={!isValid}
+            onClick={handleSave}
+            disabled={isSubmitting}
+            loading={isSubmitting}
             icon={<SaveOutlined />}
           ></Button>
         </AutoCloseTooltip>
-      </div>
+      </>
 
       <Modal
         title={`Aggregation Preview (first ${PREVIEW_LIMIT} rows)`}
@@ -403,6 +581,39 @@ function NodeDescriptionField() {
         onChange={onChange}
         value={field.value}
       />
+    </div>
+  );
+}
+
+function NodeVariablePreview({ values = [], columnName }) {
+  if (!columnName) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <Text strong>Sample values:</Text>
+        <Text type="secondary">No data found for this variable.</Text>
+      </div>
+    );
+  }
+
+  if (!values.length) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <Text strong>Sample values:</Text>
+        <Text type="secondary">No values available for this variable.</Text>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <Text strong>Sample values ({VARIABLE_VALUES_LIMIT}):</Text>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {values.map((value, index) => (
+          <Text code key={`${normalizePreviewValue(value)}-${index}`}>
+            {normalizePreviewValue(value)}
+          </Text>
+        ))}
+      </div>
     </div>
   );
 }

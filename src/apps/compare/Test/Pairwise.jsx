@@ -9,7 +9,9 @@ import {
   computePairwiseData,
   formatDecimal,
 } from "@/utils/functions";
+import { ORDER_VARIABLE } from "@/utils/Constants";
 import useResizeObserver from "@/hooks/useResizeObserver";
+import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import { notifyError, notifyInfo } from "@/utils/notifications";
 import { Settings } from "./PointRange";
 import {
@@ -17,13 +19,25 @@ import {
   CHART_OUTLINE,
 } from "@/utils/chartTheme";
 import { attachTickLabelGridHover, paintLayersInOrder } from "@/utils/gridInteractions";
+import {
+  extractOrderValues,
+  isFiniteNumericValue,
+  uniqueColumns,
+} from "@/utils/viewRecords";
 
-export default function Pairwise({ id, variable, test, remove }) {
+export default function Pairwise({
+  id,
+  variable,
+  test,
+  remove,
+  sourceOrderValues = [],
+}) {
   const ref = useRef();
   const dims = useResizeObserver(ref);
 
   const selection = useSelector((s) => s.dataframe.present.selection);
   const groupVar = useSelector((s) => s.compare.groupVar);
+  const attributes = useSelector((s) => s.metadata.attributes);
 
   const [config, setConfig] = useState({
     isSync: true,
@@ -37,11 +51,33 @@ export default function Pairwise({ id, variable, test, remove }) {
 
   const [data, setData] = useState(null);
 
+  const liveOrderValues = React.useMemo(
+    () =>
+      extractOrderValues(selection, (row) => {
+        const groupValue = row?.[groupVar];
+        const value = row?.[variable];
+        return groupValue != null && isFiniteNumericValue(value);
+      }),
+    [selection, groupVar, variable],
+  );
+
+  const recordOrders = useViewRecordSnapshot({
+    isSync: config.isSync,
+    liveOrderValues,
+    initialOrderValues: sourceOrderValues,
+  });
+
+  const requiredVariables = React.useMemo(
+    () => uniqueColumns([groupVar, variable, ORDER_VARIABLE]),
+    [groupVar, variable],
+  );
+
   useEffect(() => {
-    if (!variable || !test || !groupVar || !config.isSync) {
+    if (!variable || !test || !groupVar) {
       setData(null);
       return;
     }
+    if (!config.isSync) return;
 
     try {
       const tmp = computePairwiseData(selection, groupVar, variable, test);
@@ -122,11 +158,16 @@ export default function Pairwise({ id, variable, test, remove }) {
 
   const pairwiseLabel = data?.pairwiseTitle || "Effect sizes";
   const title = [test, pairwiseLabel, variable].filter(Boolean).join(" · ");
+  const variableDescription = React.useMemo(() => {
+    const description = attributes?.find((attr) => attr?.name === variable)?.desc;
+    return typeof description === "string" ? description.trim() : "";
+  }, [attributes, variable]);
 
   return (
     <div className={styles.viewContainer} data-view-container>
       <ChartBar
         title={title}
+        hoverTitle={variableDescription || undefined}
         info={infoContent}
         svgIDs={[id]}
         remove={remove}
@@ -135,6 +176,11 @@ export default function Pairwise({ id, variable, test, remove }) {
         settings={
           <Settings config={config} setConfig={setConfig} variant="pairwise" />
         }
+        recordsExport={{
+          filename: `pairwise_${variable || "view"}`,
+          recordOrders,
+          requiredVariables,
+        }}
       ></ChartBar>
 
       <div ref={ref} className={styles.chartContainer}></div>

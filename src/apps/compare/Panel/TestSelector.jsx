@@ -122,7 +122,7 @@ export default function TestSelector({ generateTest, generateRanking }) {
       <div className={styles.selectorField}>
         <span className={styles.selectorLabel}>Test</span>
         <Select
-          className={`${styles.selectorControl} ${styles.selectorControlWide}`}
+          size="small"
           value={selectedTest}
           onChange={(v) => dispatch(setSelectedTest(v))}
           placeholder="Select statistical test"
@@ -140,27 +140,33 @@ export default function TestSelector({ generateTest, generateRanking }) {
         </Select>
       </div>
 
-      <ColoredButton
-        title={
-          groupVar
-            ? "Run the selected test on current variable"
-            : "Group variable must be set."
-        }
-        icon={<ExperimentOutlined />}
-        onClick={triggerTest}
-        disabled={!selectedVar || !selectedTest || !groupVar}
-      />
+      <div className={styles.compareTestActions}>
+        <div className={styles.compareTestActionCell}>
+          <ColoredButton
+            title={
+              groupVar
+                ? "Run the selected test on current variable"
+                : "Group variable must be set."
+            }
+            icon={<ExperimentOutlined />}
+            onClick={triggerTest}
+            disabled={!selectedVar || !selectedTest || !groupVar}
+          />
+        </div>
 
-      <ColoredButton
-        title={
-          groupVar
-            ? "Compare all variables with the selected test"
-            : "Group variable must be set."
-        }
-        icon={<BarChartOutlined />}
-        onClick={() => selectedTest && generateRanking(selectedTest)}
-        disabled={!selectedTest || !groupVar}
-      />
+        <div className={styles.compareTestActionCell}>
+          <ColoredButton
+            title={
+              groupVar
+                ? "Compare all variables with the selected test"
+                : "Group variable must be set."
+            }
+            icon={<BarChartOutlined />}
+            onClick={() => selectedTest && generateRanking(selectedTest)}
+            disabled={!selectedTest || !groupVar}
+          />
+        </div>
+      </div>
 
       {selectedTestObj && (
         <div

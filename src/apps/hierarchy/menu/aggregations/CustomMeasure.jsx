@@ -31,7 +31,8 @@ const CustomMeasure = ({ formula }) => {
 
   const showNodes = nodes
     .filter(
-      (n) => n.name.toLowerCase().includes(searchText) && n.name !== values.name
+      (n) =>
+        n.name.toLowerCase().includes(searchText) && n.name !== values.name,
     )
     .sort((a, b) => a.name.length - b.name.length);
 
@@ -112,15 +113,14 @@ const CustomMeasure = ({ formula }) => {
           }}
         />
       </div>
-
       {errors?.info?.formula && (
         <div style={{ color: "var(--color-error)", marginTop: 4 }}>
           {errors.info.formula}
         </div>
       )}
-
-      <SaveButton />
-
+      <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
+        <SaveButton />
+      </div>
       <div
         style={{
           display: "flex",

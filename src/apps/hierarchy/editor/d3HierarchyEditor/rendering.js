@@ -4,6 +4,37 @@ import { CHART_OUTLINE, CHART_OUTLINE_MUTED } from "@/utils/chartTheme";
 import { transitionDuration } from "./constants";
 import { colorNode } from "./helpers";
 
+const getNodeShapeKind = (node) => {
+  const { type } = node?.data || {};
+  const nChildren = (node.children?.length ?? 0) + (node._children?.length ?? 0);
+
+  if (type === "aggregation" && nChildren === 0) {
+    return "triangle";
+  }
+
+  if (type === "aggregation" || type === "root") {
+    return "rect";
+  }
+
+  return "circle";
+};
+
+const ensureNodeShape = (group, node) => {
+  const shapeKind = getNodeShapeKind(node);
+  const currentShape = group.select(".showCircle");
+  const currentTag = currentShape.empty()
+    ? null
+    : currentShape.node()?.tagName?.toLowerCase();
+
+  const expectedTag =
+    shapeKind === "triangle" ? "path" : shapeKind === "rect" ? "rect" : "circle";
+
+  if (currentTag === expectedTag) return;
+
+  currentShape.remove();
+  group.insert(expectedTag, ".ghostCircle").attr("class", "showCircle");
+};
+
 export function drawHierarchy(source, instant = false) {
   const { root } = this;
   const siblingSpacing = this.viewConfig.nodeSize;
@@ -51,42 +82,8 @@ export function drawNodes(source, instant = false) {
 
         g.each(function (d) {
           const group = d3.select(this);
-          const { type } = d.data;
-          const nChildren =
-            (d.children?.length ?? 0) + (d._children?.length ?? 0);
-          const fill = colorNode(d);
-          const halfSize = graph.getNodeHalfSize();
-
-          if (type === "aggregation" && nChildren === 0) {
-            group
-              .append("path")
-              .attr("class", "showCircle")
-              .attr("d", graph.getNodeTrianglePath())
-              .attr("fill", fill);
-          } else if (type === "aggregation" || type === "root") {
-            group
-              .append("rect")
-              .attr("class", "showCircle")
-              .attr("x", -halfSize)
-              .attr("y", -halfSize)
-              .attr("width", halfSize * 2)
-              .attr("height", halfSize * 2)
-              .attr("rx", graph.getNodeCornerRadius())
-              .attr("fill", fill);
-          } else {
-            group
-              .append("circle")
-              .attr("class", "showCircle")
-              .attr("r", halfSize)
-              .attr("fill", fill);
-          }
-
-          if (d._children && !d.children) {
-            group
-              .select(".showCircle")
-              .attr("stroke", CHART_OUTLINE)
-              .attr("stroke-width", 2 * graph.viewConfig.nodeScale);
-          }
+          ensureNodeShape(group, d);
+          group.select(".showCircle").attr("fill", colorNode(d));
         });
 
         g.append("circle")
@@ -144,6 +141,10 @@ export function drawNodes(source, instant = false) {
 
   const currentNodeHalfSize = this.getNodeHalfSize();
   const currentCornerRadius = this.getNodeCornerRadius();
+
+  gnode.each(function (d) {
+    ensureNodeShape(d3.select(this), d);
+  });
 
   gnode.selectAll("circle.showCircle").attr("r", currentNodeHalfSize);
   gnode

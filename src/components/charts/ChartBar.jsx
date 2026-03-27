@@ -1,6 +1,7 @@
 import React from "react";
 import {
   SettingOutlined,
+  ExperimentOutlined,
   InfoCircleFilled,
   CloseOutlined,
   SyncOutlined,
@@ -8,26 +9,34 @@ import {
 
 import styles from "@/styles/ChartBar.module.css";
 import DownloadButton from "@/components/ui/DownloadButton";
+import ViewRecordsDownloadButton from "@/components/ui/ViewRecordsDownloadButton";
 import BarButton from "@/components/ui/BarButton";
 import PopoverButton from "@/components/ui/PopoverButton";
 import buttonStyles from "@/styles/Buttons.module.css";
 
 export default function ChartBar({
   settings,
+  testsSettings,
   title,
+  hoverTitle,
   svgIDs,
   remove,
   info = "",
   config,
   setConfig,
+  recordsExport,
 }) {
   const isSync = Boolean(config?.isSync);
+  const titleHoverText = hoverTitle || title;
   const updateConfig = (field, value) =>
     setConfig((prev) => ({ ...prev, [field]: value }));
 
   return (
     <div className={styles.chartBar} data-view-bar>
-      <div className={`${styles.dragHandle} drag-handle ${styles.chartTitle}`}>
+      <div
+        className={`${styles.dragHandle} drag-handle ${styles.chartTitle}`}
+        title={titleHoverText}
+      >
         {title}
       </div>
 
@@ -46,6 +55,7 @@ export default function ChartBar({
             }
           />
         )}
+        {recordsExport && <ViewRecordsDownloadButton {...recordsExport} />}
         {svgIDs && <DownloadButton svgIds={svgIDs} filename={`${title}`} />}
 
         {info && (
@@ -59,8 +69,16 @@ export default function ChartBar({
         <PopoverButton
           content={settings}
           icon={<SettingOutlined />}
-          title={"Settings"}
+          panelWidth={400}
         />
+        {testsSettings && (
+          <PopoverButton
+            content={testsSettings}
+            icon={<ExperimentOutlined />}
+            title={"Tests"}
+            panelWidth={400}
+          />
+        )}
         {remove && (
           <BarButton title="Close" icon={<CloseOutlined />} onClick={remove} />
         )}
@@ -72,7 +90,9 @@ export default function ChartBar({
 export function NodeBar({ title, remove }) {
   return (
     <div className={styles.chartBar} data-view-bar>
-      <div className={styles.chartTitle}>{title}</div>
+      <div className={styles.chartTitle} title={title}>
+        {title}
+      </div>
 
       <div className={styles.right}>
         {remove && (
@@ -86,7 +106,10 @@ export function NodeBar({ title, remove }) {
 export function Bar({ children, title }) {
   return (
     <div className={styles.chartBar} data-view-bar>
-      <div className={`${styles.dragHandle} drag-handle ${styles.chartTitle}`}>
+      <div
+        className={`${styles.dragHandle} drag-handle ${styles.chartTitle}`}
+        title={title}
+      >
         {title}
       </div>
 

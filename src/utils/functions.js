@@ -522,11 +522,22 @@ export function generateTree(attributes, nodeID) {
     type: node.type,
     dtype: node.dtype,
     formula: node?.info?.formula,
+    exec: node?.info?.exec,
     desc: node.desc,
   };
 }
 
 export function getVisibleNodes(tree) {
+  const hasFormula = (node) => {
+    const values = [node?.formula, node?.exec];
+    return values.some((value) => {
+      if (typeof value === "string") {
+        return value.trim().length > 0;
+      }
+      return Boolean(value);
+    });
+  };
+
   const filteredNodes = [];
   const queue = [tree];
 
@@ -539,10 +550,7 @@ export function getVisibleNodes(tree) {
       !node.children ||
       node.children.length === 0
     ) {
-      if (
-        node.type !== "aggregation" ||
-        (node.type === "aggregation" && node?.formula)
-      )
+      if (node.type !== "aggregation" || hasFormula(node))
         filteredNodes.push(node.name);
     } else if (node.children && node.children.length > 0) {
       queue.push(...node.children.filter((child) => child?.isActive !== false));

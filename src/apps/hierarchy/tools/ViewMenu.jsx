@@ -1,5 +1,8 @@
 import SearchNodeBar from "./SearchNodeBar";
-const ViewMenu = () => {
+const ViewMenu = ({
+  selectionMode,
+  onSelectionModeChange,
+}) => {
   return (
     <div
       style={{
@@ -8,7 +11,10 @@ const ViewMenu = () => {
         left: "var(--space-3)",
       }}
     >
-      <SearchNodeBar />
+      <SearchNodeBar
+        selectionMode={selectionMode}
+        onSelectionModeChange={onSelectionModeChange}
+      />
     </div>
   );
 };

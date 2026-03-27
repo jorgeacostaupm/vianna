@@ -57,17 +57,20 @@ const areColumnsEqual = (previousColumns = [], nextColumns = []) => {
   );
 };
 
+const syncSelectionFromDataframe = (state, dataframe) => {
+  const selection = pickColumns(dataframe, state.navioColumns);
+  state.dataframe = dataframe;
+  state.selection = selection;
+  hasEmptyValues(selection, state);
+};
+
 export const dataSlice = createSlice({
   name: "dataframe",
   initialState: initialState,
   reducers: {
     setDataframe: (state, action) => {
-      const selection = pickColumns(action.payload, state.navioColumns);
-      state.dataframe = action.payload;
-      state.selection = selection;
+      syncSelectionFromDataframe(state, action.payload);
       state.version += 1;
-
-      hasEmptyValues(selection, state);
     },
 
     setNavioColumns: (state, action) => {
@@ -137,32 +140,38 @@ export const dataSlice = createSlice({
 
     builder
       .addCase(generateColumn.fulfilled, (state, action) => {
-        state.dataframe = action.payload.data;
+        syncSelectionFromDataframe(state, action.payload.data);
         state.version += 1;
       })
       .addCase(generateColumn.rejected, () => {});
 
     builder.addCase(generateColumnBatch.fulfilled, (state, action) => {
-      state.dataframe = action.payload.data;
+      syncSelectionFromDataframe(state, action.payload.data);
       state.version += 1;
     });
 
     builder
       .addCase(generateEmpty.fulfilled, (state, action) => {
-        state.dataframe = action.payload;
+        syncSelectionFromDataframe(state, action.payload);
         state.version += 1;
       })
       .addCase(removeColumn.fulfilled, (state, action) => {
-        state.dataframe = action.payload;
+        syncSelectionFromDataframe(state, action.payload);
         state.version += 1;
       })
       .addCase(removeBatch.fulfilled, (state, action) => {
-        state.dataframe = action.payload;
+        syncSelectionFromDataframe(state, action.payload);
         state.version += 1;
       });
 
     builder.addCase(replaceValuesWithNull.fulfilled, (state, action) => {
-      state.nullifiedValues = [...state.nullifiedValues, action.payload.value];
+      const previousValues = Array.isArray(state.nullifiedValues)
+        ? state.nullifiedValues
+        : [];
+      const nextValues = Array.isArray(action.payload?.values)
+        ? action.payload.values
+        : [];
+      state.nullifiedValues = [...new Set([...previousValues, ...nextValues])];
     });
   },
 });

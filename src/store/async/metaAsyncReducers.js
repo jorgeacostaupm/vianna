@@ -48,7 +48,7 @@ const buildOperationName = (operation, colName, extraArgs) => {
 };
 
 const getOperationDtype = (operation) =>
-  TEXT_OPERATIONS.has(operation) ? "text" : "number";
+  TEXT_OPERATIONS.has(operation) ? "string" : "number";
 const ROOT_NODE_NAME = "Hierarchy Root";
 
 const getNodeId = (node) => node?.data?.id ?? node?.id ?? null;

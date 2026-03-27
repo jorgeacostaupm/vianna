@@ -336,7 +336,10 @@ export function aggregateSelectedNodesAction({ parent, source }) {
 
 export function inspectNode({ nodeId }) {
   const node = this.root.descendants().find((d) => d.id === nodeId);
-  if (node) publish("nodeInspectionNode", { nodeId });
+  if (!node) return;
+
+  console.log("[Hierarchy] inspected node", node.data);
+  publish("nodeInspectionNode", { nodeId });
 }
 
 export function focusNode({ nodeId }) {
@@ -388,6 +391,10 @@ export function focusNode({ nodeId }) {
     });
 }
 
+export function onNodeMenuVisibilityChanged({ isOpen }) {
+  this.isNodeMenuOpen = Boolean(isOpen);
+}
+
 export function addSubscriptions() {
   this.subscriptionHandlers = {
     addSelectedNodes: this.addSelectedNodes.bind(this),
@@ -395,6 +402,7 @@ export function addSubscriptions() {
     removeSelectedNodes: this.removeSelectedNodes.bind(this),
     focusNode: this.focusNode.bind(this),
     inspectNode: this.inspectNode.bind(this),
+    nodeMenuVisibilityChanged: this.onNodeMenuVisibilityChanged.bind(this),
   };
 
   Object.entries(this.subscriptionHandlers).forEach(([eventName, handler]) => {

@@ -232,12 +232,15 @@ export default function OperationModal({
           params,
           node,
           selectedNodes: safeSelectedNodes,
-        })
+        }),
       );
 
       if (applyOperation.fulfilled.match(action)) {
-        const { total = safeSelectedNodes.length, applied = [], failed = [] } =
-          action.payload || {};
+        const {
+          total = safeSelectedNodes.length,
+          applied = [],
+          failed = [],
+        } = action.payload || {};
 
         const description = buildListResultDescription({
           successLabel: `Created (${applied.length}/${total})`,
@@ -305,6 +308,7 @@ export default function OperationModal({
       <div style={{ marginBottom: 16 }}>
         <div style={{ marginBottom: 8 }}>Operation</div>
         <Select
+          size="small"
           style={{ width: "100%" }}
           placeholder="Select operation"
           value={operation}
@@ -347,6 +351,7 @@ export default function OperationModal({
 
             <div style={{ display: "flex", gap: 12 }}>
               <InputNumber
+                size="small"
                 style={{ flex: 1 }}
                 placeholder="Mean"
                 value={params.values?.[n.id]?.mean}
@@ -354,6 +359,7 @@ export default function OperationModal({
               />
 
               <InputNumber
+                size="small"
                 style={{ flex: 1 }}
                 placeholder="Std Dev"
                 min={0}
@@ -368,6 +374,7 @@ export default function OperationModal({
         <div style={{ marginTop: 12 }}>
           <div style={{ marginBottom: 8 }}>Group by</div>
           <Select
+            size="small"
             style={{ width: "100%" }}
             placeholder="Select group column"
             value={params.group}
@@ -400,10 +407,7 @@ export default function OperationModal({
                     addonBefore={`Arg ${index + 2}`}
                   />
                   {isVariableArgs && (
-                    <Button
-                      size="small"
-                      onClick={() => removeArgValue(index)}
-                    >
+                    <Button size="small" onClick={() => removeArgValue(index)}>
                       Remove
                     </Button>
                   )}

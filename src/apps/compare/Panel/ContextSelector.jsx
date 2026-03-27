@@ -35,7 +35,7 @@ export default function ContextSelector() {
       <div className={styles.selectorField}>
         <span className={styles.selectorLabel}>Group variable</span>
         <Select
-          className={styles.selectorControl}
+          size="small"
           value={groupVar}
           onChange={(v) => dispatch(setCompareGroupVar(v))}
           placeholder="Select group variable"
@@ -52,7 +52,11 @@ export default function ContextSelector() {
         </Select>
       </div>
 
-      <AnalysisContextStats groupVar={groupVar} timeVar={timeVar} idVar={idVar} />
+      <AnalysisContextStats
+        groupVar={groupVar}
+        timeVar={timeVar}
+        idVar={idVar}
+      />
     </>
   );
 }

@@ -102,7 +102,6 @@ rect.bar {
   ry: 6px;
   stroke: rgba(15, 23, 42, 0.15);
   stroke-width: 0.6;
-  filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.12));
   transition:
     opacity var(--transition-fast),
     filter var(--transition-fast);
@@ -123,7 +122,7 @@ rect.stacked-bar {
 }
 
 path.density {
-  fill-opacity: 0.6;
+  fill-opacity: 1;
   stroke: rgba(15, 23, 42, 0.2);
   stroke-width: 1;
 }
@@ -144,7 +143,6 @@ path.violin {
 .dot,
 .dots,
 .obs-point,
-.mean,
 .mean-point,
 .effect-point {
   stroke: rgba(15, 23, 42, 0.35);

@@ -17,13 +17,13 @@ export default function Settings({ config, setConfig }) {
     <div className={panelStyles.panel}>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>View</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Chart type</Text>
+        <div className={panelStyles.controlInlineRow}>
           <Radio.Group
-            className={panelStyles.control}
+            className={panelStyles.radioGroupCompact}
             optionType="button"
             buttonStyle="solid"
             value={config.chartType}
+            size="small"
             onChange={(e) => update("chartType", e.target.value)}
           >
             <Radio.Button value="stacked">Stacked bars</Radio.Button>
@@ -31,12 +31,12 @@ export default function Settings({ config, setConfig }) {
           </Radio.Group>
         </div>
         {config.chartType === "stacked" && (
-          <div className={panelStyles.rowStack}>
-            <Text className={panelStyles.label}>Stack values</Text>
+          <div className={panelStyles.controlInlineRow}>
             <Radio.Group
-              className={panelStyles.control}
+              className={panelStyles.radioGroupCompact}
               optionType="button"
               buttonStyle="solid"
+              size="small"
               value={config.stackedMode || "total"}
               onChange={(e) => update("stackedMode", e.target.value)}
             >
@@ -48,6 +48,7 @@ export default function Settings({ config, setConfig }) {
         <div className={panelStyles.row}>
           <Text className={panelStyles.label}>Legend</Text>
           <Switch
+            size="small"
             checked={config.showLegend}
             onChange={(v) => update("showLegend", v)}
           />
@@ -55,6 +56,7 @@ export default function Settings({ config, setConfig }) {
         <div className={panelStyles.row}>
           <Text className={panelStyles.label}>Grid</Text>
           <Switch
+            size="small"
             checked={config.showGrid}
             onChange={(v) => update("showGrid", v)}
           />
@@ -66,6 +68,7 @@ export default function Settings({ config, setConfig }) {
         <div className={panelStyles.rowStack}>
           <Text className={panelStyles.label}>Groups</Text>
           <Select
+            size="small"
             value={config.groupOrder}
             onChange={(v) => update("groupOrder", v)}
             options={orderOptions}
@@ -74,6 +77,7 @@ export default function Settings({ config, setConfig }) {
         <div className={panelStyles.rowStack}>
           <Text className={panelStyles.label}>Categories</Text>
           <Select
+            size="small"
             value={config.categoryOrder}
             onChange={(v) => update("categoryOrder", v)}
             options={orderOptions}

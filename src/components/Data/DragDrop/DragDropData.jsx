@@ -157,7 +157,7 @@ export default function DragDropData() {
         <div className={styles.switchRow}>
           <Text>Reset Hierarchy</Text>
           <Tooltip title="Start a new hierarchy">
-            <Switch
+            <Switch size="small"
               checked={generateHierarchy}
               onChange={setGenerateHierarchy}
               disabled={isUploading}

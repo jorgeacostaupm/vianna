@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { ORDER_VARIABLE } from "@/utils/Constants";
+import { normalizeOrderValues } from "@/utils/viewRecords";
 
 const wideCharts = ["ranking"];
 const squareCharts = ["Scatter Plot Matrix", "Correlation Matrix", "PCA"];
@@ -10,12 +12,16 @@ export default function useGridViews(defaultW = 3, defaultH = 4, options = {}) {
   const [layout, setLayout] = useState([]);
   const dfFilename = useSelector((s) => s.dataframe.present.filename);
   const hierFilename = useSelector((s) => s.metadata.filename);
+  const selection = useSelector((s) => s.dataframe.present.selection);
 
   const addView = useCallback(
     (type, props = {}) => {
       const id = `${type}-${Date.now()}`;
+      const sourceOrderValues = normalizeOrderValues(
+        (selection || []).map((row) => row?.[ORDER_VARIABLE]),
+      );
 
-      setViews((prev) => [{ id, type, ...props }, ...prev]);
+      setViews((prev) => [{ id, type, sourceOrderValues, ...props }, ...prev]);
 
       console.log("type", type);
 
@@ -37,7 +43,14 @@ export default function useGridViews(defaultW = 3, defaultH = 4, options = {}) {
         ...prev.map((l) => ({ ...l, y: l.y + yOffset })),
       ]);
     },
-    [defaultH, defaultW, leftOffsetCols, topOffsetRows, totalCols],
+    [
+      defaultH,
+      defaultW,
+      leftOffsetCols,
+      selection,
+      topOffsetRows,
+      totalCols,
+    ],
   );
 
   const removeView = useCallback((id) => {

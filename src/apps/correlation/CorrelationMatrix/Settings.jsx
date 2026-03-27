@@ -14,7 +14,7 @@ const { Text } = Typography;
 export default function Settings({ config, setConfig, params, setParams }) {
   const data = useSelector((s) => s.dataframe.present.selection);
   const navioColumns = useSelector(
-    (state) => state.dataframe.present.navioColumns || []
+    (state) => state.dataframe.present.navioColumns || [],
   );
 
   const onVariablesChange = (variables) => {
@@ -68,6 +68,7 @@ export default function Settings({ config, setConfig, params, setParams }) {
         <div className={panelStyles.rowStack}>
           <Text className={panelStyles.label}>Included variables</Text>
           <Select
+            size="small"
             mode="multiple"
             value={params.variables}
             onChange={onVariablesChange}
@@ -82,6 +83,7 @@ export default function Settings({ config, setConfig, params, setParams }) {
         <div className={panelStyles.inline}>
           <Text className={panelStyles.label}>Top correlations</Text>
           <InputNumber
+            size="small"
             min={0}
             value={params.nTop}
             onChange={onChange}
@@ -96,6 +98,7 @@ export default function Settings({ config, setConfig, params, setParams }) {
         <div className={panelStyles.rowStack}>
           <Text className={panelStyles.label}>Method</Text>
           <Select
+            size="small"
             value={params.method}
             onChange={onMethodChange}
             options={CORRELATION_METHODS.map((item) => ({
@@ -106,13 +109,14 @@ export default function Settings({ config, setConfig, params, setParams }) {
             className={panelStyles.control}
           />
         </div>
-      </div>
 
-      <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Range</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Correlation range</Text>
+        <div className={panelStyles.sliderInlineRowCorrelation}>
+          <Text className={panelStyles.label}>Range</Text>
+          <Text className={panelStyles.value}>
+            {config.range[0].toFixed(2)}-{config.range[1].toFixed(2)}
+          </Text>
           <Slider
+            className={panelStyles.sliderInlineControl}
             range
             min={0}
             max={1}
@@ -121,9 +125,6 @@ export default function Settings({ config, setConfig, params, setParams }) {
             onChange={onRangeChange}
             disabled={!config.isSync}
           />
-          <Text className={panelStyles.value}>
-            {config.range[0].toFixed(2)} – {config.range[1].toFixed(2)}
-          </Text>
         </div>
       </div>
 
@@ -132,6 +133,7 @@ export default function Settings({ config, setConfig, params, setParams }) {
         <div className={panelStyles.rowStack}>
           <Text className={panelStyles.label}>Color scale</Text>
           <Select
+            size="small"
             value={config.colorScale}
             onChange={onColorScaleChange}
             options={COLOR_SCALES.map((item) => ({

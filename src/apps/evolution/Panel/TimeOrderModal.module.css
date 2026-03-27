@@ -45,6 +45,16 @@
   line-height: 1.25;
 }
 
+.manualControlInput {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.manualSwitch {
+  align-self: flex-start;
+}
+
 .previewWrap {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -106,14 +116,20 @@
   font-size: 13px;
 }
 
-.footer {
-  margin-top: 12px;
+.modalFooter {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 10px;
 }
 
 @media (max-width: 840px) {
   .controls {
     grid-template-columns: 1fr;
+  }
+
+  .modalFooter {
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 }

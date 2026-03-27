@@ -91,7 +91,7 @@ const NodeInfo = ({ nChildren, nodeType }) => {
         >
           <Text strong>Data type:</Text>
           <div ref={selectRef}>
-            <Select
+            <Select size="small"
               value={field.value}
               onChange={(value) => setValue(value)}
               options={dtypeOptions}

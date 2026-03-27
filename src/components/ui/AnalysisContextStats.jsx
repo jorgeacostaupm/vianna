@@ -17,6 +17,11 @@ export default function AnalysisContextStats({
 }) {
   const selection = useSelector((state) => state.dataframe.present.selection);
   const dataframe = useSelector((state) => state.dataframe.present.dataframe);
+  const selectedRecords = Array.isArray(selection)
+    ? selection.length
+    : Array.isArray(dataframe)
+      ? dataframe.length
+      : 0;
   const rows = Array.isArray(selection)
     ? selection
     : Array.isArray(dataframe)
@@ -34,6 +39,13 @@ export default function AnalysisContextStats({
 
   return (
     <div className={styles.contextStatsBox}>
+      <div className={styles.contextStatsRow}>
+        <span className={styles.contextStatsLabel}>Selected records</span>
+        <span className={styles.contextStatsValue}>
+          {selectedRecords.toLocaleString("en-US")}
+        </span>
+      </div>
+
       <div className={styles.contextStatsRow}>
         <span className={styles.contextStatsLabel}>
           {buildLabel("Groups", groupVar)}

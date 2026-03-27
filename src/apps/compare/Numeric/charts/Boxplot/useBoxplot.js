@@ -3,7 +3,12 @@ import { useEffect } from "react";
 import { useSelector } from "react-redux";
 
 import { moveTooltip } from "@/utils/functions";
-import { numMargin, renderLegend } from "../Density/useDensity";
+import {
+  numMargin,
+  renderLegend,
+  getGroupCounts,
+  formatGroupCountLabel,
+} from "../Density/useDensity";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
 import { CHART_OUTLINE, CHART_OUTLINE_MUTED } from "@/utils/chartTheme";
@@ -21,7 +26,14 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
   );
   const groupsKey = selectionGroups.join("|");
 
-  const { pointSize, showPoints, showLegend, showGrid } = config;
+  const {
+    pointSize,
+    showPoints,
+    showLegend,
+    showGrid,
+    showGroupCountInLegend = true,
+    showGroupCountInAxis = true,
+  } = config;
 
   useEffect(() => {
     if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
@@ -56,6 +68,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       .padding(0.4);
 
     const grouped = d3.group(data, (d) => d.type);
+    const groupCounts = getGroupCounts(data, selectionGroups);
 
     const boxStatsByGroup = Array.from(grouped, ([group, values]) => {
       const numericValues = values.map((d) => d.value);
@@ -85,6 +98,9 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       .call(d3.axisBottom(x));
     xAxisG.select(".domain").remove();
     xAxisG.selectAll(".tick line").remove();
+    xAxisG.selectAll(".tick text").text((group) =>
+      showGroupCountInAxis ? formatGroupCountLabel(group, groupCounts) : group,
+    );
 
     const yAxisG = chart.append("g").call(d3.axisLeft(y).ticks(5));
     yAxisG.select(".domain").remove();
@@ -131,7 +147,10 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       if (values.length === 0) return;
 
       const stats = computeBoxStats(values);
-      const boxWidth = x.bandwidth();
+      const bandWidth = x.bandwidth();
+      const boxWidth = bandWidth;
+      const boxOffset = (bandWidth - boxWidth) / 2;
+      const boxCenter = boxOffset + boxWidth / 2;
       const jitterWidth = boxWidth * 0.6;
       const crossSize = pointSize * 1.2;
       const points = (grouped.get(group) || []).map((d) => {
@@ -151,7 +170,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       // ----- Box -----
       g.append("rect")
         .attr("class", "box")
-        .attr("x", 0)
+        .attr("x", boxOffset)
         .attr("y", y(stats.q3))
         .attr("width", boxWidth)
         .attr("height", y(stats.q1) - y(stats.q3))
@@ -181,8 +200,8 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       // ----- Median line -----
       g.append("line")
         .attr("class", "box-median")
-        .attr("x1", 0)
-        .attr("x2", boxWidth)
+        .attr("x1", boxOffset)
+        .attr("x2", boxOffset + boxWidth)
         .attr("y1", y(stats.median))
         .attr("y2", y(stats.median))
         .attr("stroke", CHART_OUTLINE)
@@ -191,16 +210,16 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       // ----- Whiskers -----
       g.append("line")
         .attr("class", "box-whisker")
-        .attr("x1", boxWidth / 2)
-        .attr("x2", boxWidth / 2)
+        .attr("x1", boxCenter)
+        .attr("x2", boxCenter)
         .attr("y1", y(stats.lower))
         .attr("y2", y(stats.q1))
         .attr("stroke", CHART_OUTLINE);
 
       g.append("line")
         .attr("class", "box-whisker")
-        .attr("x1", boxWidth / 2)
-        .attr("x2", boxWidth / 2)
+        .attr("x1", boxCenter)
+        .attr("x2", boxCenter)
         .attr("y1", y(stats.q3))
         .attr("y2", y(stats.upper))
         .attr("stroke", CHART_OUTLINE);
@@ -208,16 +227,16 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       // ----- Whisker caps -----
       g.append("line")
         .attr("class", "box-cap")
-        .attr("x1", boxWidth * 0.2)
-        .attr("x2", boxWidth * 0.8)
+        .attr("x1", boxCenter - boxWidth * 0.3)
+        .attr("x2", boxCenter + boxWidth * 0.3)
         .attr("y1", y(stats.lower))
         .attr("y2", y(stats.lower))
         .attr("stroke", CHART_OUTLINE);
 
       g.append("line")
         .attr("class", "box-cap")
-        .attr("x1", boxWidth * 0.2)
-        .attr("x2", boxWidth * 0.8)
+        .attr("x1", boxCenter - boxWidth * 0.3)
+        .attr("x2", boxCenter + boxWidth * 0.3)
         .attr("y1", y(stats.upper))
         .attr("y2", y(stats.upper))
         .attr("stroke", CHART_OUTLINE);
@@ -228,7 +247,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
         .join("circle")
         .attr("class", "point")
         .classed("hide", !showPoints)
-        .attr("cx", (d) => boxWidth / 2 + d._jitter)
+        .attr("cx", (d) => boxCenter + d._jitter)
         .attr("cy", (d) => y(d.value))
         .attr("fill", CHART_OUTLINE_MUTED)
         .attr("opacity", 0.7)
@@ -247,7 +266,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
         .join("circle")
         .attr("class", "outlier-mild")
         .classed("hide", !showPoints)
-        .attr("cx", (d) => boxWidth / 2 + d._jitter)
+        .attr("cx", (d) => boxCenter + d._jitter)
         .attr("cy", (d) => y(d.value))
         .attr("fill", "white")
         .attr("fill-opacity", 0.01)
@@ -281,7 +300,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
         .classed("hide", !showPoints)
         .attr(
           "transform",
-          (d) => `translate(${boxWidth / 2 + d._jitter}, ${y(d.value)})`,
+          (d) => `translate(${boxCenter + d._jitter}, ${y(d.value)})`,
         )
         .attr("opacity", 0.9)
         .on("mouseover", function (e, d) {
@@ -313,7 +332,11 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
     });
 
     if (showLegend !== false) {
-      renderLegend(legend, selectionGroups, color, null, null, null, null);
+      renderLegend(legend, selectionGroups, color, {
+        labelByGroup: showGroupCountInLegend
+          ? (group) => formatGroupCountLabel(group, groupCounts)
+          : undefined,
+      });
     }
 
     const yGridG = showGrid

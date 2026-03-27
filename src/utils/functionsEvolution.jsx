@@ -307,6 +307,7 @@ export function getLineChartData(
   timeVar,
   idVar,
   showComplete,
+  showIncomplete = false,
   tests = [],
   timeRange = null,
   timeOrderConfig = null,
@@ -393,29 +394,41 @@ export function getLineChartData(
     return { id, group, values };
   });
 
-  let completeIds = null;
-  if (showComplete) {
-    const beforeCount = participantData.length;
-    const completeParticipants = participantData.filter((p) =>
-      allTimes.every((t) =>
-        p.values.some(
-          (v) => v.timestamp === t && v.value !== null && !isNaN(v.value),
-        ),
+  const includeComplete = Boolean(showComplete);
+  const includeIncomplete = Boolean(showIncomplete);
+  const beforeCount = participantData.length;
+
+  const completeParticipants = participantData.filter((p) =>
+    allTimes.every((t) =>
+      p.values.some(
+        (v) => v.timestamp === t && v.value !== null && !Number.isNaN(+v.value),
       ),
-    );
-    completeIds = new Set(completeParticipants.map((p) => p.id));
+    ),
+  );
+  const completeIds = new Set(completeParticipants.map((p) => p.id));
+
+  if (!includeComplete && !includeIncomplete) {
+    participantData = [];
+  } else if (includeComplete && includeIncomplete) {
+    // Keep all participants.
+  } else if (includeComplete) {
     participantData = completeParticipants;
-
-    let tmp = raw.filter((r) => completeIds.has(r[idVar]));
-    table = aq.from(tmp);
-
-    console.log("[Evolution] Relevant data selection applied", {
-      participantsBefore: beforeCount,
-      participantsAfter: participantData.length,
-      excludedParticipants: beforeCount - participantData.length,
-      filteredRows: tmp.length,
-    });
+  } else {
+    participantData = participantData.filter((p) => !completeIds.has(p.id));
   }
+
+  const selectedIds = new Set(participantData.map((p) => p.id));
+  const filteredRows = raw.filter((r) => selectedIds.has(r[idVar]));
+  table = aq.from(filteredRows);
+
+  console.log("[Evolution] Relevant data selection applied", {
+    includeComplete,
+    includeIncomplete,
+    participantsBefore: beforeCount,
+    participantsAfter: participantData.length,
+    excludedParticipants: beforeCount - participantData.length,
+    filteredRows: filteredRows.length,
+  });
 
   // Agregar medias, desviaciones y conteo
   const aggregated = table

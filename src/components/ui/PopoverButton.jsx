@@ -9,6 +9,7 @@ export default function PopoverButton({
   title,
   placement = "bottomRight",
   tooltipDuration = 1500,
+  panelWidth,
 }) {
   const [tooltipVisible, setTooltipVisible] = useState(false);
   const [open, setOpen] = useState(false);
@@ -57,7 +58,7 @@ export default function PopoverButton({
       onOpenChange={handleOpenChange}
       arrow={false}
       content={
-        <div className={styles.panel}>
+        <div className={styles.panel} style={panelWidth ? { width: panelWidth } : undefined}>
           {title && <div className={styles.panelHeader}>{title}</div>}
           <div className={styles.panelBody}>{content}</div>
         </div>

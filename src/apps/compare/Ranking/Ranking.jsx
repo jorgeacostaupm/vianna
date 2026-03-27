@@ -12,12 +12,21 @@ import ChartBar from "@/components/charts/ChartBar";
 import styles from "@/styles/Charts.module.css";
 import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
 import { computeRankingData } from "@/utils/functions";
+import { ORDER_VARIABLE } from "@/utils/Constants";
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import { notifyError, notifyWarning } from "@/utils/notifications";
+import { extractOrderValues, uniqueColumns } from "@/utils/viewRecords";
 
 const { Text } = Typography;
 
-export default function Ranking({ test, remove, id, onVariableClick }) {
+export default function Ranking({
+  test,
+  remove,
+  id,
+  onVariableClick,
+  sourceOrderValues = [],
+}) {
   const ref = useRef(null);
   const skippedSignatureRef = useRef("");
   const dimensions = useResizeObserver(ref);
@@ -39,6 +48,25 @@ export default function Ranking({ test, remove, id, onVariableClick }) {
     desc: true,
     showGrid: true,
   });
+
+  const liveOrderValues = React.useMemo(
+    () => extractOrderValues(selection, (row) => row?.[groupVar] != null),
+    [selection, groupVar],
+  );
+
+  const recordOrders = useViewRecordSnapshot({
+    isSync: config.isSync,
+    liveOrderValues,
+    initialOrderValues: sourceOrderValues,
+  });
+
+  const requiredVariables = React.useMemo(() => {
+    const attemptedVariables = [
+      ...(data?.data || []).map((item) => item?.variable),
+      ...(data?.skippedVariables || []).map((item) => item?.variable),
+    ];
+    return uniqueColumns([groupVar, ...attemptedVariables, ORDER_VARIABLE]);
+  }, [groupVar, data]);
 
   useEffect(() => {
     setRanking(new RankingPlot(ref.current));
@@ -174,6 +202,11 @@ export default function Ranking({ test, remove, id, onVariableClick }) {
         config={config}
         setConfig={setConfig}
         settings={<Options config={config} setConfig={setConfig} />}
+        recordsExport={{
+          filename: `ranking_${test || "view"}`,
+          recordOrders,
+          requiredVariables,
+        }}
       ></ChartBar>
 
       {!hasRankingData && <NoDataPlaceholder></NoDataPlaceholder>}
@@ -197,11 +230,12 @@ function Options({ config, setConfig }) {
     <div className={panelStyles.panel}>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Ordering</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Sort order</Text>
+        <div className={panelStyles.controlInlineRow}>
           <Radio.Group
+            className={panelStyles.radioGroupCompact}
             optionType="button"
             buttonStyle="solid"
+            size="small"
             value={desc ? "desc" : "asc"}
             onChange={(e) => update("desc", e.target.value === "desc")}
           >
@@ -213,28 +247,24 @@ function Options({ config, setConfig }) {
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Filters</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>P-value threshold</Text>
-          <Text className={panelStyles.value}>{pValue.toFixed(2)}</Text>
-          <Slider
-            min={0}
-            max={1}
-            step={0.01}
-            value={pValue}
-            onChange={(v) => update("pValue", v)}
-          />
-        </div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Number of bars</Text>
-          <Text className={panelStyles.value}>{nBars}</Text>
-          <Slider
-            min={1}
-            max={50}
-            step={1}
-            value={nBars}
-            onChange={(v) => update("nBars", v)}
-          />
-        </div>
+        <SliderControl
+          label="p-value"
+          valueLabel={pValue.toFixed(2)}
+          min={0}
+          max={1}
+          step={0.01}
+          value={pValue}
+          onChange={(v) => update("pValue", v)}
+        />
+        <SliderControl
+          label="Bars"
+          valueLabel={`${nBars}`}
+          min={1}
+          max={50}
+          step={1}
+          value={nBars}
+          onChange={(v) => update("nBars", v)}
+        />
       </div>
 
       <div className={panelStyles.section}>
@@ -242,11 +272,29 @@ function Options({ config, setConfig }) {
         <div className={panelStyles.row}>
           <Text className={panelStyles.label}>Grid lines</Text>
           <Switch
+            size="small"
             checked={showGrid}
             onChange={(v) => update("showGrid", v)}
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+function SliderControl({ label, valueLabel, min, max, step, value, onChange }) {
+  return (
+    <div className={panelStyles.sliderInlineRow}>
+      <Text className={panelStyles.label}>{label}</Text>
+      <Text className={panelStyles.value}>{valueLabel}</Text>
+      <Slider
+        className={panelStyles.sliderInlineControl}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={onChange}
+      />
     </div>
   );
 }

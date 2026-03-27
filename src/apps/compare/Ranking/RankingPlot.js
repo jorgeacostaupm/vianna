@@ -127,7 +127,7 @@ export default class RankingPlot {
       .attr("y", (d) => vis.y_scale(vis.yAccesor(d)))
       .attr("width", vis.x_scale.bandwidth())
       .attr("height", (d) => vis.height - vis.y_scale(vis.yAccesor(d)))
-      .attr("fill", "rgb(22, 119, 255)")
+      .attr("fill", "var(--primary-color)")
       .style("cursor", "pointer")
       .on("click", function (_, d) {
         vis.selectedVar = d.variable;

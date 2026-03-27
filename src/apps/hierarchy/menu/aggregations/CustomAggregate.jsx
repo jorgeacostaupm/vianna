@@ -132,8 +132,9 @@ const CustomAggregate = ({ nodes, formula, save }) => {
         {errors?.info?.formula}
       </div>
 
-      {save}
-
+      <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
+        {save}
+      </div>
       <div
         style={{
           display: "flex",

@@ -14,7 +14,9 @@ export default function Bar({ title, config, updateConfig }) {
   return (
     <>
       <div className={styles.chartBar} data-view-bar>
-        <div className={`${styles.chartTitle}`}>{title}</div>
+        <div className={styles.chartTitle} title={title}>
+          {title}
+        </div>
 
         <div className={styles.right}>
           <NullQuarantineButton />

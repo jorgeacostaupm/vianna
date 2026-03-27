@@ -16,7 +16,7 @@ export default function ChartSelector({ addView }) {
       <div className={styles.selectorField}>
         <span className={styles.selectorLabel}>Chart type</span>
         <Select
-          className={styles.selectorControl}
+          size="small"
           onChange={(v) => setChart(v)}
           placeholder="Select graph"
           showSearch={true}

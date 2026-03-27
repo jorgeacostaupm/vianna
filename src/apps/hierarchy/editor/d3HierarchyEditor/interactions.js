@@ -14,7 +14,9 @@ export function addNodeEvents(nodes) {
 
   nodes
     .on("mouseover", function (e, node) {
-      if (graph.nodesDragged.length === 0) {
+      if (graph.isClickSelectionMode) {
+        graph.svg.style("cursor", "pointer");
+      } else if (graph.nodesDragged.length === 0) {
         graph.svg.style("cursor", "grab");
       }
 
@@ -33,7 +35,7 @@ export function addNodeEvents(nodes) {
       }, 700);
     })
     .on("mouseleave", () => {
-      graph.svg.style("cursor", "default");
+      graph.svg.style("cursor", graph.isClickSelectionMode ? "pointer" : "default");
 
       clearTimeout(graph._tooltipTimer);
       graph._tooltipTimer = null;
@@ -373,6 +375,21 @@ export function onInitialNodeDrag(node, isMultiSelect = false) {
 }
 
 export function onNodeClick(node) {
+  if (this.isNodeMenuOpen && node?.id != null) {
+    publish("nodeInspectionNode", { nodeId: node.id });
+    return;
+  }
+
+  if (this.isRootNodeId(node?.id)) {
+    publish("untoggleEvent", {});
+    return;
+  }
+
+  if (this.isClickSelectionMode) {
+    this.toggleNodeSelection(node.id);
+    return;
+  }
+
   if (node.children === undefined || node._children === undefined) {
     return;
   }
@@ -409,6 +426,7 @@ export function getBrush() {
   function brushEnd({ selection }) {
     if (!selection) {
       removeBrush();
+      rearmBrushIfNeeded();
       return;
     }
 
@@ -428,24 +446,30 @@ export function getBrush() {
 
     if (nodesInside.length === 0) {
       removeBrush();
+      rearmBrushIfNeeded();
       return;
     }
 
     nodesInside.forEach((node) => {
-      vis.svg
-        .selectAll(".circleG")
-        .filter((d) => d.id === node.id)
-        .select(".showCircle")
-        .classed("selectedNode", true);
+      vis.toggleNodeSelection(node.id);
     });
 
     removeBrush();
+    rearmBrushIfNeeded();
   }
 
   function removeBrush() {
     vis.svg.selectAll(".brush").remove();
     vis.svg.on(".brush", null);
     vis.svg.call(vis.zoomBehaviour);
+  }
+
+  function rearmBrushIfNeeded() {
+    if (vis.selectionMode !== "brush") return;
+    setTimeout(() => {
+      if (vis.selectionMode !== "brush") return;
+      vis.activateBrushSelection();
+    }, 0);
   }
 
   return brush;

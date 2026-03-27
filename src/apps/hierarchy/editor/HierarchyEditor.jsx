@@ -16,7 +16,6 @@ export default function HierarchyEditor() {
   const attributes = useSelector((state) => state.metadata.attributes);
   const [orientation, setOrientation] = useState("vertical");
   const [linkStyle, setLinkStyle] = useState("smooth");
-  const [brushSelectionVersion, setBrushSelectionVersion] = useState(0);
   const [viewConfig, setViewConfig] = useState(DEFAULT_HIERARCHY_VIEW_CONFIG);
 
   return (
@@ -28,9 +27,6 @@ export default function HierarchyEditor() {
         onLinkStyleChange={setLinkStyle}
         viewConfig={viewConfig}
         onViewConfigChange={setViewConfig}
-        onActivateBrushSelection={() =>
-          setBrushSelectionVersion((prev) => prev + 1)
-        }
       ></HierarchyBar>
       {attributes?.length > 0 ? (
         <Hierarchy
@@ -38,7 +34,6 @@ export default function HierarchyEditor() {
           orientation={orientation}
           linkStyle={linkStyle}
           viewConfig={viewConfig}
-          brushSelectionVersion={brushSelectionVersion}
         />
       ) : (
         <NoDataPlaceholder message="No hierarchy available" />
@@ -52,12 +47,11 @@ function Hierarchy({
   orientation,
   linkStyle,
   viewConfig,
-  brushSelectionVersion,
 }) {
   const dispatch = useDispatch();
   const editorRef = useRef(null);
   const containerRef = useRef(null);
-  const hasInitializedBrushTrigger = useRef(false);
+  const [selectionMode, setSelectionMode] = useState("none");
 
   const dimensions = useResizeObserver(containerRef);
   const version = useSelector((state) => state.metadata.version);
@@ -105,13 +99,9 @@ function Hierarchy({
   }, [viewConfig]);
 
   useEffect(() => {
-    if (!hasInitializedBrushTrigger.current) {
-      hasInitializedBrushTrigger.current = true;
-      return;
-    }
     if (!editorRef.current) return;
-    editorRef.current.activateBrushSelection?.();
-  }, [brushSelectionVersion]);
+    editorRef.current.setSelectionMode?.(selectionMode);
+  }, [selectionMode]);
 
   // Resize
   useEffect(() => {
@@ -129,7 +119,10 @@ function Hierarchy({
       {editorRef.current && <HierarchyContextMenu editor={editorRef.current} />}
 
       <NodeMenu />
-      <ViewMenu />
+      <ViewMenu
+        selectionMode={selectionMode}
+        onSelectionModeChange={setSelectionMode}
+      />
     </>
   );
 }
