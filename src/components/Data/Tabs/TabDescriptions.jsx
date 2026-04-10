@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { Typography, Divider } from "antd";
 
 import DragDropDesc from "../DragDrop/DragDropDesc";
-import { selectDescribedNodes } from "@/store/selectors/metaSelectors";
+import { selectDescribedNodes } from "@/store/features/metadata";
 import styles from "../Data.module.css";
 
 const { Title, Text } = Typography;

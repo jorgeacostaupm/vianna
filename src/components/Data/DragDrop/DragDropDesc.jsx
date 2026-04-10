@@ -1,12 +1,12 @@
 import React, { useCallback, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useDropzone } from "react-dropzone";
 import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
 
 import styles from "../Data.module.css";
 import ColoredButton from "@/components/ui/ColoredButton";
-import { updateDescriptions } from "@/store/async/metaAsyncReducers";
-import { notifyError, notifyWarning } from "@/utils/notifications";
+import { updateDescriptions } from "@/store/features/metadata";
+import { notifyError, notifyWarning } from "@/notifications";
 
 const ACCEPTED_FORMATS = {
   "text/csv": [".csv"],
@@ -18,12 +18,13 @@ export default function DragDropDesc() {
   const [filename, setFilename] = useState(null);
   const [parsedData, setParsedData] = useState(null);
   const [isReadingFile, setIsReadingFile] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const isUploading = useSelector(
+    (state) => state.metadata.loadingDescriptions,
+  );
 
   const handleUpload = async () => {
     if (!parsedData) return;
 
-    setIsUploading(true);
     try {
       await dispatch(
         updateDescriptions({ descriptions: parsedData, filename }),
@@ -36,8 +37,6 @@ export default function DragDropDesc() {
         error,
         fallback: "Descriptions upload failed. Verify CSV headers and values.",
       });
-    } finally {
-      setIsUploading(false);
     }
   };
 

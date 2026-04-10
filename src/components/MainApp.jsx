@@ -5,14 +5,13 @@ import GridLayout, { WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-import useNotification from "@/hooks/useNotification";
 import AppBar from "@/components/ui/AppBar";
 import AppsButtons from "./AppsButtons";
 import OverviewApp from "./old/Overview/OverviewApp";
 import styles from "@/styles/App.module.css";
-import { setInit } from "@/store/slices/cantabSlice";
+import { setInit } from "@/store/features/main";
 import { APP_NAME, APP_DESC } from "@/utils/Constants";
-import { notifyError } from "@/utils/notifications";
+import { notifyError } from "@/notifications";
 
 const ResponsiveGridLayout = WidthProvider(GridLayout);
 
@@ -22,7 +21,6 @@ export default function MainApp() {
   const dispatch = useDispatch();
 
   useRootStyles(setInit, APP_NAME);
-  const holder = useNotification();
 
   useEffect(() => {
     loadTestData(dispatch);
@@ -30,7 +28,6 @@ export default function MainApp() {
 
   return (
     <>
-      {holder}
       <Layout className={styles.fullScreenLayout}>
         <AppBar description={APP_DESC}>
           <AppsButtons />
@@ -64,10 +61,10 @@ const hierarchyFile = largeHierarchy;
 const dataFile = largeData;
 
 // TEST DATA LOADING
-import { updateData } from "@/store/slices/dataSlice";
-import { updateHierarchy } from "@/store/async/metaAsyncReducers";
-import * as api from "@/services/cantabAppServices";
-import { setGroupVar, setIdVar, setTimeVar } from "../store/slices/cantabSlice";
+import { updateData } from "@/store/features/dataframe";
+import { updateHierarchy } from "@/store/features/metadata";
+import * as api from "@/services/mainAppServices";
+import { setGroupVar, setIdVar, setTimeVar } from "@/store/features/main";
 import useRootStyles from "@/hooks/useRootStyles";
 
 async function loadTestData(dispatch) {
@@ -79,7 +76,13 @@ async function loadTestData(dispatch) {
     );
 
     let hierarchy = await api.fetchHierarchy(hierarchyFile);
-    await dispatch(updateHierarchy({ hierarchy, filename: "Test Hierarchy" }));
+    await dispatch(
+      updateHierarchy({
+        hierarchy,
+        filename: "Test Hierarchy",
+        silentSuccess: true,
+      }),
+    );
 
     dispatch(setIdVar(idVar));
     dispatch(setGroupVar(groupVar));

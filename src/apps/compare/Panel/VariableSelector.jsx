@@ -3,8 +3,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { Select } from "antd";
 import { AreaChartOutlined } from "@ant-design/icons";
 
-import { selectVars } from "@/store/slices/cantabSlice";
-import { checkAssumptions, setSelectedVar } from "@/store/slices/compareSlice";
+import { selectVars } from "@/store/features/main";
+import { checkAssumptions, setSelectedVar } from "@/store/features/compare";
 import ColoredButton from "@/components/ui/ColoredButton";
 import styles from "@/styles/App.module.css";
 
@@ -36,9 +36,9 @@ export default function VariableSelector({ generateDistribution }) {
         <span className={styles.selectorLabel}>Variable</span>
         <Select
           size="small"
-          value={selectedVar}
-          onChange={(v) => dispatch(setSelectedVar(v))}
-          placeholder="Search or select variable"
+          value={selectedVar ?? undefined}
+          onChange={(v) => dispatch(setSelectedVar(v ?? null))}
+          placeholder="Select variable"
           showSearch={true}
           filterOption={filterOption}
           optionFilterProp="children"
@@ -59,6 +59,7 @@ export default function VariableSelector({ generateDistribution }) {
             ? "Add distribution plots for the selected variable."
             : "Group variable must be set."
         }
+        placement={"bottom"}
         icon={<AreaChartOutlined />}
         onClick={() => selectedVar && generateDistribution(selectedVar)}
         disabled={!selectedVar || !groupVar}

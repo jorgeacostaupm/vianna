@@ -37,13 +37,14 @@ const defaultConfig = {
   showGroupCountInLegend: true,
   showGroupCountInAxis: true,
   scaleDensityStrokeByGroupSize: true,
+  axisLabelFontSize: 16,
 };
 const info = "";
 
 export default function Numeric({ id, variable, remove, sourceOrderValues = [] }) {
   const groupVar = useSelector((s) => s.compare.groupVar);
   const attributes = useSelector((s) => s.metadata.attributes);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
   const [config, setConfig] = useState(defaultConfig);
   const [data] = useDistributionData(getData, variable, config.isSync, {
     groupVar,

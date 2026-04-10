@@ -1,6 +1,6 @@
 import * as d3 from "d3";
 
-import { toggleAttribute } from "@/store/async/metaAsyncReducers";
+import { toggleAttribute } from "@/store/features/metadata";
 import { pubsub } from "@/utils/pubsub";
 import { fixTooltipToNode } from "@/utils/functions";
 

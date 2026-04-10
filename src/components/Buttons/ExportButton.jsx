@@ -2,16 +2,16 @@ import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { Button, Radio } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
-import { selectNavioVars } from "@/store/slices/cantabSlice";
+import { selectNavioVars } from "@/store/features/main";
 import { generateFileName } from "@/utils/functions";
 import buttonStyles from "@/styles/Buttons.module.css";
 import PopoverButton from "@/components/ui/PopoverButton";
 import styles from "./ExportButton.module.css";
 
 function ExportOptions() {
-  const fullData = useSelector((state) => state.dataframe.present.dataframe);
+  const fullData = useSelector((state) => state.dataframe.dataframe);
   const selectionRows = useSelector(
-    (state) => state.dataframe.present.selection,
+    (state) => state.dataframe.selection,
   );
   const visibleVariables = useSelector(selectNavioVars);
   const [includeAllVars, setIncludeAllVars] = useState(false);

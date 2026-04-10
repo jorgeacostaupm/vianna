@@ -1,4 +1,4 @@
-import { Modal, Select, InputNumber, Input, Button, Typography } from "antd";
+import { Modal, Select, InputNumber, Input, Button, Typography, Spin } from "antd";
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -8,28 +8,11 @@ import {
   ROW_FUNCTIONS,
   COLUMN_FUNCTIONS,
 } from "../menu/logic/formulaConstants";
-import { applyOperation } from "@/store/async/metaAsyncReducers";
+import { applyOperation } from "@/store/features/metadata";
 import { getCategoricalKeys } from "@/utils/functions";
-import {
-  buildListResultDescription,
-  notify,
-  notifyError,
-} from "@/utils/notifications";
 
 const { Option, OptGroup } = Select;
 const { Text } = Typography;
-
-const toNodeLabel = (node) => {
-  const name = node?.name || node?.aggregationName || "Unknown node";
-  const id = node?.id;
-  return id != null ? `${name} (#${id})` : name;
-};
-
-const toFailureLabel = (entry) => {
-  const base = toNodeLabel(entry);
-  if (!entry?.reason) return base;
-  return `${base}: ${entry.reason}`;
-};
 
 export default function OperationModal({
   open,
@@ -43,13 +26,12 @@ export default function OperationModal({
   const [operation, setOperation] = useState(null);
   const [params, setParams] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [categoricalVars, setCategoricalVars] = useState([]);
+  const [isCategoricalVarsLoading, setIsCategoricalVarsLoading] = useState(false);
+  const [categoricalVarsLoaded, setCategoricalVarsLoaded] = useState(false);
   const safeSelectedNodes = Array.isArray(selectedNodes) ? selectedNodes : [];
 
-  const data = useSelector((state) => state.dataframe.present.selection || []);
-  const categoricalVars = useMemo(() => {
-    if (!Array.isArray(data) || data.length === 0) return [];
-    return getCategoricalKeys(data);
-  }, [data]);
+  const data = useSelector((state) => state.dataframe.selection || []);
 
   const operationGroups = useMemo(() => {
     const rowText = ["string", "lower", "upper", "trim", "substring"];
@@ -114,12 +96,52 @@ export default function OperationModal({
   }, []);
 
   useEffect(() => {
-    if (!open) {
+    if (!open && !submitting) {
       setOperation(null);
       setParams({});
-      setSubmitting(false);
+    }
+  }, [open, submitting]);
+
+  useEffect(() => {
+    if (!open) {
+      setCategoricalVars([]);
+      setIsCategoricalVarsLoading(false);
+      setCategoricalVarsLoaded(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (
+      !open ||
+      operation !== "zscoreByGroup" ||
+      categoricalVarsLoaded ||
+      isCategoricalVarsLoading
+    ) {
+      return;
+    }
+
+    let canceled = false;
+    setIsCategoricalVarsLoading(true);
+
+    requestAnimationFrame(() => {
+      if (canceled) return;
+      const keys = Array.isArray(data) && data.length > 0 ? getCategoricalKeys(data) : [];
+      if (canceled) return;
+      setCategoricalVars(keys);
+      setCategoricalVarsLoaded(true);
+      setIsCategoricalVarsLoading(false);
+    });
+
+    return () => {
+      canceled = true;
+    };
+  }, [
+    open,
+    operation,
+    categoricalVarsLoaded,
+    isCategoricalVarsLoading,
+    data,
+  ]);
 
   const onOperationChange = (op) => {
     setOperation(op);
@@ -188,99 +210,29 @@ export default function OperationModal({
     });
   };
 
-  const isEmptyArg = (value) =>
-    value == null || String(value).trim().length === 0;
-
-  const isConfirmDisabled = () => {
-    if (!operation) return true;
-
-    if (operation === "zscoreByGroup") {
-      return !params.group;
-    }
-
-    if (operation === "zscoreByValues") {
-      return safeSelectedNodes.some((n) => {
-        const v = params.values?.[n.id];
-        return !v || v.mean == null || v.stdev == null;
-      });
-    }
-
-    const opArgs = ALL_FUNCTIONS[operation]?.args ?? 0;
-    if (opArgs > 1) {
-      const required = opArgs - 1;
-      const args = params.args || [];
-      return args.slice(0, required).some(isEmptyArg);
-    }
-
-    if (opArgs === -1) {
-      const args = params.args || [];
-      return args.some(isEmptyArg);
-    }
-
-    return false;
-  };
-
   const onConfirm = async () => {
-    if (isConfirmDisabled() || submitting) return;
-
+    if (submitting) return;
     setSubmitting(true);
-
+    await new Promise((resolve) => requestAnimationFrame(() => resolve()));
     try {
-      const action = await dispatch(
+      await dispatch(
         applyOperation({
           operation,
           params,
           node,
           selectedNodes: safeSelectedNodes,
         }),
-      );
-
-      if (applyOperation.fulfilled.match(action)) {
-        const {
-          total = safeSelectedNodes.length,
-          applied = [],
-          failed = [],
-        } = action.payload || {};
-
-        const description = buildListResultDescription({
-          successLabel: `Created (${applied.length}/${total})`,
-          successItems: applied.map(toNodeLabel),
-          failureLabel: `Failed (${failed.length}/${total})`,
-          failureItems: failed.map(toFailureLabel),
-          maxItems: 5,
-        });
-
-        notify({
-          message:
-            failed.length === 0
-              ? "Operation applied"
-              : applied.length === 0
-                ? "Operation failed for selection"
-                : "Operation completed with warnings",
-          description,
-          type:
-            failed.length === 0
-              ? "success"
-              : applied.length === 0
-                ? "error"
-                : "warning",
-          pauseOnHover: true,
-          duration: 6,
-        });
-      } else {
-        notifyError({
-          message: "Operation failed",
-          error: action.payload || action.error,
-          fallback: "Error applying operation to selected nodes.",
-          pauseOnHover: true,
-        });
-      }
-
-      setOpen(false);
-      setActive(false);
+      ).unwrap();
     } finally {
       setSubmitting(false);
+      setOpen(false);
+      setActive(false);
     }
+  };
+
+  const onCancel = () => {
+    if (submitting) return;
+    setOpen(false);
   };
 
   if (!node?.parent) return null;
@@ -288,21 +240,18 @@ export default function OperationModal({
   const opArgs = ALL_FUNCTIONS[operation]?.args ?? 0;
   const needsArgs = operation && (opArgs > 1 || opArgs === -1);
   const isVariableArgs = opArgs === -1;
-  const baseLabel =
-    opArgs === 0
-      ? "Base column not used"
-      : safeSelectedNodes.length > 1
-        ? `Base: ${safeSelectedNodes.length} nodes`
-        : `Base: $(${node?.data?.name || node?.name})`;
 
   return (
     <Modal
       title="Apply Operation"
       open={open}
       onOk={onConfirm}
-      onCancel={() => setOpen(false)}
-      okButtonProps={{ disabled: isConfirmDisabled() || submitting }}
+      onCancel={onCancel}
+      cancelButtonProps={{ disabled: submitting }}
       confirmLoading={submitting}
+      maskClosable={!submitting}
+      keyboard={!submitting}
+      closable={!submitting}
       destroyOnClose
     >
       <div style={{ marginBottom: 16 }}>
@@ -327,12 +276,6 @@ export default function OperationModal({
           ))}
         </Select>
       </div>
-
-      {operation && (
-        <div style={{ marginBottom: 12 }}>
-          <Text type="secondary">{baseLabel}</Text>
-        </div>
-      )}
 
       {operation === "zscoreByValues" &&
         safeSelectedNodes.map((n) => (
@@ -373,19 +316,27 @@ export default function OperationModal({
       {operation === "zscoreByGroup" && (
         <div style={{ marginTop: 12 }}>
           <div style={{ marginBottom: 8 }}>Group by</div>
-          <Select
-            size="small"
-            style={{ width: "100%" }}
-            placeholder="Select group column"
-            value={params.group}
-            onChange={(group) => setParams((prev) => ({ ...prev, group }))}
-          >
-            {categoricalVars.map((key) => (
-              <Option key={key} value={key}>
-                {key}
-              </Option>
-            ))}
-          </Select>
+          {isCategoricalVarsLoading ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Spin size="small" />
+              <Text type="secondary">Loading categorical columns...</Text>
+            </div>
+          ) : (
+            <Select
+              size="small"
+              style={{ width: "100%" }}
+              placeholder="Select group column"
+              value={params.group}
+              onChange={(group) => setParams((prev) => ({ ...prev, group }))}
+              notFoundContent="No categorical columns available"
+            >
+              {categoricalVars.map((key) => (
+                <Option key={key} value={key}>
+                  {key}
+                </Option>
+              ))}
+            </Select>
+          )}
         </div>
       )}
 

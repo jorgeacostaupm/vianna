@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 
-import { selectCategoricalVars } from "@/store/slices/cantabSlice";
-import { setInit, setSelectedVar } from "@/store/slices/compareSlice";
+import { selectCategoricalVars } from "@/store/features/main";
+import { setInit, setSelectedVar } from "@/store/features/compare";
 import { Apps } from "@/utils/Constants";
 import registry from "./registry";
 import Grid from "@/core/Grid";

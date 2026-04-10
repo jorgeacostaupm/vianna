@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   resetTimeOrderConfig,
   setTimeOrderConfig,
-} from "@/store/slices/evolutionSlice";
+} from "@/store/features/evolution";
 import {
   normalizeTimeOrderConfig,
   resolveTimeOrderMode,
@@ -59,7 +59,7 @@ export default function TimeOrderModal({ timeVar }) {
   const dispatch = useDispatch();
   const [open, setOpen] = useState(false);
   const selection = useSelector(
-    (s) => s.dataframe.present.selection ?? EMPTY_SELECTION,
+    (s) => s.dataframe.selection ?? EMPTY_SELECTION,
   );
   const storedConfig = useSelector((s) =>
     timeVar ? s.evolution.timeOrderByVar?.[timeVar] : null,

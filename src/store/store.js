@@ -1,24 +1,28 @@
-import cantabReducer from "./slices/cantabSlice";
-import compareReducer from "./slices/compareSlice";
-import evolutionReducer from "./slices/evolutionSlice";
-import correlationReducer from "./slices/correlationSlice";
-import dataReducer from "./slices/dataSlice";
-import metaReducer from "./slices/metaSlice";
+import mainReducer from "./features/main";
+import compareReducer from "./features/compare";
+import evolutionReducer from "./features/evolution";
+import correlationReducer from "./features/correlation";
+import dataReducer from "./features/dataframe";
+import metaReducer from "./features/metadata";
+import notificationsReducer from "@/notifications/store/notificationsSlice";
 
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import {
   initializeSharedStateSync,
   sharedStateSyncMiddleware,
   withSharedStateSyncReducer,
-} from "./sharedStateSync";
+} from "./middleware/sharedStateSync";
+import notificationsListenerMiddleware from "@/notifications/store/notificationsListenerMiddleware";
+import { registerNotificationDispatch } from "@/notifications/store/notificationDispatchBridge";
 
 const baseReducer = combineReducers({
-  cantab: cantabReducer,
+  main: mainReducer,
   compare: compareReducer,
   evolution: evolutionReducer,
   correlation: correlationReducer,
   metadata: metaReducer,
   dataframe: dataReducer,
+  notifications: notificationsReducer,
 });
 
 const reducer = withSharedStateSyncReducer(baseReducer);
@@ -30,8 +34,12 @@ const store = configureStore({
       immutableCheck: false,
       serializableCheck: false,
       immutableStateInvariant: false,
-    }).concat(sharedStateSyncMiddleware),
+    })
+      .prepend(notificationsListenerMiddleware.middleware)
+      .concat(sharedStateSyncMiddleware),
 });
+
+registerNotificationDispatch(store.dispatch);
 
 let syncInitializationPromise = null;
 

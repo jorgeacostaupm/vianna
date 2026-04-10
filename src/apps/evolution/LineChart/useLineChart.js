@@ -26,6 +26,7 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
     showLegend,
     showGrid,
     showGridBehindAll,
+    disableAutoDiscreteAggregatedMode,
     forceDiscreteAggregatedMode,
     ratioNodeScale,
     ratioEdgeScale,
@@ -113,7 +114,8 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
 
   const isDiscreteAggregatedMode =
     isSingleEvolutionMode &&
-    (isDiscreteLowCardinalityMode || Boolean(forceDiscreteAggregatedMode));
+    (forceDiscreteAggregatedMode ||
+      (isDiscreteLowCardinalityMode && !disableAutoDiscreteAggregatedMode));
 
   const compatibleSubjects = useMemo(
     () =>
@@ -541,7 +543,8 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
           const g = chart
             .append("g")
             .attr("class", "evolutionCI")
-            .datum(groupData);
+            .datum(groupData)
+            .classed("hide", hide.includes(groupData.group));
 
           groupData.values.forEach((v) => {
             g.append("line")
@@ -1294,6 +1297,7 @@ export default function useLineChart({ chartRef, legendRef, data, config }) {
     showLegend,
     showGrid,
     showGridBehindAll,
+    disableAutoDiscreteAggregatedMode,
     ratioNodeScale,
     ratioEdgeScale,
     ratioNodeMinPx,

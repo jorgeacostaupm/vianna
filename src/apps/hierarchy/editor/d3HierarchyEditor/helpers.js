@@ -1,4 +1,5 @@
 import { DataType } from "@/utils/Constants";
+import { getVisibleNodes } from "@/utils/functions";
 
 const dtypeColors = {
   [DataType.NUMERICAL.dtype]: DataType.NUMERICAL.color,
@@ -62,55 +63,24 @@ export const rangeUnordered = (a, b) => {
 };
 
 export const getSelectionRootsAndOrphans = (selectedNodes) => {
-  const roots = selectedNodes.filter((node) => !selectedNodes.includes(node.parent));
+  const selectedSet = new Set(selectedNodes);
+  const roots = selectedNodes.filter((node) => !selectedSet.has(node.parent));
   const orphans = selectedNodes.filter(
-    (node) => node.parent && !selectedNodes.includes(node.parent),
+    (node) => node.parent && !selectedSet.has(node.parent),
   );
   const mods = [...roots];
+  const modsSet = new Set(mods);
 
   orphans.forEach((node) => {
-    if (!mods.includes(node)) mods.push(node);
+    if (!modsSet.has(node)) {
+      mods.push(node);
+      modsSet.add(node);
+    }
   });
 
   return mods;
 };
 
 export const computeNavioColumnsFromHierarchy = (root, attrs = []) => {
-  const attributeNames = [];
-  const queue = [];
-  root?.children?.forEach((child) => queue.push(child));
-
-  for (let idx = 0; idx < queue.length; idx += 1) {
-    const node = queue[idx];
-    if (!node || node?.data?.isActive === false) continue;
-
-    const isCollapsed = node._children != null;
-    const hasVisibleChildren =
-      Array.isArray(node.children) && node.children.length > 0;
-
-    if (node.data.id !== 0 && (isCollapsed || !hasVisibleChildren)) {
-      attributeNames.push(node.data.name);
-      continue;
-    }
-
-    if (hasVisibleChildren) {
-      queue.push(
-        ...node.children.filter((child) => child?.data?.isActive !== false),
-      );
-    }
-  }
-
-  const attrsByName = new Map(attrs.map((attr) => [attr.name, attr]));
-  return attributeNames.filter((attrName) => {
-    const completeAttr = attrsByName.get(attrName);
-    if (!completeAttr || completeAttr.isActive === false) return false;
-    if (completeAttr.type !== "aggregation") return true;
-
-    const hasExec =
-      typeof completeAttr.info?.exec === "string"
-        ? completeAttr.info.exec.trim().length > 0
-        : Boolean(completeAttr.info?.exec);
-
-    return hasExec && hasNodeFormula(completeAttr);
-  });
+  return getVisibleNodes(root, attrs);
 };

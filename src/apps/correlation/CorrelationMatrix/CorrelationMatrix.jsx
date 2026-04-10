@@ -20,6 +20,7 @@ const defaultConfig = {
   showLegend: true,
   showLabels: true,
   colorScale: "rdBu",
+  axisLabelFontSize: 16,
 };
 
 const defaultParams = {
@@ -40,7 +41,7 @@ export default function CorrelationMatrix({
   remove,
   sourceOrderValues = [],
 }) {
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
   const [config, setConfig] = useState(defaultConfig);
   const [params, setParams] = useState(defaultParams);
   const [info, setInfo] = useState(null);

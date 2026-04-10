@@ -6,7 +6,7 @@ import { UMAP } from "umap-js";
 import tests from "@/utils/tests";
 
 import { VariableTypes, ORDER_VARIABLE } from "./Constants";
-import { extractErrorMessage, notifyWarning } from "@/utils/notifications";
+import { extractErrorMessage } from "@/notifications";
 
 export function generateId() {
   return "id-" + Date.now().toString(36);
@@ -359,19 +359,23 @@ export function getUMAPData(data, params) {
 export function getPCAData(data, params) {
   const { variables } = params;
   if (variables.length < 2 || data.length < 2) {
-    return null;
+    return {
+      points: [],
+      info: [],
+      skippedVariables: [],
+    };
   }
 
+  const skippedVariables = [];
   const validVars = variables.filter((v) => {
-    const badCount = data.reduce((count, row) => {
+    const invalidCount = data.reduce((count, row) => {
       const n = parseFloat(row[v]);
       return count + (row[v] == null || isNaN(n) || !isFinite(n));
     }, 0);
-    if (badCount) {
-      notifyWarning({
-        message: "Skipped variable",
-        description: `Column "${v}" has ${badCount} invalid values and was excluded.`,
-        placement: "bottomRight",
+    if (invalidCount > 0) {
+      skippedVariables.push({
+        variable: v,
+        invalidCount,
       });
       return false;
     }
@@ -379,7 +383,13 @@ export function getPCAData(data, params) {
   });
 
   if (validVars.length < 2) {
-    return null;
+    return {
+      points: [],
+      info: [
+        "PCA needs at least 2 numeric variables without missing or invalid values.",
+      ],
+      skippedVariables,
+    };
   }
 
   const matrix = data.map((row) => validVars.map((v) => parseFloat(row[v])));
@@ -414,7 +424,7 @@ export function getPCAData(data, params) {
     ...data[i],
   }));
 
-  return { points, info };
+  return { points, info, skippedVariables };
 }
 
 export function getScatterData(data, params) {
@@ -527,9 +537,17 @@ export function generateTree(attributes, nodeID) {
   };
 }
 
-export function getVisibleNodes(tree) {
-  const hasFormula = (node) => {
-    const values = [node?.formula, node?.exec];
+export function getVisibleNodes(tree, attrs = []) {
+  const getNodeData = (node) => node?.data ?? node;
+
+  const hasNodeFormula = (nodeData) => {
+    const values = [
+      nodeData?.info?.formula,
+      nodeData?.formula,
+      nodeData?.info?.exec,
+      nodeData?.exec,
+    ];
+
     return values.some((value) => {
       if (typeof value === "string") {
         return value.trim().length > 0;
@@ -538,25 +556,55 @@ export function getVisibleNodes(tree) {
     });
   };
 
-  const filteredNodes = [];
-  const queue = [tree];
+  const hasExecutableFormula = (nodeData) => {
+    const exec = nodeData?.info?.exec ?? nodeData?.exec;
+    if (typeof exec === "string") return exec.trim().length > 0;
+    return Boolean(exec);
+  };
+
+  const attrsByName = new Map(
+    (Array.isArray(attrs) ? attrs : [])
+      .filter((attr) => typeof attr?.name === "string")
+      .map((attr) => [attr.name, attr]),
+  );
+
+  const rootChildren = Array.isArray(tree?.children) ? tree.children : [];
+  const queue = [...rootChildren];
+  const visibleNames = [];
 
   while (queue.length > 0) {
     const node = queue.shift();
-    if (!node || node.isActive === false) continue;
+    const nodeData = getNodeData(node);
+    if (!nodeData || nodeData.isActive === false) continue;
 
-    if (
-      node.isShown === false ||
-      !node.children ||
-      node.children.length === 0
-    ) {
-      if (node.type !== "aggregation" || hasFormula(node))
-        filteredNodes.push(node.name);
-    } else if (node.children && node.children.length > 0) {
-      queue.push(...node.children.filter((child) => child?.isActive !== false));
+    const visibleChildren = Array.isArray(node?.children)
+      ? node.children.filter((child) => getNodeData(child)?.isActive !== false)
+      : [];
+    const isCollapsed = node?._children != null;
+    const shouldIncludeNode =
+      nodeData.id !== 0 &&
+      (nodeData.isShown === false || isCollapsed || visibleChildren.length === 0);
+
+    if (shouldIncludeNode) {
+      const completeAttr = attrsByName.get(nodeData.name) ?? nodeData;
+      if (!completeAttr || completeAttr.isActive === false) continue;
+
+      if (completeAttr.type === "aggregation") {
+        if (!hasNodeFormula(completeAttr) || !hasExecutableFormula(completeAttr)) {
+          continue;
+        }
+      }
+
+      visibleNames.push(nodeData.name);
+      continue;
+    }
+
+    if (visibleChildren.length > 0) {
+      queue.push(...visibleChildren);
     }
   }
-  return filteredNodes;
+
+  return visibleNames;
 }
 
 export function getEvolutionZscores(groups, timeVar) {

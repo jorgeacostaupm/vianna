@@ -2,16 +2,16 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RollbackOutlined } from "@ant-design/icons";
 
-import { setDataframe } from "@/store/slices/dataSlice";
+import { setDataframe } from "@/store/features/dataframe";
 import BarButton from "@/components/ui/BarButton";
-import { setFilteredData } from "@/store/slices/cantabSlice";
-import { notifySuccess, notifyWarning } from "@/utils/notifications";
+import { setFilteredData } from "@/store/features/main";
+import { notifyWarning } from "@/notifications";
 
 export default function ResetButton() {
   const dispatch = useDispatch();
-  const dataframe = useSelector((state) => state.dataframe.present.dataframe);
+  const dataframe = useSelector((state) => state.dataframe.dataframe);
   const filteredData = useSelector(
-    (state) => state.cantab.present.filteredData
+    (state) => state.main.filteredData,
   );
 
   const onReset = () => {
@@ -23,9 +23,6 @@ export default function ResetButton() {
     } else {
       dispatch(setDataframe([...filteredData, ...dataframe]));
       dispatch(setFilteredData(null));
-      notifySuccess({
-        message: "Original data restored",
-      });
     }
   };
 

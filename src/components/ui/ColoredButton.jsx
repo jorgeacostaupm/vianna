@@ -8,8 +8,10 @@ export default function ColoredButton({
   onClick,
   placement,
   disabled = false,
+  loading = false,
   children,
   shape = "default",
+  ...buttonProps
 }) {
   return (
     <AutoCloseTooltip title={title} placement={placement}>
@@ -19,6 +21,8 @@ export default function ColoredButton({
         icon={icon}
         onClick={onClick}
         disabled={disabled}
+        loading={loading}
+        {...buttonProps}
       >
         {children}
       </Button>

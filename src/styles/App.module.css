@@ -194,8 +194,36 @@
   padding: 24px;
 }
 
-.initialDataChoiceCard {
-  width: min(760px, 100%);
+.initialDataChoiceContent {
+  width: 100%;
+  align-items: center;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.initialChoiceLogo {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.initialChoiceTitle {
+  text-align: center;
+  font-size: 24px;
+}
+
+.initialChoiceText {
+  text-align: center;
+}
+
+.initialChoiceButtonsRow {
+  display: flex;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .gridWrapper {
@@ -356,6 +384,58 @@
   color: var(--color-ink-tertiary);
   line-height: 1;
   padding-left: 2px;
+}
+
+.selectorLabelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.testInfoTrigger {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-ink-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.testInfoTrigger:hover {
+  background: var(--color-surface-muted);
+  border-color: var(--color-ink-secondary);
+  color: var(--color-ink);
+}
+
+.testInfoTrigger:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.testInfoTriggerInactive {
+  opacity: 0.6;
+}
+
+.testInfoTooltipContent {
+  max-width: min(460px, 84vw);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.testInfoTooltipList {
+  margin: 4px 0 0;
+  padding-left: 18px;
 }
 
 .contextStatsBox {

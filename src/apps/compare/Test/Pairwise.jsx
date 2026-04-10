@@ -12,7 +12,7 @@ import {
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
-import { notifyError, notifyInfo } from "@/utils/notifications";
+import { notifyError, notifyInfo } from "@/notifications";
 import { Settings } from "./PointRange";
 import {
   CHART_GRID,
@@ -35,7 +35,7 @@ export default function Pairwise({
   const ref = useRef();
   const dims = useResizeObserver(ref);
 
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
   const groupVar = useSelector((s) => s.compare.groupVar);
   const attributes = useSelector((s) => s.metadata.attributes);
 
@@ -47,6 +47,8 @@ export default function Pairwise({
     markerSize: 5,
     positiveOnly: true,
     sortDescending: true,
+    axisLabelFontSize: 16,
+    yAxisLabelSpace: 160,
   });
 
   const [data, setData] = useState(null);
@@ -162,9 +164,20 @@ export default function Pairwise({
     const description = attributes?.find((attr) => attr?.name === variable)?.desc;
     return typeof description === "string" ? description.trim() : "";
   }, [attributes, variable]);
+  const axisLabelFontSize = Number.isFinite(config?.axisLabelFontSize)
+    ? config.axisLabelFontSize
+    : null;
+  const containerStyle =
+    axisLabelFontSize != null
+      ? { "--axis-label-font-size": `${axisLabelFontSize}px` }
+      : undefined;
 
   return (
-    <div className={styles.viewContainer} data-view-container>
+    <div
+      className={styles.viewContainer}
+      data-view-container
+      style={containerStyle}
+    >
       <ChartBar
         title={title}
         hoverTitle={variableDescription || undefined}
@@ -196,6 +209,7 @@ function renderPairwisePlot(container, result, config, dimensions, id) {
     markerSize,
     positiveOnly,
     sortDescending,
+    yAxisLabelSpace,
   } = config;
   let data = result.pairwiseEffects.map((d) => ({
     ...d,
@@ -223,7 +237,10 @@ function renderPairwisePlot(container, result, config, dimensions, id) {
 
   const labels = data.map((d) => d.groups.join(" vs "));
 
-  const margin = { top: 20, right: 50, bottom: 50, left: 160 };
+  const leftMargin = Number.isFinite(yAxisLabelSpace)
+    ? Math.max(100, Math.min(320, yAxisLabelSpace))
+    : 160;
+  const margin = { top: 20, right: 50, bottom: 50, left: leftMargin };
   const totalWidth = dimensions.width;
   const totalHeight = dimensions.height;
   const chartWidth = totalWidth - margin.left - margin.right;
@@ -252,7 +269,7 @@ function renderPairwisePlot(container, result, config, dimensions, id) {
   const chart = svg
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`)
-    .style("font-size", "16px");
+    .style("font-size", "var(--axis-label-font-size, 16px)");
 
   const rawLower = Math.min(
     d3.min(data, (d) => d.ci95.lower),

@@ -6,8 +6,8 @@ import { Button, Tooltip } from "antd";
 
 import { UserDeleteOutlined, UsergroupDeleteOutlined } from "@ant-design/icons";
 import store from "@/store/store";
-import { setDataframe } from "@/store/slices/dataSlice";
-import { setQuarantineData } from "@/store/slices/cantabSlice";
+import { setDataframe } from "@/store/features/dataframe";
+import { setQuarantineData } from "@/store/features/main";
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import styles from "@/styles/Charts.module.css";
 import buttonStyles from "@/styles/Buttons.module.css";
@@ -15,9 +15,9 @@ import buttonStyles from "@/styles/Buttons.module.css";
 const QuarantineObservationTooltip = ({ d, idVar }) => {
   const dispatch = useDispatch();
   const dataframe =
-    useSelector((state) => state.dataframe.present.dataframe) || [];
+    useSelector((state) => state.dataframe.dataframe) || [];
   const quarantineData =
-    useSelector((state) => state.cantab.present.quarantineData) || [];
+    useSelector((state) => state.main.quarantineData) || [];
 
   const handleQuarantineById = useCallback(() => {
     const id = d[idVar];

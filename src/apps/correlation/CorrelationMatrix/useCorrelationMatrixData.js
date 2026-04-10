@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
 import { getCorrelationData as getData } from "@/utils/functionsCorrelation";
-import { notifyError } from "@/utils/notifications";
+import { notifyError } from "@/notifications";
 
 export default function useCorrelationMatrixData(
   isSync = true,
@@ -10,7 +10,7 @@ export default function useCorrelationMatrixData(
   setInfo,
 ) {
   const [data, setData] = useState([]);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
 
   useEffect(() => {
     if (!isSync) return;

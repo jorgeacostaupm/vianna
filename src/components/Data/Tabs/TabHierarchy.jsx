@@ -9,9 +9,9 @@ import {
   selectTextNodes,
   selectDetermineNodes,
   selectAggregationNodes,
-} from "@/store/selectors/metaSelectors";
-import { selectNavioVars } from "@/store/slices/cantabSlice";
-import { addAttribute, removeAttribute } from "@/store/async/metaAsyncReducers";
+} from "@/store/features/metadata";
+import { selectNavioVars } from "@/store/features/main";
+import { addAttribute, removeAttribute } from "@/store/features/metadata";
 import { getRandomInt } from "@/utils/functions";
 import { HIDDEN_VARIABLES, VariableTypes } from "@/utils/Constants";
 import {
@@ -20,7 +20,7 @@ import {
   notify,
   notifyError,
   notifyInfo,
-} from "@/utils/notifications";
+} from "@/notifications";
 import styles from "../Data.module.css";
 
 const { Title, Text } = Typography;
@@ -42,9 +42,9 @@ const mapVarTypeToNodeDtype = (varType) => {
 
 const SyncPanel = () => {
   const dispatch = useDispatch();
-  const dataframe = useSelector((state) => state.dataframe.present.dataframe);
+  const dataframe = useSelector((state) => state.dataframe.dataframe);
   const hierarchy = useSelector((state) => state.metadata.attributes);
-  const varTypes = useSelector((state) => state.cantab.present.varTypes || {});
+  const varTypes = useSelector((state) => state.main.varTypes || {});
   const [actionLoading, setActionLoading] = useState(null);
   const [actionProgress, setActionProgress] = useState({
     mode: null,

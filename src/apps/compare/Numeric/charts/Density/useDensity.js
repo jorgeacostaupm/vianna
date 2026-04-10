@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
-import { notifyInfo } from "@/utils/notifications";
+import { notifyInfo } from "@/notifications";
 import { moveTooltip } from "@/utils/functions";
 import { CHART_OUTLINE } from "@/utils/chartTheme";
 import {

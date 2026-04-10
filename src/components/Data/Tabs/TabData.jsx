@@ -3,17 +3,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { Select, Typography, Divider } from "antd";
 import DragDropData from "../DragDrop/DragDropData";
 import NullifyValuesPanel from "../NullifyValuesPanel";
-import { setIdVar } from "@/store/slices/cantabSlice";
-import { selectNavioVars } from "@/store/slices/cantabSlice";
+import { setIdVar } from "@/store/features/main";
+import { selectNavioVars } from "@/store/features/main";
 import styles from "../Data.module.css";
 
 const { Title, Text } = Typography;
 
 const Info = () => {
   const dispatch = useDispatch();
-  const idVar = useSelector((state) => state.cantab.present.idVar);
-  const filename = useSelector((state) => state.dataframe.present.filename);
-  const dt = useSelector((state) => state.dataframe.present.dataframe);
+  const idVar = useSelector((state) => state.main.idVar);
+  const filename = useSelector((state) => state.dataframe.filename);
+  const dt = useSelector((state) => state.dataframe.dataframe);
   const vars = useSelector(selectNavioVars);
   const handleChange = useCallback(
     (setter) => (value) => dispatch(setter(value)),

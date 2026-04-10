@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import {
   selectNumericVars,
   selectCategoricalVars,
-} from "@/store/slices/cantabSlice";
+} from "@/store/features/main";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import RankingPlot from "./RankingPlot";
 import ChartBar from "@/components/charts/ChartBar";
@@ -15,8 +15,9 @@ import { computeRankingData } from "@/utils/functions";
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
-import { notifyError, notifyWarning } from "@/utils/notifications";
+import { notifyError, notifyWarning } from "@/notifications";
 import { extractOrderValues, uniqueColumns } from "@/utils/viewRecords";
+import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 
 const { Text } = Typography;
 
@@ -32,7 +33,7 @@ export default function Ranking({
   const dimensions = useResizeObserver(ref);
 
   const groupVar = useSelector((state) => state.compare.groupVar);
-  const selection = useSelector((state) => state.dataframe.present.selection);
+  const selection = useSelector((state) => state.dataframe.selection);
   const numericVars = useSelector(selectNumericVars);
 
   const categoricVars = useSelector(selectCategoricalVars);
@@ -47,6 +48,7 @@ export default function Ranking({
     pValue: 0.05,
     desc: true,
     showGrid: true,
+    axisLabelFontSize: 16,
   });
 
   const liveOrderValues = React.useMemo(
@@ -191,9 +193,16 @@ export default function Ranking({
       )}
     </div>
   );
+  const axisLabelFontSize = Number.isFinite(config?.axisLabelFontSize)
+    ? config.axisLabelFontSize
+    : null;
+  const containerStyle =
+    axisLabelFontSize != null
+      ? { "--axis-label-font-size": `${axisLabelFontSize}px` }
+      : undefined;
 
   return (
-    <div className={styles.viewContainer}>
+    <div className={styles.viewContainer} style={containerStyle}>
       <ChartBar
         title={`Ranking · ${test}`}
         info={info}
@@ -277,6 +286,7 @@ function Options({ config, setConfig }) {
             onChange={(v) => update("showGrid", v)}
           />
         </div>
+        <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
     </div>
   );

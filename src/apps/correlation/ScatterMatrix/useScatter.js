@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { moveTooltip } from "@/utils/functions";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import { useSelector } from "react-redux";
@@ -14,18 +14,22 @@ let brushCell = null;
 let brushInstance = null;
 
 export default function useScatter({ chartRef, legendRef, data, config }) {
-  const idVar = useSelector((s) => s.cantab.present.idVar);
+  const idVar = useSelector((s) => s.main.idVar);
   const dimensions = useResizeObserver(chartRef);
   const [hide, setHide] = useState([]);
+  const [hoverHiddenGroups, setHoverHiddenGroups] = useState([]);
   const [blur, setBlur] = useState([]);
   const [scatter, setScatter] = useState(null);
   const groupVar = config?.groupVar;
-  const groupsInData =
-    Array.isArray(data) && groupVar
-      ? Array.from(new Set(data.map((d) => d[groupVar]))).filter(
-          (value) => value != null
-        )
-      : [];
+  const groupsInData = useMemo(
+    () =>
+      Array.isArray(data) && groupVar
+        ? Array.from(new Set(data.map((d) => d[groupVar]))).filter(
+            (value) => value != null
+          )
+        : [],
+    [data, groupVar]
+  );
   const { colorDomain, orderedGroups: groups } = useGroupColorDomain(
     groupVar,
     groupsInData
@@ -33,6 +37,21 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
 
   useEffect(() => {
     const { groupVar, pointSize, variables, pointOpacity, showLegend } = config;
+    const clearChart = () => {
+      if (!chartRef.current) return;
+      d3.select(chartRef.current).selectAll("*").remove();
+    };
+    const clearLegend = () => {
+      if (!legendRef.current) return;
+      const legendSvg = d3.select(legendRef.current);
+      legendSvg.selectAll("*").remove();
+      legendSvg.attr("width", 0).attr("height", 0);
+      const parent = legendRef.current.parentNode;
+      if (parent) {
+        d3.select(parent).style("align-items", null).style("justify-content", null);
+      }
+    };
+
     if (
       !groupVar ||
       !dimensions ||
@@ -40,14 +59,13 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
       !chartRef.current ||
       !legendRef.current
     ) {
-      if (chartRef.current) d3.select(chartRef.current).selectAll("*").remove();
-      if (legendRef.current)
-        d3.select(legendRef.current).selectAll("*").remove();
+      clearChart();
+      clearLegend();
       return;
     }
 
-    d3.select(chartRef.current).selectAll("*").remove();
-    d3.select(legendRef.current).selectAll("*").remove();
+    clearChart();
+    clearLegend();
 
     const colorScheme = d3.schemeCategory10;
 
@@ -79,7 +97,10 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
     const color = d3.scaleOrdinal().domain(colorDomain).range(colorScheme);
 
     if (showLegend !== false) {
-      renderLegend(legend, groups, color, blur, setBlur, hide, setHide);
+      renderLegend(legend, groups, color, blur, setBlur, hide, setHide, null, null, {
+        transientHide: hoverHiddenGroups,
+        setTransientHide: setHoverHiddenGroups,
+      });
     }
 
     if (variables.length < 2) return;
@@ -389,7 +410,7 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
         .attr("class", "yAxisLabel")
         .attr("transform", `translate(0, ${-20})`)
         .attr("text-anchor", "middle")
-        .attr("font-size", "18px")
+        .style("font-size", "var(--axis-label-font-size, 16px)")
         .text(var2);
 
       chart
@@ -399,7 +420,7 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
         .attr("class", "xAxisLabel")
         .attr("transform", `translate(${chartSize + 10}, ${chartSize + 5})`)
         .attr("text-anchor", "start")
-        .attr("font-size", "18px")
+        .style("font-size", "var(--axis-label-font-size, 16px)")
         .text(var1);
     }
 
@@ -475,14 +496,16 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
     if (!chartRef.current) return;
 
     const chart = d3.select(chartRef.current);
+    const hiddenSet = new Set([...(hide || []), ...(hoverHiddenGroups || [])]);
     chart
       .selectAll(".dots")
-      .classed("hide", (d) => hide.includes(d[config.groupVar]))
+      .classed("hide", (d) => hiddenSet.has(d[config.groupVar]))
       .classed("blur", (d) => blur.includes(d[config.groupVar]));
-  }, [hide, blur]);
+  }, [hide, hoverHiddenGroups, blur, config.groupVar]);
 
   useEffect(() => {
     setHide([]);
+    setHoverHiddenGroups([]);
     setBlur([]);
   }, [config.groupVar]);
 

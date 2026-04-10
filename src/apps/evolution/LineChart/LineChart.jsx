@@ -9,7 +9,7 @@ import useEvolutionData from "./useLineChartData";
 import ChartWithLegend from "@/components/charts/ChartWithLegend";
 import ViewContainer from "@/components/charts/ViewContainer";
 import EvolutionTestsInfo from "./EvolutionTestsInfo";
-import { selectVars, selectVarTypes } from "@/store/slices/cantabSlice";
+import { selectVars, selectVarTypes } from "@/store/features/main";
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import {
@@ -32,6 +32,7 @@ const defaultConfig = {
   showLegend: true,
   showGrid: true,
   showGridBehindAll: false,
+  disableAutoDiscreteAggregatedMode: true,
   forceDiscreteAggregatedMode: false,
   ratioNodeScale: "sqrt",
   ratioEdgeScale: "sqrt",
@@ -51,6 +52,7 @@ const defaultConfig = {
   testIds: ["lmm-random-intercept"],
   testTimeFrom: null,
   testTimeTo: null,
+  axisLabelFontSize: 16,
 };
 
 function Chart({ data, config, id }) {
@@ -81,8 +83,8 @@ export default function LineChart({
   const attributes = useSelector((s) => s.metadata.attributes);
   const groupVar = useSelector((s) => s.evolution.groupVar);
   const timeVar = useSelector((s) => s.evolution.timeVar);
-  const idVar = useSelector((s) => s.cantab.present.idVar);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const idVar = useSelector((s) => s.main.idVar);
+  const selection = useSelector((s) => s.dataframe.selection);
   const timeRange = {
     from: config.testTimeFrom,
     to: config.testTimeTo,

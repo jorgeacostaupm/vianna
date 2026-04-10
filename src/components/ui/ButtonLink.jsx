@@ -1,5 +1,7 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import { Apps } from "@/utils/Constants";
+import { selectAppOpenMode } from "@/store/features/main";
 import PanelButton from "./PanelButton";
 
 const APP_ROUTE_MAP = {
@@ -28,10 +30,17 @@ const buildAppUrl = (route) => {
 export default function LinkButton({ to, icon }) {
   const route = to || "";
   const routePath = route === "overview" ? "" : route;
+  const appOpenMode = useSelector(selectAppOpenMode);
   const appName = APP_ROUTE_MAP[route] || route;
-  const targetName = APP_WINDOW_TARGET_MAP[route] || `vianna-app-${route}`;
+  const targetName =
+    appOpenMode === "tab"
+      ? "_blank"
+      : APP_WINDOW_TARGET_MAP[route] || `vianna-app-${route}`;
 
-  const tooltipTitle = `Open or focus ${appName}`;
+  const tooltipTitle =
+    appOpenMode === "tab"
+      ? `Open ${appName} in a new tab`
+      : `Open or focus ${appName}`;
 
   const handleOpenTab = () => {
     if (!route) return;

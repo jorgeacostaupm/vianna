@@ -2,7 +2,6 @@ import GridLayout, { WidthProvider } from "react-grid-layout";
 import { useState } from "react";
 import styles from "@/styles/App.module.css";
 import { Layout } from "antd";
-import useNotification from "@/hooks/useNotification";
 import useRootStyles from "@/hooks/useRootStyles";
 import useGridViews from "./useGridViews";
 import { createViewRenderer } from "./ViewRegistry";
@@ -19,16 +18,14 @@ export default function Grid({
   componentName,
   panelPlacement = "top",
 }) {
-  const holder = useNotification();
   useRootStyles(setInit, APP_NAME + " - " + componentName);
   const isInlineLeftPanel = Boolean(panel) && panelPlacement === "left";
-  const initialPanelRows =
-    componentName === "Comparison" ? 10 : componentName === "Evolution" ? 6 : 4;
+  const initialPanelRows = componentName === "Correlation" ? 5 : 7;
   const [panelLayout, setPanelLayout] = useState({
     i: PANEL_LAYOUT_ID,
     x: 0,
     y: 0,
-    w: 4,
+    w: 3,
     h: initialPanelRows,
     minW: 1,
     maxW: 6,
@@ -66,6 +63,8 @@ export default function Grid({
         ...prev,
         ...nextPanelLayout,
         i: PANEL_LAYOUT_ID,
+        x: 0,
+        y: 0,
         isDraggable: false,
         isResizable: true,
       }));
@@ -76,7 +75,6 @@ export default function Grid({
 
   return (
     <>
-      {holder}
       <Layout className={styles.fullScreenLayout}>
         {!isInlineLeftPanel && panelNode}
         <div className={styles.gridWrapper}>
@@ -86,6 +84,8 @@ export default function Grid({
             onLayoutChange={handleLayoutChange}
             cols={GRID_COLS}
             rowHeight={100}
+            isDraggable={true}
+            isResizable={true}
             draggableHandle=".drag-handle"
             containerPadding={[10, 10]}
           >

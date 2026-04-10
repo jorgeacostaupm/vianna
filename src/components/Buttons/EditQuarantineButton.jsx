@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Select, Input } from "antd";
 import { EditOutlined, FormOutlined } from "@ant-design/icons";
 
-import { selectNavioVars, setQuarantineData } from "@/store/slices/cantabSlice";
-import { generateColumnBatch } from "@/store/async/dataAsyncReducers";
+import { selectNavioVars, setQuarantineData } from "@/store/features/main";
+import { generateColumnBatch } from "@/store/features/dataframe";
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import PopoverButton from "@/components/ui/PopoverButton";
 import BarButton from "@/components/ui/BarButton";
@@ -15,9 +15,9 @@ function EditColumn() {
   const [inputValue, setInputValue] = useState("");
 
   const selection = useSelector(
-    (state) => state.cantab.present.quarantineSelection
+    (state) => state.main.quarantineSelection
   );
-  const data = useSelector((state) => state.cantab.present.quarantineData);
+  const data = useSelector((state) => state.main.quarantineData);
   const attributes = useSelector((state) => state.metadata.attributes);
   const vars = useSelector(selectNavioVars);
 

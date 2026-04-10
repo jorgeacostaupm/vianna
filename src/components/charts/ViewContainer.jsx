@@ -15,8 +15,20 @@ export default function ViewContainer({
   setConfig,
   recordsExport,
 }) {
+  const axisLabelFontSize = Number.isFinite(config?.axisLabelFontSize)
+    ? config.axisLabelFontSize
+    : null;
+  const containerStyle =
+    axisLabelFontSize != null
+      ? { "--axis-label-font-size": `${axisLabelFontSize}px` }
+      : undefined;
+
   return (
-    <div className={styles.viewContainer} data-view-container>
+    <div
+      className={styles.viewContainer}
+      data-view-container
+      style={containerStyle}
+    >
       <ChartBar
         title={title}
         hoverTitle={hoverTitle}

@@ -3,8 +3,8 @@ import { useSelector, useDispatch } from "react-redux";
 import { Select } from "antd";
 import { LineChartOutlined } from "@ant-design/icons";
 
-import { setSelectedVar } from "@/store/slices/evolutionSlice";
-import { selectNumericVars } from "@/store/slices/cantabSlice";
+import { setSelectedVar } from "@/store/features/evolution";
+import { selectNumericVars } from "@/store/features/main";
 import ColoredButton from "@/components/ui/ColoredButton";
 import styles from "@/styles/App.module.css";
 
@@ -33,7 +33,7 @@ export default function VariableSelector({ generateEvolution }) {
           size="small"
           value={selectedVar}
           onChange={(v) => dispatch(setSelectedVar(v))}
-          placeholder="Search or select variable"
+          placeholder="Select variable"
           showSearch={true}
           filterOption={filterOption}
           optionFilterProp="children"

@@ -7,12 +7,10 @@ import { Typography } from "antd";
 import { get_parser } from "../logic/parser";
 import buildAggregation from "../logic/formulaGenerator";
 
-import { QuestionCircleOutlined } from "@ant-design/icons";
-import PopoverButton from "@/components/ui/PopoverButton";
-import CustomFormulaHelp from "./CustomFormulaHelp";
+import CustomFormulaHelpModalButton from "./CustomFormulaHelpModalButton";
 import styles from "./DropArea.module.css";
 import { AttributePaste } from "./CustomAggregate";
-import { SaveButton } from "../NodeMenu";
+import SaveButton from "../components/SaveButton";
 
 const { Text } = Typography;
 
@@ -87,12 +85,7 @@ const CustomMeasure = ({ formula }) => {
           }}
         >
           <Text strong>Custom Formula:</Text>
-          <PopoverButton
-            title="Custom Operations Help"
-            content={<CustomFormulaHelp />}
-            placement="left"
-            icon={<QuestionCircleOutlined />}
-          />
+          <CustomFormulaHelpModalButton />
         </div>
 
         <textarea

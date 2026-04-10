@@ -10,9 +10,9 @@ export default function useGridViews(defaultW = 3, defaultH = 4, options = {}) {
   const { topOffsetRows = 0, leftOffsetCols = 0, totalCols = 12 } = options;
   const [views, setViews] = useState([]);
   const [layout, setLayout] = useState([]);
-  const dfFilename = useSelector((s) => s.dataframe.present.filename);
+  const dfFilename = useSelector((s) => s.dataframe.filename);
   const hierFilename = useSelector((s) => s.metadata.filename);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
 
   const addView = useCallback(
     (type, props = {}) => {

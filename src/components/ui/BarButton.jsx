@@ -7,6 +7,7 @@ export default function BarButton({
   icon,
   onClick,
   disabled,
+  loading = false,
   ariaLabel,
   className,
   type,
@@ -23,6 +24,7 @@ export default function BarButton({
         icon={icon}
         onClick={onClick}
         disabled={disabled}
+        loading={loading}
         className={classes}
         type={type}
         shape={shape}

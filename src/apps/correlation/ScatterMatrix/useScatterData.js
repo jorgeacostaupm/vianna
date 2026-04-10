@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
-import { notifyError } from "@/utils/notifications";
+import { notifyError } from "@/notifications";
 
 export default function useScatterData(isSync = true, params) {
   const [data, setData] = useState([]);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
 
   useEffect(() => {
     if (!isSync) return;

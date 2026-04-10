@@ -57,7 +57,7 @@ export function getDistributionData(data, column, groupVar, timeVar, idVar) {
 export function getCategoricDistributionData(selection, variable, groupVar) {
   const groups = [...new Set(selection.map((item) => item[groupVar]))];
 
-  const df = store.getState().dataframe.present.dataframe;
+  const df = store.getState().dataframe.dataframe;
   const categories = [...new Set(df.map((item) => item[variable]))];
 
   const counts = {};

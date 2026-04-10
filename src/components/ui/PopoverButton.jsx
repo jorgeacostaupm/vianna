@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Popover, Button, Tooltip } from "antd";
+import { useSelector } from "react-redux";
 import styles from "./PopoverButton.module.css";
 import { getViewOverlayPosition } from "./popupPosition";
+import { selectShowInformativeTooltips } from "@/store/features/main";
 
 export default function PopoverButton({
   content,
@@ -16,8 +18,20 @@ export default function PopoverButton({
   const [overlayStyle, setOverlayStyle] = useState(undefined);
   const [isFixedOverlay, setIsFixedOverlay] = useState(false);
   const triggerRef = useRef(null);
+  const showInformativeTooltips = useSelector(selectShowInformativeTooltips);
+  const hasTooltip = Boolean(title) && showInformativeTooltips;
 
-  const showTooltip = () => setTooltipVisible(true);
+  const showTooltip = () => {
+    if (hasTooltip) {
+      setTooltipVisible(true);
+    }
+  };
+
+  useEffect(() => {
+    if (!hasTooltip) {
+      setTooltipVisible(false);
+    }
+  }, [hasTooltip]);
 
   useEffect(() => {
     let timer;
@@ -58,8 +72,10 @@ export default function PopoverButton({
       onOpenChange={handleOpenChange}
       arrow={false}
       content={
-        <div className={styles.panel} style={panelWidth ? { width: panelWidth } : undefined}>
-          {title && <div className={styles.panelHeader}>{title}</div>}
+        <div
+          className={styles.panel}
+          style={panelWidth ? { width: panelWidth } : undefined}
+        >
           <div className={styles.panelBody}>{content}</div>
         </div>
       }
@@ -72,9 +88,13 @@ export default function PopoverButton({
       getPopupContainer={() => document.body}
     >
       <Tooltip
-        title={title}
-        open={Boolean(title) && tooltipVisible && !open}
-        onOpenChange={setTooltipVisible}
+        title={hasTooltip ? title : null}
+        open={hasTooltip && tooltipVisible && !open}
+        onOpenChange={(nextVisible) => {
+          if (hasTooltip) {
+            setTooltipVisible(nextVisible);
+          }
+        }}
         mouseLeaveDelay={0}
       >
         <span

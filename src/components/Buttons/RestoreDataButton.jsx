@@ -3,19 +3,19 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import BarButton from "@/components/ui/BarButton";
-import { setQuarantineData } from "@/store/slices/cantabSlice";
-import { setDataframe } from "@/store/slices/dataSlice";
-import { notifyInfo, notifySuccess, notifyWarning } from "@/utils/notifications";
+import { setQuarantineData } from "@/store/features/main";
+import { setDataframe } from "@/store/features/dataframe";
+import { notifyInfo, notifyWarning } from "@/notifications";
 
 export default function RestoreDataButton() {
   const dispatch = useDispatch();
   const selection = useSelector(
-    (state) => state.cantab.present.quarantineSelection,
+    (state) => state.main.quarantineSelection,
   );
   const quarantineData = useSelector(
-    (state) => state.cantab.present.quarantineData,
+    (state) => state.main.quarantineData,
   );
-  const dataframe = useSelector((state) => state.dataframe.present.dataframe);
+  const dataframe = useSelector((state) => state.dataframe.dataframe);
 
   function resetQuarantineSelection() {
     if (!Array.isArray(selection) || selection.length === 0) {
@@ -49,10 +49,6 @@ export default function RestoreDataButton() {
 
     dispatch(setDataframe(nextDataframe));
     dispatch(setQuarantineData(nextQuarantineData));
-    notifySuccess({
-      message: "Rows restored from quarantine",
-      description: `${restoredRows.length} row${restoredRows.length === 1 ? "" : "s"} restored.`,
-    });
   }
 
   return (

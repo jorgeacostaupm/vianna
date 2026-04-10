@@ -25,6 +25,7 @@
   --color-brand-hover: #435985;
   --color-brand-active: #374a73;
   --color-brand-soft: rgba(78, 102, 152, 0.16);
+  --brand-radial-tint: rgba(78, 102, 152, 0.12);
 
   --color-ink: #25324a;
   --color-ink-secondary: #4c5d7e;
@@ -122,7 +123,7 @@ body {
   background:
     radial-gradient(
       1200px 900px at 12% -10%,
-      rgba(78, 102, 152, 0.12),
+      var(--brand-radial-tint),
       transparent 60%
     ),
     var(--color-bg);
@@ -220,11 +221,6 @@ a {
   transition:
     box-shadow var(--transition-fast),
     transform var(--transition-fast);
-}
-
-:where(.ant-card:hover) {
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
 }
 
 :where(.ant-card-head) {

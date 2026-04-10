@@ -1,7 +1,10 @@
 import { Typography } from "antd";
-import { ROW_FUNCTIONS, COLUMN_FUNCTIONS, SPECIAL_FUNCTIONS } from "../logic/formulaConstants";
+import {
+  ROW_FUNCTIONS,
+  COLUMN_FUNCTIONS,
+  SPECIAL_FUNCTIONS,
+} from "../logic/formulaConstants";
 import { copyClipboard } from "@/utils/functions";
-import { notifySuccess, notifyWarning } from "@/utils/notifications";
 import styles from "./CustomFormulaHelp.module.css";
 
 const { Text } = Typography;
@@ -78,21 +81,8 @@ function FunctionSection({ title, items, onCopy }) {
 }
 
 export default function CustomFormulaHelp() {
-  const handleCopy = async (value, message) => {
-    try {
-      await copyClipboard(value);
-      notifySuccess({
-        message,
-        description: value,
-        duration: 1.5,
-      });
-    } catch {
-      notifyWarning({
-        message: "Copy unavailable",
-        description: "Copy the text manually from the help panel.",
-        duration: 2,
-      });
-    }
+  const handleCopy = async (value) => {
+    copyClipboard(value);
   };
 
   return (
@@ -129,7 +119,7 @@ export default function CustomFormulaHelp() {
               key={example.label}
               type="button"
               className={styles.exampleButton}
-              onClick={() => handleCopy(example.formula, `${example.label} copied`)}
+              onClick={() => handleCopy(example.formula)}
               title="Copy example"
             >
               <span className={styles.exampleLabel}>{example.label}</span>

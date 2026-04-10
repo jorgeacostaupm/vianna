@@ -1,15 +1,19 @@
 // SelectorPanel.jsx
 import React, { useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Select } from "antd";
-import { ExperimentOutlined, BarChartOutlined } from "@ant-design/icons";
+import { Select, Tooltip } from "antd";
+import {
+  ExperimentOutlined,
+  BarChartOutlined,
+  InfoCircleOutlined,
+} from "@ant-design/icons";
 
 import tests from "@/utils/tests";
 import { VariableTypes } from "@/utils/Constants";
-import { setSelectedTest } from "@/store/slices/compareSlice";
+import { setSelectedTest } from "@/store/features/compare";
 import ColoredButton from "@/components/ui/ColoredButton";
 import styles from "@/styles/App.module.css";
-import { notifyError } from "@/utils/notifications";
+import { notifyError } from "@/notifications";
 
 const { Option, OptGroup } = Select;
 
@@ -24,8 +28,8 @@ export default function TestSelector({ generateTest, generateRanking }) {
   const selectedVar = useSelector((s) => s.compare.selectedVar);
   const selectedTest = useSelector((s) => s.compare.selectedTest);
 
-  const varTypes = useSelector((s) => s.cantab.present.varTypes);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const varTypes = useSelector((s) => s.main.varTypes);
+  const selection = useSelector((s) => s.dataframe.selection);
   const groupVar = useSelector((s) => s.compare.groupVar);
   const groups = useMemo(() => {
     if (!groupVar || !Array.isArray(selection)) return [];
@@ -101,6 +105,49 @@ export default function TestSelector({ generateTest, generateRanking }) {
     Boolean(selectedTestObj) &&
     isGroupCountApplicable &&
     (isTypeApplicable === null || isTypeApplicable);
+  const testInfoTooltip = selectedTestObj ? (
+    <div className={styles.testInfoTooltipContent}>
+      <div>
+        <strong>Test:</strong> {selectedTestObj.label}
+      </div>
+      <div>
+        <strong>Applies to:</strong> {selectedTestObj.applicability}
+      </div>
+      <div>
+        <strong>Current context:</strong> {groups.length} groups
+        {selectedVarType
+          ? `, ${getVariableTypeLabel(selectedVarType)} variable`
+          : ", variable type not selected"}
+      </div>
+      <div>
+        <strong>Current applicability:</strong>{" "}
+        <span
+          className={
+            isApplicableNow ? styles.applicabilityYes : styles.applicabilityNo
+          }
+        >
+          {isApplicableNow ? "Applicable" : "Not applicable"}
+        </span>
+      </div>
+      <div>
+        <strong>Reported measures:</strong>
+        {selectedTestObj.reportedMeasures?.length ? (
+          <ul className={styles.testInfoTooltipList}>
+            {selectedTestObj.reportedMeasures.map((measure) => (
+              <li key={measure}>{measure}</li>
+            ))}
+          </ul>
+        ) : (
+          " Not specified."
+        )}
+      </div>
+      <div>
+        <strong>Post hoc:</strong> {selectedTestObj.postHoc}
+      </div>
+    </div>
+  ) : (
+    "Select a statistical test to view its details."
+  );
 
   function triggerTest() {
     const testObj = tests.find((t) => t.label === selectedTest);
@@ -120,13 +167,29 @@ export default function TestSelector({ generateTest, generateRanking }) {
   return (
     <>
       <div className={styles.selectorField}>
-        <span className={styles.selectorLabel}>Test</span>
+        <div className={styles.selectorLabelRow}>
+          <span className={styles.selectorLabel}>Test</span>
+          <Tooltip
+            title={testInfoTooltip}
+            placement="rightTop"
+            trigger={["hover", "click"]}
+          >
+            <button
+              type="button"
+              className={`${styles.testInfoTrigger}${selectedTestObj ? "" : ` ${styles.testInfoTriggerInactive}`}`}
+              aria-label="Show selected test information"
+            >
+              <InfoCircleOutlined />
+            </button>
+          </Tooltip>
+        </div>
         <Select
           size="small"
-          value={selectedTest}
-          onChange={(v) => dispatch(setSelectedTest(v))}
-          placeholder="Select statistical test"
+          value={selectedTest ?? undefined}
+          onChange={(v) => dispatch(setSelectedTest(v ?? null))}
+          placeholder="Select test"
           listHeight={520}
+          allowClear={true}
         >
           {orderedGroups.map((category) => (
             <OptGroup key={category} label={category}>
@@ -148,6 +211,7 @@ export default function TestSelector({ generateTest, generateRanking }) {
                 ? "Run the selected test on current variable"
                 : "Group variable must be set."
             }
+            placement={"bottom"}
             icon={<ExperimentOutlined />}
             onClick={triggerTest}
             disabled={!selectedVar || !selectedTest || !groupVar}
@@ -161,64 +225,13 @@ export default function TestSelector({ generateTest, generateRanking }) {
                 ? "Compare all variables with the selected test"
                 : "Group variable must be set."
             }
+            placement={"bottom"}
             icon={<BarChartOutlined />}
             onClick={() => selectedTest && generateRanking(selectedTest)}
             disabled={!selectedTest || !groupVar}
           />
         </div>
       </div>
-
-      {selectedTestObj && (
-        <div
-          style={{
-            marginTop: "8px",
-            border: "1px solid var(--color-border)",
-            borderRadius: "8px",
-            padding: "10px",
-            background: "var(--color-surface-muted)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "6px",
-            fontSize: "12px",
-          }}
-        >
-          <div>
-            <strong>Test:</strong> {selectedTestObj.label}
-          </div>
-          <div>
-            <strong>Applies to:</strong> {selectedTestObj.applicability}
-          </div>
-          <div>
-            <strong>Current context:</strong> {groups.length} groups
-            {selectedVarType
-              ? `, ${getVariableTypeLabel(selectedVarType)} variable`
-              : ", variable type not selected"}
-          </div>
-          <div>
-            <strong>Current applicability:</strong>{" "}
-            <span
-              className={
-                isApplicableNow
-                  ? styles.applicabilityYes
-                  : styles.applicabilityNo
-              }
-            >
-              {isApplicableNow ? "Applicable" : "Not applicable"}
-            </span>
-          </div>
-          <div>
-            <strong>Reported measures:</strong>
-            <ul style={{ margin: "4px 0 0", paddingLeft: "18px" }}>
-              {selectedTestObj.reportedMeasures?.map((measure) => (
-                <li key={measure}>{measure}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <strong>Post hoc:</strong> {selectedTestObj.postHoc}
-          </div>
-        </div>
-      )}
     </>
   );
 }

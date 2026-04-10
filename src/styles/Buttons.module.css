@@ -37,6 +37,15 @@
   color: var(--color-ink-secondary);
 }
 
+.barButton:global(.ant-btn-loading) {
+  color: var(--color-brand);
+}
+
+.barButton:global(.ant-btn-loading) :global(.ant-btn-loading-icon),
+.barButton:global(.ant-btn-loading) :global(.ant-btn-loading-icon .anticon) {
+  color: var(--color-brand);
+}
+
 .barButton:focus-visible {
   box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.35);
 }

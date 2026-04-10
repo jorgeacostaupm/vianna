@@ -17,6 +17,7 @@ export default function HierarchyEditor() {
   const [orientation, setOrientation] = useState("vertical");
   const [linkStyle, setLinkStyle] = useState("smooth");
   const [viewConfig, setViewConfig] = useState(DEFAULT_HIERARCHY_VIEW_CONFIG);
+  const [selectionMode, setSelectionMode] = useState("none");
 
   return (
     <div className={styles.viewContainer} data-view-container>
@@ -27,6 +28,9 @@ export default function HierarchyEditor() {
         onLinkStyleChange={setLinkStyle}
         viewConfig={viewConfig}
         onViewConfigChange={setViewConfig}
+        selectionMode={selectionMode}
+        onSelectionModeChange={setSelectionMode}
+        hasNodes={attributes?.length > 0}
       ></HierarchyBar>
       {attributes?.length > 0 ? (
         <Hierarchy
@@ -34,6 +38,8 @@ export default function HierarchyEditor() {
           orientation={orientation}
           linkStyle={linkStyle}
           viewConfig={viewConfig}
+          selectionMode={selectionMode}
+          onSelectionModeChange={setSelectionMode}
         />
       ) : (
         <NoDataPlaceholder message="No hierarchy available" />
@@ -47,17 +53,21 @@ function Hierarchy({
   orientation,
   linkStyle,
   viewConfig,
+  selectionMode,
+  onSelectionModeChange,
 }) {
   const dispatch = useDispatch();
   const editorRef = useRef(null);
   const containerRef = useRef(null);
-  const [selectionMode, setSelectionMode] = useState("none");
 
   const dimensions = useResizeObserver(containerRef);
-  const version = useSelector((state) => state.metadata.version);
+  const hierarchyRevision = useSelector((state) => state.metadata.hierarchyRevision);
 
-  // Se hace update con version para las animaciones de las transiciones, hay parte que se hace desde d3hierarchyeditor
-  const treeData = useMemo(() => generateTree(attributes, 0), [version]);
+  // Rebuild the tree only when hierarchy semantics change.
+  const treeData = useMemo(
+    () => generateTree(attributes, 0),
+    [hierarchyRevision, attributes],
+  );
 
   // Inicialización / actualización del editor
   useEffect(() => {
@@ -103,6 +113,34 @@ function Hierarchy({
     editorRef.current.setSelectionMode?.(selectionMode);
   }, [selectionMode]);
 
+  useEffect(() => {
+    const isTextInput = (target) =>
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT");
+
+    const onKeyDown = (event) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.key === "Escape") {
+        onSelectionModeChange?.("none");
+        return;
+      }
+      if (isTextInput(event.target)) return;
+
+      const key = event.key?.toLowerCase();
+      if (key === "b") {
+        onSelectionModeChange?.("brush");
+      } else if (key === "c") {
+        onSelectionModeChange?.("click");
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onSelectionModeChange]);
+
   // Resize
   useEffect(() => {
     if (!editorRef.current || !dimensions) return;
@@ -119,50 +157,7 @@ function Hierarchy({
       {editorRef.current && <HierarchyContextMenu editor={editorRef.current} />}
 
       <NodeMenu />
-      <ViewMenu
-        selectionMode={selectionMode}
-        onSelectionModeChange={setSelectionMode}
-      />
+      <ViewMenu />
     </>
   );
 }
-
-/* function Hierarchy({ attributes }) {
-  const dispatch = useDispatch();
-
-  const version = useSelector((state) => state.metadata.version);
-  const editorRef = useRef(null);
-  const containerRef = useRef(null);
-
-  const dimensions = useResizeObserver(containerRef);
-  useEffect(() => {
-    if (editorRef.current) {
-      editorRef.current.onResize(dimensions);
-    }
-  }, [dimensions]);
-
-  useEffect(() => {
-    const treeData = generateTree(attributes, 0);
-
-    if (!editorRef.current) {
-      editorRef.current = new D3HierarchyEditor(
-        containerRef.current,
-        treeData,
-        dispatch
-      );
-    } else {
-      editorRef.current.update(treeData);
-    }
-  }, [version, dispatch]);
-
-  return (
-    <>
-      <div style={{ textAlign: "initial" }} className={styles.chartContainer}>
-        <svg ref={containerRef} className={styles.chartSvg} />
-      </div>
-      <HierarchyEditorContextMenu editor={editorRef.current} />
-      <NodeMenu></NodeMenu>
-      <ViewMenu></ViewMenu>
-    </>
-  );
-} */

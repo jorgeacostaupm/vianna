@@ -7,6 +7,7 @@ import TabHierarchy from "../Tabs/TabHierarchy";
 import styles from "../Data.module.css";
 import PanelButton from "@/components/ui/PanelButton";
 import TabDescriptions from "../Tabs/TabDescriptions";
+import TabSettings from "../Tabs/TabSettings";
 
 const items = [
   {
@@ -24,11 +25,16 @@ const items = [
     label: "Descriptions",
     children: <TabDescriptions />,
   },
+  {
+    key: "settings",
+    label: "Settings",
+    children: <TabSettings />,
+  },
 ];
 
 export default function DataManagementButton({
   trigger = "panel",
-  buttonLabel = "Open Data Management",
+  buttonLabel = "Management",
   buttonType = "default",
   size = "middle",
   onOpen,
@@ -67,8 +73,8 @@ export default function DataManagementButton({
     <>
       {trigger === "panel" ? (
         <PanelButton
-          title="Open Data Management"
-          ariaLabel="Open Data Management"
+          title="Management"
+          ariaLabel="Management"
           onClick={showModal}
           icon={<DatabaseOutlined />}
         />
@@ -89,7 +95,6 @@ export default function DataManagementButton({
         onCancel={handleCancel}
         width={modalWidth}
         style={{ top: modalTop }}
-        bodyStyle={{ height: "calc(85vh - 210px)", overflow: "hidden" }}
         footer={null}
         centered={!screens.md}
         destroyOnClose

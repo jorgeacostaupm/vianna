@@ -4,7 +4,7 @@ import { TableOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 
 import BarButton from "@/components/ui/BarButton";
-import { selectNavioVars } from "@/store/slices/cantabSlice";
+import { selectNavioVars } from "@/store/features/main";
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import { generateFileName } from "@/utils/functions";
 import { getViewOverlayPosition } from "@/components/ui/popupPosition";
@@ -31,7 +31,7 @@ export default function ViewRecordsDownloadButton({
   const [isFixedOverlay, setIsFixedOverlay] = useState(false);
   const triggerRef = useRef(null);
 
-  const fullData = useSelector((state) => state.dataframe.present.dataframe);
+  const fullData = useSelector((state) => state.dataframe.dataframe);
   const visibleVariables = useSelector(selectNavioVars);
   const normalizedOrders = useMemo(
     () => normalizeOrderValues(recordOrders),

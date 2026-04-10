@@ -3,8 +3,8 @@ import { useSelector } from "react-redux";
 
 import { getLineChartData } from "@/utils/functionsEvolution";
 import evolutionTests from "@/utils/evolution_tests";
-import { selectNumericVars, selectVarTypes } from "@/store/slices/cantabSlice";
-import { notifyError } from "@/utils/notifications";
+import { selectNumericVars, selectVarTypes } from "@/store/features/main";
+import { notifyError } from "@/notifications";
 
 export default function useLineChartData(
   variable,
@@ -17,13 +17,13 @@ export default function useLineChartData(
 ) {
   const [data, setData] = useState([]);
   const lastErrorRef = useRef(null);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
   const groupVar = useSelector((s) => s.evolution.groupVar);
   const timeVar = useSelector((s) => s.evolution.timeVar);
   const timeOrderConfig = useSelector((s) =>
     timeVar ? s.evolution.timeOrderByVar?.[timeVar] : null
   );
-  const idVar = useSelector((s) => s.cantab.present.idVar);
+  const idVar = useSelector((s) => s.main.idVar);
   const variables = useSelector(selectNumericVars);
   const varTypes = useSelector(selectVarTypes);
 

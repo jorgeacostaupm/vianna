@@ -176,6 +176,68 @@
   gap: var(--space-3);
 }
 
+.settingsPanel {
+  max-width: 860px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2);
+}
+
+.settingsSection {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settingsRowBetween {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.settingsHint {
+  margin: 0;
+  color: var(--color-ink-tertiary);
+}
+
+.settingsRadioGroup {
+  width: fit-content;
+}
+
+.settingsRadioGroup :global(.ant-radio-button-wrapper) {
+  min-width: 120px;
+  text-align: center;
+}
+
+.colorPresetGrid {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.colorPresetButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 var(--space-3);
+  height: var(--control-height-sm);
+}
+
+.colorPresetDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+}
+
 @media (max-width: 980px) {
   .tabSplit {
     flex-direction: column;

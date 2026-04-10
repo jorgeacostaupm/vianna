@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 
-import { notifyError } from "@/utils/notifications";
-import { selectVars } from "@/store/slices/cantabSlice";
+import { notifyError } from "@/notifications";
+import { selectVars } from "@/store/features/main";
 
 export default function useDistributionData(
   getData,
@@ -11,8 +11,8 @@ export default function useDistributionData(
   { groupVar = null, timeVar = null } = {}
 ) {
   const [data, setData] = useState([]);
-  const selection = useSelector((s) => s.dataframe.present.selection);
-  const idVar = useSelector((s) => s.cantab.present.idVar);
+  const selection = useSelector((s) => s.dataframe.selection);
+  const idVar = useSelector((s) => s.main.idVar);
   const variables = useSelector(selectVars);
 
   useEffect(() => {

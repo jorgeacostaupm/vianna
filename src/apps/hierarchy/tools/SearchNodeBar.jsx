@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { Input, List, Card, Button, Tooltip } from "antd";
-import {
-  CheckSquareOutlined,
-  DragOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
+import { Input, List, Card } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 import { pubsub } from "@/utils/pubsub";
-import { toggleAttribute } from "@/store/async/metaAsyncReducers";
+import { toggleAttribute } from "@/store/features/metadata";
 
-const SearchNodeBar = ({ selectionMode = "none", onSelectionModeChange }) => {
+const SearchNodeBar = () => {
   const dispatch = useDispatch();
   const attributes = useSelector((state) => state.metadata.attributes || []);
   const [results, setResults] = useState([]);
@@ -109,26 +105,6 @@ const SearchNodeBar = ({ selectionMode = "none", onSelectionModeChange }) => {
     document.addEventListener("mouseup", onMouseUp);
   };
 
-  const toggleSelectionMode = (mode) => {
-    const nextMode = selectionMode === mode ? "none" : mode;
-    onSelectionModeChange?.(nextMode);
-  };
-
-  const getModeButtonStyle = (mode) => {
-    const isActive = selectionMode === mode;
-    return {
-      width: "2.5rem",
-      height: "2.5rem",
-      minWidth: "2.5rem",
-      padding: 0,
-      borderRadius: "var(--radius-md)",
-      borderColor: "var(--color-brand)",
-      backgroundColor: isActive ? "var(--color-brand)" : "#fff",
-      color: isActive ? "#fff" : "var(--color-brand)",
-      boxShadow: isActive ? "var(--shadow-sm)" : "none",
-    };
-  };
-
   return (
     <div ref={containerRef} style={{ position: "relative", width: "22rem" }}>
       <Input
@@ -147,45 +123,6 @@ const SearchNodeBar = ({ selectionMode = "none", onSelectionModeChange }) => {
           boxShadow: showResults ? "var(--focus-ring)" : "none",
         }}
       />
-
-      <div
-        style={{
-          marginTop: "0.6rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-        }}
-      >
-        <span
-          style={{
-            fontSize: "0.85rem",
-            color: "var(--color-ink-secondary)",
-            whiteSpace: "nowrap",
-          }}
-        >
-          select by:
-        </span>
-        <Tooltip title="Select nodes by brushing an area" placement="bottom">
-          <Button
-            icon={<DragOutlined />}
-            onClick={() => toggleSelectionMode("brush")}
-            disabled={attributes.length === 0}
-            size="large"
-            style={getModeButtonStyle("brush")}
-            aria-label="Brush selection mode"
-          />
-        </Tooltip>
-        <Tooltip title="Select nodes one by one with click" placement="bottom">
-          <Button
-            icon={<CheckSquareOutlined />}
-            onClick={() => toggleSelectionMode("click")}
-            disabled={attributes.length === 0}
-            size="large"
-            style={getModeButtonStyle("click")}
-            aria-label="Click selection mode"
-          />
-        </Tooltip>
-      </div>
 
       {showResults && results.length > 0 && (
         <Card

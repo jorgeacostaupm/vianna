@@ -5,6 +5,7 @@ import * as d3 from "d3";
 import * as aq from "arquero";
 import { Typography, Slider, Radio, Switch, Select } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
@@ -14,7 +15,7 @@ import { ORDER_VARIABLE } from "@/utils/Constants";
 import ChartBar from "@/components/charts/ChartBar";
 import tests from "@/utils/tests";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
-import { notifyError } from "@/utils/notifications";
+import { notifyError } from "@/notifications";
 import { CHART_GRID, CHART_OUTLINE, CHART_ZERO_LINE } from "@/utils/chartTheme";
 import {
   attachTickLabelGridHover,
@@ -36,7 +37,7 @@ export default function PointRange({
   const containerRef = useRef();
   const dims = useResizeObserver(containerRef);
 
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
   const groupVar = useSelector((s) => s.compare.groupVar);
   const attributes = useSelector((s) => s.metadata.attributes);
 
@@ -51,6 +52,7 @@ export default function PointRange({
     markerSize: 5,
     showZeroLine: true,
     sortBy: "name",
+    axisLabelFontSize: 16,
   });
 
   const liveOrderValues = React.useMemo(
@@ -382,9 +384,20 @@ export default function PointRange({
     const description = attributes?.find((attr) => attr?.name === variable)?.desc;
     return typeof description === "string" ? description.trim() : "";
   }, [attributes, variable]);
+  const axisLabelFontSize = Number.isFinite(config?.axisLabelFontSize)
+    ? config.axisLabelFontSize
+    : null;
+  const containerStyle =
+    axisLabelFontSize != null
+      ? { "--axis-label-font-size": `${axisLabelFontSize}px` }
+      : undefined;
 
   return (
-    <div className={styles.viewContainer} data-view-container>
+    <div
+      className={styles.viewContainer}
+      data-view-container
+      style={containerStyle}
+    >
       <ChartBar
         title={title}
         hoverTitle={variableDescription || undefined}
@@ -418,6 +431,7 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
     positiveOnly,
     sortDescending,
     sortBy,
+    yAxisLabelSpace,
   } = config;
   const update = (field, value) =>
     setConfig((prev) => ({ ...prev, [field]: value }));
@@ -523,6 +537,18 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
             <Switch size="small" checked disabled />
           </div>
         )}
+        {variant === "pairwise" && (
+          <SliderControl
+            label="Y label space"
+            valueLabel={`${Number.isFinite(yAxisLabelSpace) ? yAxisLabelSpace : 160}px`}
+            min={100}
+            max={320}
+            step={5}
+            value={Number.isFinite(yAxisLabelSpace) ? yAxisLabelSpace : 160}
+            disabled={disabled}
+            onChange={(v) => update("yAxisLabelSpace", v)}
+          />
+        )}
         {variant !== "pairwise" && (
           <div className={panelStyles.row}>
             <Text className={panelStyles.label}>Sort by</Text>
@@ -534,6 +560,11 @@ export function Settings({ config, setConfig, variant = "pointrange" }) {
             />
           </div>
         )}
+        <AxisLabelSizeControl
+          config={config}
+          setConfig={setConfig}
+          disabled={disabled}
+        />
       </div>
     </div>
   );

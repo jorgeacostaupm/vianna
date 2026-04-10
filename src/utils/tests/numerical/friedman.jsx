@@ -3,7 +3,7 @@ import { VariableTypes } from "@/utils/Constants";
 
 export const friedmanTest = {
   id: "friedman-test",
-  label: "Friedman Test",
+  label: "Friedman test",
   description:
     "Non-parametric test for comparing more than two paired samples.",
   isApplicable: (count) => count >= 3,
@@ -46,7 +46,7 @@ export const friedmanTest = {
       pValue,
       df,
       descriptionString: `Friedman test (n=${n}, k=${k}): χ²(${df}) = ${chiSquare.toFixed(
-        2
+        2,
       )}, p = ${pValue.toFixed(3)}`,
     };
   },

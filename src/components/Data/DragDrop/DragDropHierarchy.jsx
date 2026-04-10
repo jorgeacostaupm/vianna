@@ -6,9 +6,9 @@ import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
 
 import { FileProcessorFactory } from "./drag";
 import styles from "../Data.module.css";
-import { updateHierarchy } from "@/store/async/metaAsyncReducers";
+import { updateHierarchy } from "@/store/features/metadata";
 import ColoredButton from "@/components/ui/ColoredButton";
-import { notifyError, notifySuccess, notifyWarning } from "@/utils/notifications";
+import { notifyError, notifyWarning } from "@/notifications";
 
 const ACCEPTED_FORMATS = {
   "application/json": [".json"],
@@ -20,31 +20,15 @@ export default function DragAndDropHierarchy() {
   const [filename, setFilename] = useState(null);
   const [parsedData, setParsedData] = useState(null);
   const [isReadingFile, setIsReadingFile] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const loading = useSelector((state) => state.metadata.loadingHierarchy);
 
-  const executeUpload = async () => {
-    setIsUploading(true);
-    try {
-      await dispatch(
-        updateHierarchy({
-          filename,
-          hierarchy: parsedData,
-        }),
-      ).unwrap();
-      notifySuccess({
-        message: "Hierarchy uploaded",
-      });
-      setParsedData(null);
-      setFilename(null);
-    } catch (error) {
-      notifyError({
-        message: "Could not upload hierarchy",
-        error,
-        fallback: "Hierarchy upload failed.",
-      });
-    } finally {
-      setIsUploading(false);
-    }
+  const executeUpload = () => {
+    dispatch(
+      updateHierarchy({
+        filename,
+        hierarchy: parsedData,
+      }),
+    );
   };
 
   const handleUpload = () => {
@@ -159,8 +143,8 @@ export default function DragAndDropHierarchy() {
       <div className={styles.controls}>
         <ColoredButton
           onClick={handleUpload}
-          disabled={!parsedData || isUploading || isReadingFile}
-          loading={isUploading}
+          disabled={!parsedData || loading || isReadingFile}
+          loading={loading}
           icon={<UploadOutlined />}
           shape="default"
         >

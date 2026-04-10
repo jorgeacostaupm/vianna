@@ -2,20 +2,20 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Select, Input } from "antd";
 import { EditOutlined, FormOutlined } from "@ant-design/icons";
-import { selectNavioVars } from "@/store/slices/cantabSlice";
-import { setDataframe } from "@/store/slices/dataSlice";
+import { selectNavioVars } from "@/store/features/main";
+import { setDataframe } from "@/store/features/dataframe";
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import PopoverButton from "@/components/ui/PopoverButton";
 import BarButton from "@/components/ui/BarButton";
-import { generateColumnBatch } from "@/store/async/dataAsyncReducers";
+import { generateColumnBatch } from "@/store/features/dataframe";
 
 function EditColumn() {
   const dispatch = useDispatch();
   const [column, setColumn] = useState(null);
   const [inputValue, setInputValue] = useState("");
 
-  const selection = useSelector((state) => state.dataframe.present.selection);
-  const data = useSelector((state) => state.dataframe.present.dataframe);
+  const selection = useSelector((state) => state.dataframe.selection);
+  const data = useSelector((state) => state.dataframe.dataframe);
   const attributes = useSelector((state) => state.metadata.attributes);
   const vars = useSelector(selectNavioVars);
 

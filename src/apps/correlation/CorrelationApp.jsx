@@ -1,4 +1,4 @@
-import { setInit } from "@/store/slices/correlationSlice";
+import { setInit } from "@/store/features/correlation";
 import { Apps } from "@/utils/Constants";
 import registry from "./registry";
 import Grid from "@/core/Grid";

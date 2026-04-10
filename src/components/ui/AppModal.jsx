@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Button, Modal, Tooltip } from "antd";
+import { useSelector } from "react-redux";
 import styles from "@/styles/Buttons.module.css";
+import { selectShowInformativeTooltips } from "@/store/features/main";
 
 export default function AppModal({
   icon,
@@ -9,13 +11,14 @@ export default function AppModal({
   children,
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const showInformativeTooltips = useSelector(selectShowInformativeTooltips);
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
   return (
     <>
-      <Tooltip title={tooltipTitle}>
+      <Tooltip title={showInformativeTooltips ? tooltipTitle : null}>
         <Button
           shape="circle"
           className={styles.barButton}

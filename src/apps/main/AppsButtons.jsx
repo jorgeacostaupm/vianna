@@ -15,7 +15,7 @@ export default function AppsButtons({
   dataManagementOpen,
   onDataManagementOpenChange,
 }) {
-  const dt = useSelector((state) => state.dataframe.present.dataframe);
+  const dt = useSelector((state) => state.dataframe.dataframe);
 
   return (
     <div style={{ display: "flex", gap: "10px" }}>

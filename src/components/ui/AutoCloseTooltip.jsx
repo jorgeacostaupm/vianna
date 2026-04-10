@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Tooltip } from "antd";
+import { useSelector } from "react-redux";
+import { selectShowInformativeTooltips } from "@/store/features/main";
 
 export default function AutoCloseTooltip({
   title,
@@ -8,9 +10,18 @@ export default function AutoCloseTooltip({
   autoCloseMs = 2000,
 }) {
   const [visible, setVisible] = useState(false);
+  const showInformativeTooltips = useSelector(selectShowInformativeTooltips);
+  const shouldShowTooltip = Boolean(title) && showInformativeTooltips;
+
   const closeTooltip = useCallback(() => {
     setVisible(false);
   }, []);
+
+  useEffect(() => {
+    if (!shouldShowTooltip) {
+      setVisible(false);
+    }
+  }, [shouldShowTooltip]);
 
   useEffect(() => {
     let timer;
@@ -45,18 +56,26 @@ export default function AutoCloseTooltip({
 
   return (
     <Tooltip
-      title={title}
-      open={Boolean(title) && visible}
-      onOpenChange={setVisible}
+      title={shouldShowTooltip ? title : null}
+      open={shouldShowTooltip && visible}
+      onOpenChange={(nextVisible) => {
+        if (shouldShowTooltip) {
+          setVisible(nextVisible);
+        }
+      }}
       placement={placement}
     >
       <span
         onPointerDown={closeTooltip}
-        onMouseEnter={() => setVisible(true)}
+        onMouseEnter={() => {
+          if (shouldShowTooltip) {
+            setVisible(true);
+          }
+        }}
         onMouseLeave={() => setVisible(false)}
         onClick={closeTooltip}
         onFocus={(event) => {
-          if (event.currentTarget.matches(":focus-visible")) {
+          if (shouldShowTooltip && event.currentTarget.matches(":focus-visible")) {
             setVisible(true);
           }
         }}

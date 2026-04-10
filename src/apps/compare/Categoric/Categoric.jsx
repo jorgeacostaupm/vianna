@@ -18,8 +18,8 @@ const defaultConfig = {
   showGrid: true,
   groupOrder: "alpha",
   categoryOrder: "alpha",
+  axisLabelFontSize: 16,
 };
-const info = "Categorical Distribution plots, Grouped or Stacked bar chart";
 
 export default function Categoric({
   id,
@@ -29,7 +29,7 @@ export default function Categoric({
 }) {
   const groupVar = useSelector((s) => s.compare.groupVar);
   const attributes = useSelector((s) => s.metadata.attributes);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
   const [config, setConfig] = useState(defaultConfig);
   const [data] = useDistributionData(getData, variable, config.isSync, {
     groupVar,
@@ -56,7 +56,9 @@ export default function Categoric({
     [groupVar, variable],
   );
   const variableDescription = useMemo(() => {
-    const description = attributes?.find((attr) => attr?.name === variable)?.desc;
+    const description = attributes?.find(
+      (attr) => attr?.name === variable,
+    )?.desc;
     return typeof description === "string" ? description.trim() : "";
   }, [attributes, variable]);
 
@@ -75,7 +77,6 @@ export default function Categoric({
       title={`Distribution · ${variable}`}
       hoverTitle={variableDescription || undefined}
       svgIDs={[id, `${id}-legend`]}
-      info={info}
       remove={remove}
       settings={<Settings config={config} setConfig={setConfig} />}
       chart={chart}

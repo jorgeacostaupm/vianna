@@ -3,7 +3,7 @@ import { Tag } from "antd";
 import { useSelector, useDispatch } from "react-redux";
 import { CloseOutlined } from "@ant-design/icons";
 
-import { setFilteringList } from "@/store/slices/evolutionSlice";
+import { setFilteringList } from "@/store/features/evolution";
 
 const FilteredVariables = () => {
   const filterList = useSelector((s) => s.evolution.filterList);

@@ -2,18 +2,18 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { BugFilled } from "@ant-design/icons";
 
-import { setQuarantineData } from "@/store/slices/cantabSlice";
-import { setDataframe } from "@/store/slices/dataSlice";
+import { setQuarantineData } from "@/store/features/main";
+import { setDataframe } from "@/store/features/dataframe";
 
 import { ORDER_VARIABLE } from "@/utils/Constants";
 import BarButton from "@/components/ui/BarButton";
 
 export default function QuarantineButton() {
   const dispatch = useDispatch();
-  const selection = useSelector((state) => state.dataframe.present.selection);
-  const data = useSelector((state) => state.dataframe.present.dataframe);
+  const selection = useSelector((state) => state.dataframe.selection);
+  const data = useSelector((state) => state.dataframe.dataframe);
   const qData =
-    useSelector((state) => state.cantab.present.quarantineData) || [];
+    useSelector((state) => state.main.quarantineData) || [];
   const ids = selection?.map((item) => item[ORDER_VARIABLE]);
 
   const onQuarantine = () => {

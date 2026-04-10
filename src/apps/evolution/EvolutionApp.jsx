@@ -1,4 +1,4 @@
-import { setInit } from "@/store/slices/evolutionSlice";
+import { setInit } from "@/store/features/evolution";
 import { Apps } from "@/utils/Constants";
 import registry from "./registry";
 import Grid from "@/core/Grid";

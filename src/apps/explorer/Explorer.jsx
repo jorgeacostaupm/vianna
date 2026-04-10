@@ -5,13 +5,16 @@ import Bar from "./Bar";
 import Navio from "@/components/Navio";
 import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
 import styles from "@/styles/Charts.module.css";
-import { setSelection } from "@/store/slices/dataSlice";
-import { updateConfig } from "@/store/slices/dataSlice";
+import { setNavioUiState, setSelection } from "@/store/features/dataframe";
+import { updateConfig } from "@/store/features/dataframe";
 
 export default function Explorer() {
-  const dt = useSelector((state) => state.dataframe.present.dataframe);
-  const config = useSelector((state) => state.dataframe.present.config);
-  const filename = useSelector((state) => state.dataframe.present.filename);
+  const dt = useSelector((state) => state.dataframe.dataframe);
+  const config = useSelector((state) => state.dataframe.config);
+  const selection = useSelector((state) => state.dataframe.selection);
+  const navioUiState = useSelector((state) => state.dataframe.navioUiState);
+  const navioResetEpoch = useSelector((state) => state.dataframe.navioResetEpoch);
+  const filename = useSelector((state) => state.dataframe.filename);
   const title = filename ? `Overview · ${filename}` : "Overview";
 
   return (
@@ -19,7 +22,15 @@ export default function Explorer() {
       <Bar title={title} config={config} updateConfig={updateConfig} />
 
       {dt && dt.length > 0 ? (
-        <Navio data={dt} config={config} setSelection={setSelection} />
+        <Navio
+          data={dt}
+          config={config}
+          setSelection={setSelection}
+          selection={selection}
+          navioUiState={navioUiState}
+          setNavioUiState={setNavioUiState}
+          resetToken={navioResetEpoch}
+        />
       ) : (
         <NoDataPlaceholder></NoDataPlaceholder>
       )}

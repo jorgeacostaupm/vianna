@@ -1,11 +1,12 @@
 import * as d3 from "d3";
 
-import { setNavioColumns } from "@/store/slices/dataSlice";
-import { aggregateSelectedNodes, changeOrder } from "@/store/slices/metaSlice";
+import { setNavioColumns } from "@/store/features/dataframe";
+import { aggregateSelectedNodes, changeOrder } from "@/store/features/metadata";
 import {
   changeRelationship,
+  changeRelationshipBatch,
   removeAttribute,
-} from "@/store/async/metaAsyncReducers";
+} from "@/store/features/metadata";
 import store from "@/store/store";
 
 import { pubsub } from "@/utils/pubsub";
@@ -17,7 +18,7 @@ import {
   notifyError,
   notifyInfo,
   notifyWarning,
-} from "@/utils/notifications";
+} from "@/notifications";
 
 import { transitionDuration } from "./constants";
 import { computeNavioColumnsFromHierarchy, getNodeLabel } from "./helpers";
@@ -55,7 +56,7 @@ export function setNavioNodes() {
   const attrs = store.getState().metadata.attributes;
   const columns = computeNavioColumnsFromHierarchy(this.root, attrs);
 
-  const currentColumns = store.getState().dataframe.present.navioColumns || [];
+  const currentColumns = store.getState().dataframe.navioColumns || [];
   const hasSameColumns =
     columns.length === currentColumns.length &&
     columns.every((columnName, index) => columnName === currentColumns[index]);
@@ -101,33 +102,45 @@ export function onChangeHierarchy() {
 export async function addSelectedNodes({ parent }) {
   const mods = this.getSelectedNodesToModify();
 
-  const toApply = [];
+  const targetNode = this.root?.descendants?.().find((node) => node.id === parent);
+  const targetAncestorIds = new Set(
+    targetNode?.ancestors?.().map((ancestor) => ancestor.id) || [],
+  );
+
+  const toMove = [];
   const failed = [];
 
   mods.forEach((d) => {
     const nodeName = getNodeLabel(d);
-    if (d.id === parent || d.descendants().some((nd) => nd.id === parent)) {
+    if (d.id === parent || targetAncestorIds.has(d.id)) {
       failed.push(
         `${nodeName}: cannot move into itself or one of its descendants.`,
       );
       return;
     }
-    toApply.push(d);
+    toMove.push(d);
   });
 
-  for (const d of toApply) {
-    const nodeName = getNodeLabel(d);
+  if (toMove.length > 0) {
     try {
-      await this.dispatcher(
-        changeRelationship({
-          sourceID: d.id,
+      const result = await this.dispatcher(
+        changeRelationshipBatch({
+          sourceIDs: toMove.map((d) => d.id),
           targetID: parent,
           recover: false,
           silent: true,
         }),
       ).unwrap();
+
+      if (Array.isArray(result?.failed) && result.failed.length > 0) {
+        const nodeLabelById = new Map(toMove.map((d) => [d.id, getNodeLabel(d)]));
+        result.failed.forEach(({ sourceID, reason }) => {
+          const nodeName = nodeLabelById.get(sourceID) || `Node #${sourceID}`;
+          failed.push(`${nodeName}: ${reason || "Unknown error"}`);
+        });
+      }
     } catch (error) {
-      failed.push(`${nodeName}: ${extractErrorMessage(error, "Unknown error")}`);
+      failed.push(extractErrorMessage(error, "Unknown error"));
     }
   }
 
@@ -144,11 +157,11 @@ export async function addSelectedNodes({ parent }) {
     });
   }
 
-  if (toApply.length > 0 || failed.length > 0) {
+  if (toMove.length > 0 || failed.length > 0) {
     this.clearSelection();
   }
 
-  if (toApply.length > 0) {
+  if (toMove.length > 0) {
     this.scheduleNavioSync(transitionDuration + 16);
   }
 }

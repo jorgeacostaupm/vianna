@@ -9,8 +9,12 @@ export default function renderLegend(
   hide,
   setHide,
   showStats,
-  hideStats
+  hideStats,
+  options = {}
 ) {
+  const { transientHide = null, setTransientHide = null } = options || {};
+  const hasTransientHideControl =
+    Array.isArray(transientHide) && typeof setTransientHide === "function";
   const circleSize = 10;
   const padding = 6;
   const lineHeight = circleSize * 2 + padding;
@@ -21,6 +25,18 @@ export default function renderLegend(
     .style("cursor", "pointer");
 
   const orderedGroups = Array.isArray(groups) ? [...groups] : [];
+  const parent = legend.node()?.parentNode;
+
+  if (!parent) {
+    legend.attr("width", 0).attr("height", 0);
+    return;
+  }
+
+  if (!orderedGroups.length) {
+    d3.select(parent).style("align-items", null).style("justify-content", null);
+    legend.attr("width", 0).attr("height", 0);
+    return;
+  }
 
   orderedGroups.forEach((group, i) => {
     const y = i * lineHeight + circleSize * 2;
@@ -82,21 +98,26 @@ export default function renderLegend(
       legendItem
         .on("mouseover", () => {
           const hideGroups = orderedGroups.filter((d) => d !== group);
-          setHide(hideGroups);
+          if (hasTransientHideControl) {
+            setTransientHide(hideGroups);
+          } else {
+            setHide(hideGroups);
+          }
           if (showStats) showStats(group);
         })
         .on("mouseout", () => {
-          const hideGroups = legend.selectAll(".cross").data();
-
-          setHide(hideGroups);
+          if (hasTransientHideControl) {
+            setTransientHide([]);
+          } else {
+            const hideGroups = legend.selectAll(".cross").data();
+            setHide(hideGroups);
+          }
           if (hideStats) hideStats(group);
         });
     }
   });
 
   const bbox = legendGroup.node().getBBox();
-
-  const parent = legend.node().parentNode;
   const { width, height } = parent.getBoundingClientRect();
 
   if (height > bbox.y + bbox.height) {
@@ -111,7 +132,8 @@ export default function renderLegend(
     d3.select(parent).style("justify-content", null);
   }
 
-  legend
-    .attr("width", bbox.x + bbox.width)
-    .attr("height", bbox.y + bbox.height);
+  const legendWidth = Math.max(0, Math.ceil(bbox.x + bbox.width));
+  const legendHeight = Math.max(0, Math.ceil(bbox.y + bbox.height));
+
+  legend.attr("width", legendWidth).attr("height", legendHeight);
 }

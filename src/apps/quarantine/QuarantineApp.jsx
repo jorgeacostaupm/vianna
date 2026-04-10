@@ -1,9 +1,8 @@
 import React from "react";
 
-import { setInitQuarantine } from "@/store/slices/cantabSlice";
+import { setInitQuarantine } from "@/store/features/main";
 import Quarantine from "./Quarantine";
 
-import useNotification from "@/hooks/useNotification";
 import useRootStyles from "@/hooks/useRootStyles";
 import { APP_NAME, Apps } from "@/utils/Constants";
 import MainSidebar from "@/apps/main/MainSidebar";
@@ -15,11 +14,9 @@ const QUARANTINE_DESC =
 
 export default function QuarantineApp() {
   useRootStyles(setInitQuarantine, APP_NAME + " · " + Apps.QUARANTINE);
-  const holder = useNotification();
 
   return (
     <>
-      {holder}
       <SingleViewAppLayout
         sidebar={
           <MainSidebar

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useDropzone } from "react-dropzone";
 import { Switch, Tooltip, Typography } from "antd";
 import {
@@ -10,10 +10,10 @@ import {
 } from "@ant-design/icons";
 
 import { FileProcessorFactory } from "./drag";
-import { updateData } from "@/store/async/dataAsyncReducers";
+import { updateData } from "@/store/features/dataframe";
 import styles from "../Data.module.css";
 import ColoredButton from "@/components/ui/ColoredButton";
-import { notifyError, notifyWarning } from "@/utils/notifications";
+import { notifyError, notifyWarning } from "@/notifications";
 
 const { Text } = Typography;
 
@@ -31,12 +31,11 @@ export default function DragDropData() {
   const [parsedData, setParsedData] = useState(null);
   const [generateHierarchy, setGenerateHierarchy] = useState(true);
   const [isReadingFile, setIsReadingFile] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
+  const isUploading = useSelector((state) => state.dataframe.loadingDataUpload);
 
   const handleUpload = async () => {
     if (!parsedData) return;
 
-    setIsUploading(true);
     try {
       await dispatch(
         updateData({
@@ -51,8 +50,6 @@ export default function DragDropData() {
         error,
         fallback: "Data upload failed. Verify file format and content.",
       });
-    } finally {
-      setIsUploading(false);
     }
   };
 

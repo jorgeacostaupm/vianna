@@ -8,7 +8,7 @@ import { FileProcessorFactory } from "./drag";
 import buttonStyles from "@/styles/Buttons.module.css";
 import styles from "../Data.module.css";
 import tests from "@/utils/tests";
-import { notifyError, notifyWarning } from "@/utils/notifications";
+import { notifyError, notifyWarning } from "@/notifications";
 
 const ACCEPTED_FORMATS = ".json";
 

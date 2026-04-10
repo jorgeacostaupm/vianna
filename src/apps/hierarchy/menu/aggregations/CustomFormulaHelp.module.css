@@ -1,5 +1,7 @@
 .helpPanel {
-  width: min(480px, calc(100vw - 56px));
+  width: fit-content;
+  min-width: min(520px, calc(100vw - 56px));
+  max-width: min(920px, calc(100vw - 56px));
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -156,4 +158,11 @@
   border-radius: var(--radius-sm);
   background: var(--color-surface-muted);
   padding: 0 4px;
+}
+
+@media (max-width: 640px) {
+  .helpPanel {
+    width: 100%;
+    min-width: 0;
+  }
 }

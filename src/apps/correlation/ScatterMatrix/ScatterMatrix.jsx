@@ -26,6 +26,7 @@ function Chart({ data, id, config }) {
       chartRef={chartRef}
       legendRef={legendRef}
       showLegend={config.showLegend}
+      legendWidthMode="content"
     />
   );
 }
@@ -36,7 +37,7 @@ export default function ScatterMatrix({
   sourceOrderValues = [],
 }) {
   const groupVar = useSelector((s) => s.correlation.groupVar);
-  const selection = useSelector((s) => s.dataframe.present.selection);
+  const selection = useSelector((s) => s.dataframe.selection);
 
   const [config, setConfig] = useState({
     isSync: true,
@@ -45,6 +46,7 @@ export default function ScatterMatrix({
     groupVar: groupVar,
     variables: [],
     showLegend: true,
+    axisLabelFontSize: 16,
   });
 
   useEffect(() => {

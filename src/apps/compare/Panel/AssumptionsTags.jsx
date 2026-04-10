@@ -7,8 +7,8 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 
-import { selectVars } from "@/store/slices/cantabSlice";
-import { checkAssumptions, setSelectedVar } from "@/store/slices/compareSlice";
+import { selectVars } from "@/store/features/main";
+import { checkAssumptions, setSelectedVar } from "@/store/features/compare";
 
 import { getColorByDtype, getNameByDtype } from "@/utils/Constants";
 import AutoCloseTooltip from "@/components/ui/AutoCloseTooltip";
@@ -23,7 +23,6 @@ const tagStyle = {
   display: "inline-flex",
   justifyContent: "center",
   alignItems: "center",
-  minWidth: "88px",
   textAlign: "center",
   padding: "6px 10px",
   lineHeight: 1,
@@ -64,7 +63,7 @@ export default function AssumptionsTags() {
   const variables = useSelector(selectVars);
   const assumptions = useSelector((s) => s.compare.assumptions);
   const selectedVar = useSelector((s) => s.compare.selectedVar);
-  const varTypes = useSelector((s) => s.cantab.present.varTypes);
+  const varTypes = useSelector((s) => s.main.varTypes);
   const groupVar = useSelector((s) => s.compare.groupVar);
 
   const allNormal = assumptions.normality?.every((d) => d.normal);
@@ -88,14 +87,14 @@ export default function AssumptionsTags() {
         condition={assumptions.normality && type !== null ? allNormal : null}
         successText="All distributions meet normality"
         failText="Some distributions fail normality"
-        label="Normality"
+        label="μ"
       />
 
       <StatusTag
         condition={type !== null ? assumptions.equalVariance : null}
         successText="Homogeneous variances"
         failText="Heterogeneous variances"
-        label="Equal σ²"
+        label="σ²"
       />
 
       <TypeTag type={type} />

@@ -1,0 +1,15 @@
+.helpModal {
+  max-width: calc(100vw - 24px);
+}
+
+.helpModal :global(.ant-modal-content) {
+  width: fit-content;
+  max-width: calc(100vw - 24px);
+}
+
+.helpModal :global(.ant-modal-body) {
+  max-height: min(75vh, 820px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-inline-end: var(--space-1);
+}

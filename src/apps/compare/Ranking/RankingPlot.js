@@ -85,7 +85,7 @@ export default class RankingPlot {
         d.pValue < vis.config.pValue
     );
 
-    vis.descriptions = store.getState().cantab.present.descriptions;
+    vis.descriptions = store.getState().main.descriptions;
 
     vis.data.sort((b, a) => {
       return vis.config.desc

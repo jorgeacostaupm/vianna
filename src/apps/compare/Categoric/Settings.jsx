@@ -1,6 +1,7 @@
 import React from "react";
 import { Typography, Radio, Select, Switch } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 
 const { Text } = Typography;
 
@@ -61,6 +62,7 @@ export default function Settings({ config, setConfig }) {
             onChange={(v) => update("showGrid", v)}
           />
         </div>
+        <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
 
       <div className={panelStyles.section}>

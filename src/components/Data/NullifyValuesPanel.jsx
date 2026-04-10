@@ -4,19 +4,20 @@ import { Card, Input, Space, Tag, Typography } from "antd";
 import { EditOutlined } from "@ant-design/icons";
 
 import ColoredButton from "@/components/ui/ColoredButton";
-import { replaceValuesWithNull } from "@/store/async/dataAsyncReducers";
-import { notifyError, notifySuccess } from "@/utils/notifications";
+import { replaceValuesWithNull } from "@/store/features/dataframe";
+import { notifyError, notifySuccess } from "@/notifications";
 
 const { Text } = Typography;
 const VALUE_SEPARATOR_REGEX = /[\n;]/;
 
-const parseNullifyValues = (rawInput) =>
-  [...new Set(
+const parseNullifyValues = (rawInput) => [
+  ...new Set(
     String(rawInput ?? "")
       .split(VALUE_SEPARATOR_REGEX)
       .map((value) => value.trim())
       .filter(Boolean),
-  )];
+  ),
+];
 
 const normalizeComparableValue = (value) => String(value ?? "").trim();
 const isSameValue = (rowValue, candidate) => {
@@ -24,7 +25,8 @@ const isSameValue = (rowValue, candidate) => {
   const normalizedRowValue = normalizeComparableValue(rowValue);
   const normalizedCandidate = normalizeComparableValue(candidate);
   return (
-    normalizedRowValue === normalizedCandidate || rowValue == normalizedCandidate
+    normalizedRowValue === normalizedCandidate ||
+    rowValue == normalizedCandidate
   );
 };
 
@@ -33,13 +35,17 @@ export default function NullifyValuesPanel() {
   const [inputValue, setInputValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const nullifiedValues = useSelector(
-    (state) => state.dataframe.present.nullifiedValues,
+    (state) => state.dataframe.nullifiedValues,
   );
-  const dataframe = useSelector((state) => state.dataframe.present.dataframe) || [];
+  const dataframe =
+    useSelector((state) => state.dataframe.dataframe) || [];
   const quarantineData =
-    useSelector((state) => state.cantab.present.quarantineData) || [];
+    useSelector((state) => state.main.quarantineData) || [];
 
-  const nullifyValues = useMemo(() => parseNullifyValues(inputValue), [inputValue]);
+  const nullifyValues = useMemo(
+    () => parseNullifyValues(inputValue),
+    [inputValue],
+  );
   const hasInputValues = nullifyValues.length > 0;
   const matchesCount = useMemo(() => {
     if (!hasInputValues) return 0;
@@ -47,8 +53,8 @@ export default function NullifyValuesPanel() {
     const countMatches = (rows) =>
       rows.reduce((acc, row) => {
         if (!row || typeof row !== "object") return acc;
-        const rowMatches = Object.values(row).filter(
-          (value) => nullifyValues.some((candidate) => isSameValue(value, candidate)),
+        const rowMatches = Object.values(row).filter((value) =>
+          nullifyValues.some((candidate) => isSameValue(value, candidate)),
         ).length;
         return acc + rowMatches;
       }, 0);

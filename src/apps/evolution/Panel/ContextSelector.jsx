@@ -5,11 +5,8 @@ import { Select } from "antd";
 import {
   setGroupVar as setEvolutionGroupVar,
   setTimeVar as setEvolutionTimeVar,
-} from "@/store/slices/evolutionSlice";
-import {
-  selectCategoricalVars,
-  selectNavioVars,
-} from "@/store/slices/cantabSlice";
+} from "@/store/features/evolution";
+import { selectCategoricalVars, selectNavioVars } from "@/store/features/main";
 import {
   DEFAULT_GROUP_VARIABLE,
   DEFAULT_TIMESTAMP_VARIABLE,
@@ -24,12 +21,13 @@ export default function ContextSelector() {
   const dispatch = useDispatch();
   const groupVar = useSelector((s) => s.evolution.groupVar);
   const timeVar = useSelector((s) => s.evolution.timeVar);
-  const idVar = useSelector((s) => s.cantab.present.idVar);
+  const idVar = useSelector((s) => s.main.idVar);
   const categoricalVars = useSelector(selectCategoricalVars);
   const navioVars = useSelector(selectNavioVars);
 
   useEffect(() => {
     if (!categoricalVars.length) return;
+    if (groupVar == null) return;
     if (categoricalVars.includes(groupVar)) return;
     const fallback = categoricalVars.includes(DEFAULT_GROUP_VARIABLE)
       ? DEFAULT_GROUP_VARIABLE
@@ -39,6 +37,7 @@ export default function ContextSelector() {
 
   useEffect(() => {
     if (!navioVars.length) return;
+    if (timeVar == null) return;
     if (navioVars.includes(timeVar)) return;
     const fallback = navioVars.includes(DEFAULT_TIMESTAMP_VARIABLE)
       ? DEFAULT_TIMESTAMP_VARIABLE
@@ -56,13 +55,14 @@ export default function ContextSelector() {
         <span className={styles.selectorLabel}>Group variable</span>
         <Select
           size="small"
-          value={groupVar}
-          onChange={(v) => dispatch(setEvolutionGroupVar(v))}
-          placeholder="Select group variable"
+          value={groupVar ?? undefined}
+          onChange={(v) => dispatch(setEvolutionGroupVar(v ?? null))}
+          placeholder="Select variable"
           showSearch={true}
           filterOption={filterOption}
           optionFilterProp="children"
           notFoundContent="No variables found"
+          allowClear={true}
         >
           {categoricalVars.map((v) => (
             <Option key={v} value={v}>
@@ -76,13 +76,14 @@ export default function ContextSelector() {
         <span className={styles.selectorLabel}>Time variable</span>
         <Select
           size="small"
-          value={timeVar}
-          onChange={(v) => dispatch(setEvolutionTimeVar(v))}
+          value={timeVar ?? undefined}
+          onChange={(v) => dispatch(setEvolutionTimeVar(v ?? null))}
           placeholder="Select time variable"
           showSearch={true}
           filterOption={filterOption}
           optionFilterProp="children"
           notFoundContent="No variables found"
+          allowClear={true}
         >
           {navioVars.map((v) => (
             <Option key={v} value={v}>
@@ -94,6 +95,7 @@ export default function ContextSelector() {
       </div>
 
       <AnalysisContextStats
+        app="evolution"
         groupVar={groupVar}
         timeVar={timeVar}
         idVar={idVar}

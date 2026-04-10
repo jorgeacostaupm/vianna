@@ -6,9 +6,7 @@ import { CopyOutlined } from "@ant-design/icons";
 import { copyClipboard } from "@/utils/functions";
 import { get_parser } from "../logic/parser";
 import buildAggregation from "../logic/formulaGenerator";
-import { QuestionCircleOutlined } from "@ant-design/icons";
-import PopoverButton from "@/components/ui/PopoverButton";
-import CustomFormulaHelp from "./CustomFormulaHelp";
+import CustomFormulaHelpModalButton from "./CustomFormulaHelpModalButton";
 import styles from "./DropArea.module.css";
 
 const { Text } = Typography;
@@ -96,12 +94,7 @@ const CustomAggregate = ({ nodes, formula, save }) => {
           }}
         >
           <Text strong>Aggregation Formula:</Text>
-          <PopoverButton
-            title={"Custom Operations Help"}
-            content={<CustomFormulaHelp />}
-            placement="left"
-            icon={<QuestionCircleOutlined></QuestionCircleOutlined>}
-          ></PopoverButton>
+          <CustomFormulaHelpModalButton />
         </div>
         <textarea
           ref={textRef}

@@ -12,7 +12,7 @@ import LinkButton from "@/components/ui/ButtonLink";
 import DataManagementButton from "@/components/Data/Buttons/DataManagementButton";
 
 export default function AppsButtons() {
-  const dt = useSelector((state) => state.dataframe.present.dataframe);
+  const dt = useSelector((state) => state.dataframe.dataframe);
 
   return (
     <div style={{ display: "flex", gap: "10px" }}>

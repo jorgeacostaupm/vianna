@@ -125,7 +125,7 @@ export default class D3HierarchyEditor {
     if (options.orientation) this.setOrientation(options.orientation);
     if (options.linkStyle) this.setLinkStyle(options.linkStyle);
 
-    this.descriptions = store.getState().cantab.present.descriptions;
+    this.descriptions = store.getState().main.descriptions;
     this.dims = container.getBoundingClientRect();
 
     this.width = this.dims.width;
@@ -159,12 +159,6 @@ export default class D3HierarchyEditor {
       });
 
     this.brush = this.getBrush();
-
-    d3.select(window).on("keydown.hierarchy-editor", (event) => {
-      if (event.key === "b" || event.key === "B") {
-        this.setSelectionMode("brush");
-      }
-    });
 
     this.main = this.svg.select("g#main-container").node()
       ? this.svg.select("g#main-container")

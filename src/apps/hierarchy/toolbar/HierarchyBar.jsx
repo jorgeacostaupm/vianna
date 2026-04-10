@@ -1,13 +1,21 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { DownloadOutlined, SettingOutlined } from "@ant-design/icons";
+import {
+  CheckSquareOutlined,
+  DownloadOutlined,
+  DragOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 
 import LegendButton from "./LegendButton";
 import { Bar } from "@/components/charts/ChartBar";
-import { hierarchySelector } from "@/store/selectors/metaSelectors";
+import { hierarchySelector } from "@/store/features/metadata";
 import BarButton from "@/components/ui/BarButton";
 import PopoverButton from "@/components/ui/PopoverButton";
 import HierarchyViewSettings from "../tools/HierarchyViewSettings";
+import buttonStyles from "@/styles/Buttons.module.css";
+import styles from "@/styles/ChartBar.module.css";
+import UndoRedoButtons from "@/components/Buttons/UndoRedoButtons";
 
 function downloadHierarchy(hierarchy) {
   const meta = JSON.stringify(hierarchy, null, 2);
@@ -26,18 +34,52 @@ export default function HierarchyBar({
   onLinkStyleChange,
   viewConfig,
   onViewConfigChange,
+  selectionMode = "none",
+  onSelectionModeChange,
+  hasNodes = false,
 }) {
   const hierarchy = useSelector(hierarchySelector);
   const hierarchyFilename = useSelector((state) => state.metadata.filename);
   const hierarchyTitle = hierarchyFilename
     ? `Hierarchy Editor · ${hierarchyFilename}`
     : "Hierarchy Editor";
+  const toggleSelectionMode = (mode) => {
+    const nextMode = selectionMode === mode ? "none" : mode;
+    onSelectionModeChange?.(nextMode);
+  };
 
   return (
     <>
       <Bar title={hierarchyTitle} drag={false}>
-        {/* <UndoRedoButtons></UndoRedoButtons>
-        <div className={styles.separator} /> */}
+        <UndoRedoButtons />
+        <div className={styles.separator} />
+
+        <BarButton
+          title="Brush selection (B)"
+          icon={<DragOutlined />}
+          onClick={() => toggleSelectionMode("brush")}
+          disabled={!hasNodes}
+          ariaLabel="Brush selection mode"
+          className={
+            selectionMode === "brush"
+              ? buttonStyles.barButton
+              : buttonStyles.greyBarButton
+          }
+        />
+        <BarButton
+          title="Click selection (C)"
+          icon={<CheckSquareOutlined />}
+          onClick={() => toggleSelectionMode("click")}
+          disabled={!hasNodes}
+          ariaLabel="Click selection mode"
+          className={
+            selectionMode === "click"
+              ? buttonStyles.barButton
+              : buttonStyles.greyBarButton
+          }
+        />
+
+        <div className={styles.separator} />
 
         <LegendButton />
 
@@ -67,6 +109,7 @@ export default function HierarchyBar({
 
         <PopoverButton
           icon={<SettingOutlined />}
+          title={"Settings"}
           content={
             <HierarchyViewSettings
               orientation={orientation}

@@ -5,6 +5,57 @@ import BarButton from "./BarButton";
 import styles from "./DownloadButton.module.css";
 import { getViewOverlayPosition } from "./popupPosition";
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+const SVG_STYLE_PROPERTIES = [
+  "display",
+  "visibility",
+  "opacity",
+  "overflow",
+  "color",
+  "fill",
+  "fill-opacity",
+  "fill-rule",
+  "stroke",
+  "stroke-opacity",
+  "stroke-width",
+  "stroke-linecap",
+  "stroke-linejoin",
+  "stroke-miterlimit",
+  "stroke-dasharray",
+  "stroke-dashoffset",
+  "paint-order",
+  "vector-effect",
+  "shape-rendering",
+  "rx",
+  "ry",
+  "font-family",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "font-variant",
+  "font-variant-numeric",
+  "letter-spacing",
+  "word-spacing",
+  "text-anchor",
+  "dominant-baseline",
+  "alignment-baseline",
+  "white-space",
+  "text-decoration",
+  "marker-start",
+  "marker-mid",
+  "marker-end",
+  "mix-blend-mode",
+  "isolation",
+  "filter",
+  "clip-path",
+  "clip-rule",
+  "mask",
+  "pointer-events",
+  "transform",
+  "transform-origin",
+  "transform-box",
+];
+
 const downloadFormats = [
   { key: "png", label: "PNG (.png)" },
   { key: "svg", label: "SVG (.svg)" },
@@ -96,48 +147,24 @@ function handleDownload(filename, svgIds, format) {
       return;
     }
 
-    const combinedSvg = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "svg"
-    );
-    combinedSvg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-    combinedSvg.setAttribute("width", totalWidth);
-    combinedSvg.setAttribute("height", maxHeight);
+    const combinedSvg = document.createElementNS(SVG_NS, "svg");
+    combinedSvg.setAttribute("xmlns", SVG_NS);
+    combinedSvg.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    combinedSvg.setAttribute("width", String(totalWidth));
+    combinedSvg.setAttribute("height", String(maxHeight));
+    combinedSvg.setAttribute("viewBox", `0 0 ${totalWidth} ${maxHeight}`);
 
     let currentX = 0;
 
     for (const { svg, width, height } of svgs) {
-      const clone = svg.cloneNode(true);
+      const clone = cloneSvgWithInlineStyles(svg, width, height);
       const offsetY = (maxHeight - height) / 2;
-
-      const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-      g.setAttribute("transform", `translate(${currentX}, ${offsetY})`);
-
-      g.appendChild(clone);
-      combinedSvg.appendChild(g);
+      clone.setAttribute("x", String(currentX));
+      clone.setAttribute("y", String(offsetY));
+      combinedSvg.appendChild(clone);
 
       currentX += width;
     }
-
-    const styleEl = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "style"
-    );
-
-    const cssRules = Array.from(document.styleSheets)
-      .map((sheet) => {
-        try {
-          return Array.from(sheet.cssRules)
-            .map((rule) => rule.cssText)
-            .join("\n");
-        } catch {
-          return "";
-        }
-      })
-      .join("\n");
-
-    styleEl.textContent = cssRules;
-    combinedSvg.insertBefore(styleEl, combinedSvg.firstChild);
 
     const serialized = new XMLSerializer().serializeToString(combinedSvg);
 
@@ -207,6 +234,56 @@ function handleDownload(filename, svgIds, format) {
     image.src = svgUrl;
   } catch (err) {
     console.error("Download error:", err);
+  }
+}
+
+function cloneSvgWithInlineStyles(sourceSvg, width, height) {
+  const clone = sourceSvg.cloneNode(true);
+
+  applyComputedStylesRecursively(sourceSvg, clone);
+
+  clone.setAttribute("width", String(width));
+  clone.setAttribute("height", String(height));
+  if (!clone.getAttribute("viewBox")) {
+    clone.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  }
+
+  return clone;
+}
+
+function applyComputedStylesRecursively(sourceNode, targetNode) {
+  if (!(sourceNode instanceof Element) || !(targetNode instanceof Element)) {
+    return;
+  }
+
+  const computed = window.getComputedStyle(sourceNode);
+  for (const property of SVG_STYLE_PROPERTIES) {
+    const value = computed.getPropertyValue(property);
+    if (!value) continue;
+
+    const normalizedValue = value.trim();
+    if (!normalizedValue) continue;
+    targetNode.style.setProperty(property, normalizedValue);
+  }
+
+  // Some SVG viewers ignore geometry properties (e.g. rx/ry) in inline CSS.
+  // Promote them to attributes so exported files keep rounded corners.
+  if (targetNode instanceof SVGRectElement) {
+    const rx = computed.getPropertyValue("rx")?.trim();
+    const ry = computed.getPropertyValue("ry")?.trim();
+    if (rx && rx !== "auto" && rx !== "none" && rx !== "0px" && rx !== "0") {
+      targetNode.setAttribute("rx", rx);
+    }
+    if (ry && ry !== "auto" && ry !== "none" && ry !== "0px" && ry !== "0") {
+      targetNode.setAttribute("ry", ry);
+    }
+  }
+
+  const sourceChildren = sourceNode.children;
+  const targetChildren = targetNode.children;
+  const childCount = Math.min(sourceChildren.length, targetChildren.length);
+  for (let i = 0; i < childCount; i += 1) {
+    applyComputedStylesRecursively(sourceChildren[i], targetChildren[i]);
   }
 }
 

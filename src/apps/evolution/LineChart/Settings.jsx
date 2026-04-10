@@ -11,6 +11,7 @@ import {
 import { InfoCircleOutlined } from "@ant-design/icons";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import evolutionTests from "@/utils/evolution_tests";
+import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 
 const { Text } = Typography;
 
@@ -237,8 +238,7 @@ export default function Settings({
             </div>
             {interactionDisabled && (
               <Text className={panelStyles.helper}>
-                Interaction is available only when a group variable is
-                selected.
+                Interaction is available only when a group variable is selected.
               </Text>
             )}
 
@@ -361,7 +361,8 @@ export default function Settings({
             onChange={(v) => update("showIncomplete", v)}
           />
         </div>
-        <div className={panelStyles.row}>
+        <AxisLabelSizeControl config={config} setConfig={setConfig} />
+        {/*         <div className={panelStyles.row}>
           <span className={panelStyles.labelInline}>
             <Text className={panelStyles.label}>Ratio Mode</Text>
             <Popover
@@ -383,7 +384,7 @@ export default function Settings({
             checked={Boolean(forceDiscreteAggregatedMode)}
             onChange={(v) => update("forceDiscreteAggregatedMode", v)}
           />
-        </div>
+        </div> */}
         {Boolean(forceDiscreteAggregatedMode) && (
           <>
             <div className={panelStyles.rowStack}>

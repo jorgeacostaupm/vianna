@@ -7,7 +7,7 @@ import {
 } from "@/utils/groupColors";
 
 export default function useGroupColorDomain(groupVar, groups = []) {
-  const dataframe = useSelector((s) => s.dataframe.present.dataframe);
+  const dataframe = useSelector((s) => s.dataframe.dataframe);
 
   const visibleGroups = useMemo(() => normalizeGroupList(groups), [groups]);
 

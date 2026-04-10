@@ -69,6 +69,7 @@ export default function ChartBar({
         <PopoverButton
           content={settings}
           icon={<SettingOutlined />}
+          title={"Settings"}
           panelWidth={400}
         />
         {testsSettings && (

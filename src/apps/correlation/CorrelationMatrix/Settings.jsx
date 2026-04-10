@@ -8,13 +8,14 @@ import {
 } from "@/apps/correlation/CorrelationMatrix/constants";
 import { EditOutlined } from "@ant-design/icons";
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 
 const { Text } = Typography;
 
 export default function Settings({ config, setConfig, params, setParams }) {
-  const data = useSelector((s) => s.dataframe.present.selection);
+  const data = useSelector((s) => s.dataframe.selection);
   const navioColumns = useSelector(
-    (state) => state.dataframe.present.navioColumns || [],
+    (state) => state.dataframe.navioColumns || [],
   );
 
   const onVariablesChange = (variables) => {
@@ -143,6 +144,7 @@ export default function Settings({ config, setConfig, params, setParams }) {
             className={panelStyles.control}
           />
         </div>
+        <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
     </div>
   );

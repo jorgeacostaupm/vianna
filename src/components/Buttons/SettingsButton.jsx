@@ -76,6 +76,7 @@ export default function SettingsButton({ config, updateConfig }) {
     <PopoverButton
       content={<SettingsContent config={config} updateConfig={updateConfig} />}
       icon={<SettingOutlined />}
+      title={"Settings"}
       panelWidth={420}
     />
   );

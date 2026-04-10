@@ -2,20 +2,17 @@ import React from "react";
 
 import HierarchyEditor from "./editor/HierarchyEditor";
 import { Apps, APP_NAME, HIER_DESC } from "@/utils/Constants";
-import { setInit } from "@/store/slices/metaSlice";
+import { setInit } from "@/store/features/metadata";
 import useRootStyles from "@/hooks/useRootStyles";
-import useNotification from "@/hooks/useNotification";
 import AppsButtons from "./AppsButtons";
 import MainSidebar from "../main/MainSidebar";
 import SingleViewAppLayout from "@/components/ui/SingleViewAppLayout";
 
 export default function HierarchyApp() {
   useRootStyles(setInit, APP_NAME + " · " + Apps.HIERARCHY);
-  const holder = useNotification();
 
   return (
     <>
-      {holder}
       <SingleViewAppLayout
         sidebar={
           <MainSidebar

@@ -2,12 +2,13 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { Select, Slider, Switch, Typography } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 
 const { Text } = Typography;
 
 export default function Settings({ config, setConfig }) {
   const navioColumns = useSelector(
-    (state) => state.dataframe.present.navioColumns || []
+    (state) => state.dataframe.navioColumns || []
   );
 
   const onVariablesChange = (values) => {
@@ -84,6 +85,7 @@ export default function Settings({ config, setConfig }) {
             }
           />
         </div>
+        <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
     </div>
   );
