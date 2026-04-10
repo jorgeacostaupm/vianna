@@ -61,12 +61,13 @@ function Hierarchy({
   const containerRef = useRef(null);
 
   const dimensions = useResizeObserver(containerRef);
-  const hierarchyRevision = useSelector((state) => state.metadata.hierarchyRevision);
+  const hierarchyRevision = useSelector(
+    (state) => state.metadata.hierarchyRevision,
+  );
 
-  // Rebuild the tree only when hierarchy semantics change.
   const treeData = useMemo(
     () => generateTree(attributes, 0),
-    [hierarchyRevision, attributes],
+    [hierarchyRevision],
   );
 
   // Inicialización / actualización del editor
@@ -161,3 +162,45 @@ function Hierarchy({
     </>
   );
 }
+
+/* function Hierarchy({ attributes }) {
+  const dispatch = useDispatch();
+
+  const hierarchyRevision = useSelector(
+    (state) => state.metadata.hierarchyRevision,
+  );
+  const editorRef = useRef(null);
+  const containerRef = useRef(null);
+
+  const dimensions = useResizeObserver(containerRef);
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.onResize(dimensions);
+    }
+  }, [dimensions]);
+
+  useEffect(() => {
+    const treeData = generateTree(attributes, 0);
+
+    if (!editorRef.current) {
+      editorRef.current = new D3HierarchyEditor(
+        containerRef.current,
+        treeData,
+        dispatch
+      );
+    } else {
+      editorRef.current.update(treeData);
+    }
+  }, [hierarchyRevision, dispatch]);
+
+  return (
+    <>
+      <div style={{ textAlign: "initial" }} className={styles.chartContainer}>
+        <svg ref={containerRef} className={styles.chartSvg} />
+      </div>
+      <HierarchyEditorContextMenu editor={editorRef.current} />
+      <NodeMenu></NodeMenu>
+      <ViewMenu></ViewMenu>
+    </>
+  );
+} */

@@ -362,8 +362,8 @@ function navio(selection, _h) {
 
     // TODO: Try a more localized selection
     d3.select("body")
-      .on("keydown.navio", changeCursorOnKey)
-      .on("keyup.navio", changeCursorOnKey);
+      .on("keydown", changeCursorOnKey)
+      .on("keyup", changeCursorOnKey);
 
     svg.append("g").attr("class", "attribs");
 
@@ -865,7 +865,7 @@ function navio(selection, _h) {
         (f) => f.type === "negativeValue" || f.type === "negativeRange"
       ),
       posFilters = filtersByLevel[level].filter(
-        (f) => f.type !== "negativeValue" && f.type !== "negativeRange"
+        (f) => f.type !== "negativeValue" || f.type !== "negativeRange"
       );
 
     let filteredData = _dataIs[level].filter((d) => {
@@ -1412,13 +1412,9 @@ function navio(selection, _h) {
       .attr("x", 0)
       .style("cursor", "not-allowed")
       .text((f) => "Ⓧ " + f.toStr())
-      .on("click pointerup", (event, f) => {
-        const levelFilters = filtersByLevel[f.level] || [];
-        const filterIndex = levelFilters.indexOf(f);
-        if (DEBUG) console.log("Click remove filter", filterIndex, f);
-        if (filterIndex >= 0) {
-          levelFilters.splice(filterIndex, 1);
-        }
+      .on("click pointerup", (event, f, i) => {
+        if (DEBUG) console.log("Click remove filter", i, f);
+        filtersByLevel[f.level].splice(i, 1);
 
         applyFiltersAndUpdate(f.level);
       });
@@ -1475,13 +1471,9 @@ function navio(selection, _h) {
       // .attr("x", 0)
       .style("cursor", "not-allowed")
       .text((f) => "Ⓧ " + f.toStr())
-      .on("click pointerup", (event, f) => {
-        const levelFilters = filtersByLevel[f.level] || [];
-        const filterIndex = levelFilters.indexOf(f);
-        if (DEBUG) console.log("Click remove filter", filterIndex, f);
-        if (filterIndex >= 0) {
-          levelFilters.splice(filterIndex, 1);
-        }
+      .on("click pointerup", (event, f, i) => {
+        if (DEBUG) console.log("Click remove filter", i, f);
+        filtersByLevel[f.level].splice(i, 1);
 
         applyFiltersAndUpdate(f.level);
       });
@@ -2507,8 +2499,7 @@ function navio(selection, _h) {
   // Exports a lightweight UI state snapshot that the host app can store externally
   nv.exportUiState = function () {
     return {
-      schemaVersion: 1,
-      version: 1, // Backward-compatible key.
+      version: 1,
       nestedFilters: nv.nestedFilters,
       attribOrder: attribsOrdered.map((attr) => getAttribName(attr)),
       sortHistoryByLevel: dSortHistoryByLevel.map((levelHistory) =>
@@ -2535,8 +2526,6 @@ function navio(selection, _h) {
   // Imports a lightweight UI state and optionally applies it immediately
   nv.importUiState = function (state, opts = {}) {
     if (!state || typeof state !== "object") return nv;
-    const schemaVersion = Number(state.schemaVersion ?? state.version ?? 1);
-    if (!Number.isFinite(schemaVersion) || schemaVersion > 1) return nv;
 
     const shouldApply = opts.shouldApply !== undefined ? opts.shouldApply : true;
     const restoreSort =

@@ -206,7 +206,7 @@ const initialState = {
   recoverableOperations: [],
   assignmentUndoStack: [],
   assignmentRedoStack: [],
-  hierarchyRevision: 0,
+  hierarchyRevision: -1,
 };
 
 export const metaSlice = createSlice({
@@ -223,7 +223,7 @@ export const metaSlice = createSlice({
       state.filename = filename;
       state.loadingHierarchy = false;
       clearAssignmentHistory(state);
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision = state.hierarchyRevision === 0 ? 1 : 0;
     }),
 
     changeOrder: create.reducer((state, action) => {
@@ -249,7 +249,7 @@ export const metaSlice = createSlice({
       parentNode.related.splice(oldIndex, 1);
       parentNode.related.splice(newIndex, 0, sourceID);
 
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision += 0.5;
     }),
 
     setDescriptions: create.reducer((state, action) => {
@@ -260,7 +260,7 @@ export const metaSlice = createSlice({
         attr.desc = desc ? desc : "";
         return attr;
       });
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision = 0;
     }),
 
     setNodeOverviewAccess: create.reducer((state, action) => {
@@ -308,7 +308,7 @@ export const metaSlice = createSlice({
       if (!applied) return;
 
       state.assignmentRedoStack.push(historyEntry);
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision += 0.5;
     }),
 
     redoAssignmentChange: create.reducer((state) => {
@@ -324,7 +324,7 @@ export const metaSlice = createSlice({
       if (state.assignmentUndoStack.length > MAX_ASSIGNMENT_HISTORY) {
         state.assignmentUndoStack.shift();
       }
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision += 0.5;
     }),
 
     aggregateSelectedNodes: create.reducer((state, action) => {
@@ -394,7 +394,7 @@ export const metaSlice = createSlice({
         }
       });
 
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision += 0.5;
     }),
   }),
   extraReducers: (builder) => {
@@ -422,12 +422,12 @@ export const metaSlice = createSlice({
         if (moves.length === 0) return;
 
         pushAssignmentHistoryEntry(state, moves);
-        state.hierarchyRevision += 1;
+        state.hierarchyRevision += 0.5;
       })
       .addCase(changeRelationship.rejected, (state, action) => {
         const isSilent = Boolean(action.meta?.arg?.silent);
         if (isSilent) return;
-        state.error = action.payload || action.error || null;
+        state.hierarchyRevision += 0.5;
       });
 
     builder
@@ -461,12 +461,12 @@ export const metaSlice = createSlice({
         if (moves.length === 0) return;
 
         pushAssignmentHistoryEntry(state, moves);
-        state.hierarchyRevision += 1;
+        state.hierarchyRevision += 0.5;
       })
       .addCase(changeRelationshipBatch.rejected, (state, action) => {
         const isSilent = Boolean(action.meta?.arg?.silent);
         if (isSilent) return;
-        state.error = action.payload || action.error || null;
+        state.hierarchyRevision += 0.5;
       });
 
     builder
@@ -492,7 +492,7 @@ export const metaSlice = createSlice({
         state.filename = filename;
         state.loadingHierarchy = false;
         clearAssignmentHistory(state);
-        state.hierarchyRevision += 1;
+        state.hierarchyRevision = state.hierarchyRevision === 0 ? 1 : 0;
       })
       .addCase(updateHierarchy.rejected, (state, action) => {
         state.loadingHierarchy = false;
@@ -508,7 +508,7 @@ export const metaSlice = createSlice({
         state.attributes = attributes;
         state.descriptionsFilename = filename;
         state.loadingDescriptions = false;
-        state.hierarchyRevision += 1;
+        state.hierarchyRevision = state.hierarchyRevision === 0 ? 1 : 0;
       })
       .addCase(updateDescriptions.rejected, (state, action) => {
         state.loadingDescriptions = false;
@@ -518,13 +518,13 @@ export const metaSlice = createSlice({
     builder.addCase(buildMetaFromVariableTypes.fulfilled, (state, action) => {
       state.attributes = action.payload;
       clearAssignmentHistory(state);
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision = state.hierarchyRevision === 0 ? 1 : 0;
     });
 
     builder.addCase(createToMeta.fulfilled, (state, action) => {
       state.attributes = action.payload;
       clearAssignmentHistory(state);
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision = Math.min(state.hierarchyRevision - 1, 0);
     });
 
     builder.addCase(addAttribute.fulfilled, (state, action) => {
@@ -570,7 +570,7 @@ export const metaSlice = createSlice({
       state.attributes[parentPosition].isShown = true;
 
       state.attributes[parentPosition].related.push(id);
-      state.hierarchyRevision += 1;
+      state.hierarchyRevision += info ? 0 : 1;
     });
 
     builder
@@ -620,7 +620,7 @@ export const metaSlice = createSlice({
           (att) => att.id !== attributeID
         );
 
-        state.hierarchyRevision += 1;
+        state.hierarchyRevision += recover ? 0.5 : -0.5;
       });
 
     builder
@@ -643,7 +643,7 @@ export const metaSlice = createSlice({
           ...state.attributes[idx],
           ...node,
         };
-        state.hierarchyRevision += 1;
+        state.hierarchyRevision += recover != null || recover ? 0.5 : -0.5;
       });
 
     builder.addCase(applyOperation.fulfilled, (state, action) => {

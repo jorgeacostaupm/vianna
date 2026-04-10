@@ -13,7 +13,7 @@ export default function Explorer() {
   const config = useSelector((state) => state.dataframe.config);
   const selection = useSelector((state) => state.dataframe.selection);
   const navioUiState = useSelector((state) => state.dataframe.navioUiState);
-  const navioResetEpoch = useSelector((state) => state.dataframe.navioResetEpoch);
+  const version = useSelector((state) => state.dataframe.version);
   const filename = useSelector((state) => state.dataframe.filename);
   const title = filename ? `Overview · ${filename}` : "Overview";
 
@@ -29,7 +29,7 @@ export default function Explorer() {
           selection={selection}
           navioUiState={navioUiState}
           setNavioUiState={setNavioUiState}
-          resetToken={navioResetEpoch}
+          resetToken={version}
         />
       ) : (
         <NoDataPlaceholder></NoDataPlaceholder>

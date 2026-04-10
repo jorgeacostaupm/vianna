@@ -537,17 +537,9 @@ export function generateTree(attributes, nodeID) {
   };
 }
 
-export function getVisibleNodes(tree, attrs = []) {
-  const getNodeData = (node) => node?.data ?? node;
-
-  const hasNodeFormula = (nodeData) => {
-    const values = [
-      nodeData?.info?.formula,
-      nodeData?.formula,
-      nodeData?.info?.exec,
-      nodeData?.exec,
-    ];
-
+export function getVisibleNodes(tree) {
+  const hasFormula = (node) => {
+    const values = [node?.formula, node?.exec];
     return values.some((value) => {
       if (typeof value === "string") {
         return value.trim().length > 0;
@@ -556,55 +548,25 @@ export function getVisibleNodes(tree, attrs = []) {
     });
   };
 
-  const hasExecutableFormula = (nodeData) => {
-    const exec = nodeData?.info?.exec ?? nodeData?.exec;
-    if (typeof exec === "string") return exec.trim().length > 0;
-    return Boolean(exec);
-  };
-
-  const attrsByName = new Map(
-    (Array.isArray(attrs) ? attrs : [])
-      .filter((attr) => typeof attr?.name === "string")
-      .map((attr) => [attr.name, attr]),
-  );
-
-  const rootChildren = Array.isArray(tree?.children) ? tree.children : [];
-  const queue = [...rootChildren];
-  const visibleNames = [];
+  const filteredNodes = [];
+  const queue = [tree];
 
   while (queue.length > 0) {
     const node = queue.shift();
-    const nodeData = getNodeData(node);
-    if (!nodeData || nodeData.isActive === false) continue;
+    if (!node || node.isActive === false) continue;
 
-    const visibleChildren = Array.isArray(node?.children)
-      ? node.children.filter((child) => getNodeData(child)?.isActive !== false)
-      : [];
-    const isCollapsed = node?._children != null;
-    const shouldIncludeNode =
-      nodeData.id !== 0 &&
-      (nodeData.isShown === false || isCollapsed || visibleChildren.length === 0);
-
-    if (shouldIncludeNode) {
-      const completeAttr = attrsByName.get(nodeData.name) ?? nodeData;
-      if (!completeAttr || completeAttr.isActive === false) continue;
-
-      if (completeAttr.type === "aggregation") {
-        if (!hasNodeFormula(completeAttr) || !hasExecutableFormula(completeAttr)) {
-          continue;
-        }
-      }
-
-      visibleNames.push(nodeData.name);
-      continue;
-    }
-
-    if (visibleChildren.length > 0) {
-      queue.push(...visibleChildren);
+    if (
+      node.isShown === false ||
+      !node.children ||
+      node.children.length === 0
+    ) {
+      if (node.type !== "aggregation" || hasFormula(node))
+        filteredNodes.push(node.name);
+    } else if (node.children && node.children.length > 0) {
+      queue.push(...node.children.filter((child) => child?.isActive !== false));
     }
   }
-
-  return visibleNames;
+  return filteredNodes;
 }
 
 export function getEvolutionZscores(groups, timeVar) {

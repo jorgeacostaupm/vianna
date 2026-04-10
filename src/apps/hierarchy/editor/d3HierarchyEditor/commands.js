@@ -54,7 +54,7 @@ export function onChangeOrder(node, newIndex) {
 
 export function setNavioNodes() {
   const attrs = store.getState().metadata.attributes;
-  const columns = computeNavioColumnsFromHierarchy(this.root, attrs);
+  const columns = computeNavioColumnsFromHierarchy(attrs);
 
   const currentColumns = store.getState().dataframe.navioColumns || [];
   const hasSameColumns =

@@ -402,7 +402,7 @@ export const updateHierarchy = createAsyncThunk(
       const normalizedFilename = getFileName(filename);
       const normalizedHierarchy = setHierarchyRootName(hierarchy);
       const tree = generateTree(normalizedHierarchy, 0);
-      const navioColumns = getVisibleNodes(tree, normalizedHierarchy);
+      const navioColumns = getVisibleNodes(tree);
       dispatch(generateColumnBatch({ cols: normalizedHierarchy }));
       return {
         filename: normalizedFilename,

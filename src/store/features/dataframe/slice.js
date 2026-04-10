@@ -39,7 +39,7 @@ const initialState = {
 
   navioColumns: [],
   navioUiState: null,
-  navioResetEpoch: 0,
+  version: -1,
 
   config: {
     attrWidth: 30,
@@ -57,7 +57,7 @@ export const dataSlice = createSlice({
     setDataframe: (state, action) => {
       syncSelectionFromDataframe(state, action.payload);
       state.navioUiState = null;
-      state.navioResetEpoch += 1;
+      state.version += 1;
     },
 
     setNavioColumns: (state, action) => {
@@ -97,11 +97,9 @@ export const dataSlice = createSlice({
         .objects();
 
       const navColIdx = state.navioColumns.findIndex((n) => n === prevName);
-      if (navColIdx !== -1) {
-        state.navioColumns[navColIdx] = newName;
-      }
+      state.navioColumns[navColIdx] = newName;
 
-      state.navioResetEpoch += 1;
+      state.version += 1;
     },
 
     updateConfig: (state, action) => {
@@ -114,10 +112,9 @@ export const dataSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(updateHierarchy.fulfilled, (state, action) => {
-      const { hierarchy, navioColumns } = action.payload;
-      const filtered = Array.isArray(navioColumns)
-        ? navioColumns
-        : getVisibleNodes(generateTree(hierarchy, 0), hierarchy);
+      const { hierarchy } = action.payload;
+      const tree = generateTree(hierarchy, 0);
+      const filtered = getVisibleNodes(tree);
 
       state.navioColumns = filtered;
       const currentSelectionIds = Array.isArray(state.selection)
@@ -155,7 +152,7 @@ export const dataSlice = createSlice({
       state.dataframe = items;
       state.selection = selection;
       state.navioUiState = null;
-      state.navioResetEpoch += 1;
+      state.version = 0;
       state.nullifiedValues = [];
     });
 
@@ -166,27 +163,27 @@ export const dataSlice = createSlice({
     builder
       .addCase(generateColumn.fulfilled, (state, action) => {
         syncSelectionFromDataframe(state, action.payload.data);
-        state.navioResetEpoch += 1;
+        state.version += 1;
       })
       .addCase(generateColumn.rejected, () => {});
 
     builder.addCase(generateColumnBatch.fulfilled, (state, action) => {
       syncSelectionFromDataframe(state, action.payload.data);
-      state.navioResetEpoch += 1;
+      state.version += 1;
     });
 
     builder
       .addCase(generateEmpty.fulfilled, (state, action) => {
         syncSelectionFromDataframe(state, action.payload);
-        state.navioResetEpoch += 1;
+        state.version += 1;
       })
       .addCase(removeColumn.fulfilled, (state, action) => {
         syncSelectionFromDataframe(state, action.payload);
-        state.navioResetEpoch += 1;
+        state.version += 1;
       })
       .addCase(removeBatch.fulfilled, (state, action) => {
         syncSelectionFromDataframe(state, action.payload);
-        state.navioResetEpoch += 1;
+        state.version += 1;
       });
 
     builder.addCase(replaceValuesWithNull.fulfilled, (state, action) => {

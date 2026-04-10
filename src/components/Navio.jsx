@@ -12,6 +12,12 @@ const NAVIO_PASTEL_CATEGORICAL = [
   TABLEAU_YELLOW,
 ];
 
+const areColumnsEqual = (left, right) => {
+  if (!Array.isArray(left) || !Array.isArray(right)) return false;
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+};
+
 export default function Navio({
   data,
   config,
@@ -25,7 +31,6 @@ export default function Navio({
   const navioInstanceRef = useRef(null);
   const navioUiStateRef = useRef(navioUiState);
   const resetTokenRef = useRef(resetToken);
-
   const columns = useSelector(selectNavioColumns);
   const columnsRef = useRef(columns);
 
@@ -56,11 +61,10 @@ export default function Navio({
       resetTokenRef.current !== undefined &&
       resetTokenRef.current !== resetToken;
     resetTokenRef.current = resetToken;
-
-    const didColumnsChange = !areColumnsEqual(columnsRef.current, columns);
-    columnsRef.current = columns;
-
     const previousUiState = shouldResetState ? null : navioUiStateRef.current;
+    const previousColumns = columnsRef.current;
+    const hasExternalColumnOrderChange = !areColumnsEqual(previousColumns, columns);
+    columnsRef.current = columns;
 
     const nv = navio(navioRef.current, config.navioHeight);
     navioInstanceRef.current = nv;
@@ -80,7 +84,7 @@ export default function Navio({
     nv.updateCallback(handleSelection);
     nv.addAllAttribs(columns);
     restoreNavioState(nv, previousUiState, {
-      restoreAttribOrder: !didColumnsChange,
+      restoreAttribOrder: !hasExternalColumnOrderChange,
     });
     emitNavioUiState();
 
@@ -113,25 +117,13 @@ export default function Navio({
 function restoreNavioState(
   nv,
   previousUiState,
-  options = {},
+  { restoreAttribOrder = true } = {},
 ) {
   if (!previousUiState || typeof nv.importUiState !== "function") return;
 
   nv.importUiState(previousUiState, {
     shouldApply: true,
     restoreSort: true,
-    restoreAttribOrder:
-      options.restoreAttribOrder !== undefined
-        ? options.restoreAttribOrder
-        : true,
+    restoreAttribOrder,
   });
-}
-
-function areColumnsEqual(previousColumns = [], nextColumns = []) {
-  if (previousColumns === nextColumns) return true;
-  if (!Array.isArray(previousColumns) || !Array.isArray(nextColumns)) {
-    return false;
-  }
-  if (previousColumns.length !== nextColumns.length) return false;
-  return previousColumns.every((column, index) => column === nextColumns[index]);
 }
