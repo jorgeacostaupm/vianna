@@ -64,6 +64,7 @@ export default class D3HierarchyEditor {
   navioSyncTimeout = null;
   subscriptionHandlers = {};
   isNodeMenuOpen = false;
+  instantNextUpdate = false;
 
   getSelectedNodes = getSelectedNodes;
 
@@ -474,7 +475,9 @@ export default class D3HierarchyEditor {
     this.data = newData;
     this.root = d3.hierarchy(newData);
     this.initHierarchy();
-    this.drawHierarchy(this.root, false);
+    const instant = this.instantNextUpdate;
+    this.instantNextUpdate = false;
+    this.drawHierarchy(this.root, instant);
     this.setNavioNodes();
   }
 }

@@ -38,6 +38,7 @@ export function scheduleNavioSync(delay = 0) {
 
 export function onChangeOrder(node, newIndex) {
   this.svg.selectAll(".ghostCircle").attr("fill-opacity", 0);
+  this.instantNextUpdate = true;
 
   const sourceID = node.id;
   const parentID = node.parent.id;
@@ -89,6 +90,7 @@ export function onChangeHierarchy() {
     return;
   }
 
+  this.instantNextUpdate = true;
   this.dispatcher(
     changeRelationship({
       sourceID,

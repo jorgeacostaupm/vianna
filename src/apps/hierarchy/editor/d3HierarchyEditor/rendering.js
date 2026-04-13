@@ -40,6 +40,35 @@ const ensureNodeShape = (group, node) => {
   group.insert(expectedTag, ".ghostCircle").attr("class", "showCircle");
 };
 
+const canReceiveDrop = (graph, targetNode) => {
+  if (!targetNode || graph.nodesDragged.length === 0) return false;
+
+  return graph.nodesDragged.every((draggedNode) => {
+    if (!draggedNode) return false;
+    if (draggedNode.id === targetNode.id) return false;
+    return !draggedNode
+      .descendants?.()
+      ?.some((descendant) => descendant.id === targetNode.id);
+  });
+};
+
+const bindGhostDropEvents = (ghostCircles, graph) => {
+  ghostCircles
+    .on("mouseover", function (event, node) {
+      if (!canReceiveDrop(graph, node)) return;
+
+      graph.svg.selectAll(".ghostCircle").attr("fill-opacity", 0);
+      d3.select(this).attr("fill-opacity", 0.5);
+      graph.targetNode = node;
+    })
+    .on("mouseout", function (event, node) {
+      if (graph.targetNode?.id === node.id) {
+        graph.targetNode = null;
+      }
+      d3.select(this).attr("fill-opacity", 0);
+    });
+};
+
 export function drawHierarchy(source, instant = false) {
   const { root } = this;
   const siblingSpacing = this.viewConfig.nodeSize;
@@ -93,26 +122,7 @@ export function drawNodes(source, instant = false) {
           .attr("opacity", 0.2)
           .attr("fill", "var(--color-brand)")
           .attr("fill-opacity", 0)
-          .attr("pointer-events", "all")
-          .on("mouseover", function (event, node) {
-            if (
-              graph.nodesDragged.length > 0 &&
-              graph.nodesDragged.filter((n) => n.id !== node.id).length ===
-                graph.nodesDragged.length
-            ) {
-              d3.select(this).attr("fill-opacity", 0.5);
-              graph.targetNode = node;
-            }
-          })
-          .on("mouseout", function (event, node) {
-            if (
-              graph.nodesDragged.length &&
-              !graph.nodesDragged.some((n) => n.id === node.id)
-            ) {
-              graph.targetNode = null;
-            }
-            d3.select(this).attr("fill-opacity", 0);
-          });
+          .attr("pointer-events", "all");
 
         g.append("text")
           .attr("dy", "0.3em")
@@ -163,7 +173,11 @@ export function drawNodes(source, instant = false) {
     .attr("height", currentNodeHalfSize * 2)
     .attr("rx", currentCornerRadius);
   gnode.selectAll("path.showCircle").attr("d", this.getNodeTrianglePath());
-  gnode.selectAll(".ghostCircle").attr("r", this.getAssignRadius());
+  const ghostCircles = gnode
+    .select(".ghostCircle")
+    .attr("r", this.getAssignRadius())
+    .attr("pointer-events", "all");
+  bindGhostDropEvents(ghostCircles, graph);
 
   gnode
     .select(".showCircle")
