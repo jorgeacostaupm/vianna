@@ -17,6 +17,7 @@ export default function EvolutionApp() {
       panel={panel}
       panelPlacement="left"
       panelGridLayout={{ w: 3, minW: 3, maxW: 5, h: 7, minH: 4 }}
+      compactType="vertical"
     />
   );
 }

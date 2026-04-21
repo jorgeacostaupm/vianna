@@ -21,7 +21,11 @@ import {
 } from "@/components/notifications";
 
 import { transitionDuration } from "./constants";
-import { computeNavioColumnsFromHierarchy, getNodeLabel } from "./helpers";
+import {
+  canNodeAcceptChildren,
+  computeNavioColumnsFromHierarchy,
+  getNodeLabel,
+} from "./helpers";
 
 const { publish, subscribe, unsubscribe } = pubsub;
 
@@ -90,6 +94,16 @@ export function onChangeHierarchy() {
     return;
   }
 
+  if (!canNodeAcceptChildren(this.targetNode?.data)) {
+    notifyWarning({
+      message: "Cannot reassign node",
+      description:
+        "Target measure node has a valid formula and cannot receive child nodes.",
+    });
+    this.drawHierarchy(this.root, true);
+    return;
+  }
+
   this.instantNextUpdate = true;
   this.dispatcher(
     changeRelationship({
@@ -104,7 +118,19 @@ export function onChangeHierarchy() {
 export async function addSelectedNodes({ parent }) {
   const mods = this.getSelectedNodesToModify();
 
-  const targetNode = this.root?.descendants?.().find((node) => node.id === parent);
+  const targetNode = this.root
+    ?.descendants?.()
+    .find((node) => node.id === parent);
+
+  if (!canNodeAcceptChildren(targetNode?.data)) {
+    notifyWarning({
+      message: "Cannot add selected nodes",
+      description:
+        "Target measure node has a valid formula and cannot receive child nodes.",
+    });
+    return;
+  }
+
   const targetAncestorIds = new Set(
     targetNode?.ancestors?.().map((ancestor) => ancestor.id) || [],
   );

@@ -1,4 +1,4 @@
-export const transitionDuration = 800;
+export const transitionDuration = 500;
 export const dragClickThreshold = 5;
 export const nodeHalfSize = 12.5;
 export const nodeCornerRadius = 4;

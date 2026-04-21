@@ -381,10 +381,10 @@ export function onNodeClick(node) {
     return;
   }
 
-  /* if (this.isClickSelectionMode) {
+  if (this.isClickSelectionMode) {
     this.toggleNodeSelection(node.id);
     return;
-  } */
+  }
 
   if (node.children === undefined || node._children === undefined) {
     return;
@@ -403,7 +403,7 @@ export function onNodeClick(node) {
   );
 
   this.drawHierarchy(node);
-  this.scheduleNavioSync(transitionDuration + 16);
+  this.scheduleNavioSync(transitionDuration);
 }
 
 export function getBrush() {

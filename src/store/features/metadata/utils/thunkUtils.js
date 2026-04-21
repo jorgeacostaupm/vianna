@@ -176,6 +176,30 @@ export function isPartOfAggregation(attributeID, attributes) {
   throw new Error(`Parent not found for attributeID: ${attributeID}`);
 }
 
+export const hasValidAggregationFormula = (node) => {
+  if (node?.type !== "aggregation") return false;
+
+  const formulaCandidates = [
+    node?.info?.formula,
+    node?.formula,
+    node?.info?.exec,
+    node?.exec,
+  ];
+
+  return formulaCandidates.some((value) => {
+    if (typeof value === "string") {
+      return value.trim().length > 0;
+    }
+    return Boolean(value);
+  });
+};
+
+export const canNodeAcceptHierarchyChildren = (node) => {
+  if (!node) return false;
+  if (node.type !== "aggregation") return true;
+  return !hasValidAggregationFormula(node);
+};
+
 export function buildHierarchyIndexes(attributes = []) {
   const idToIndex = new Map();
   const parentIndexByChildId = new Map();

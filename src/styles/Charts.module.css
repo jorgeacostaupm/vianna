@@ -136,6 +136,8 @@
 
 .nodeInfoBody {
   color: var(--color-ink);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--space-4);
   gap: var(--space-3);

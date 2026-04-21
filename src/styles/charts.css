@@ -253,6 +253,14 @@ svg line.chart-grid-line,
     transform var(--transition-fast);
 }
 
+.circleG .collapsedHalo {
+  fill: none;
+  stroke: var(--color-ink-secondary);
+  stroke-width: 1.5px;
+  stroke-dasharray: 4 3;
+  opacity: 0.9;
+}
+
 .circleG:hover .showCircle {
   stroke: var(--color-ink);
   stroke-width: 2.5px;

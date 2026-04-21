@@ -16,6 +16,7 @@ import {
 import { convertColumnType } from "../dataframe/thunks";
 import {
   buildHierarchyIndexes,
+  canNodeAcceptHierarchyChildren,
   createNodeInfo,
   formatErrorMessage,
   getAggregation,
@@ -330,6 +331,13 @@ export const changeRelationship = createAsyncThunk(
       return rejectWithValue("Source or target not found");
     }
 
+    const targetNode = attributes[targetIdx];
+    if (!canNodeAcceptHierarchyChildren(targetNode)) {
+      return rejectWithValue(
+        "Target measure node has a valid formula and cannot receive child nodes"
+      );
+    }
+
     const isUsed = isPartOfAggregation(sourceID, attributes);
     if (isUsed)
       return rejectWithValue("Node is part of an existing aggregation");
@@ -357,6 +365,13 @@ export const changeRelationshipBatch = createAsyncThunk(
 
     if (targetIdx == null) {
       return rejectWithValue("Target not found");
+    }
+
+    const targetNode = attributes[targetIdx];
+    if (!canNodeAcceptHierarchyChildren(targetNode)) {
+      return rejectWithValue(
+        "Target measure node has a valid formula and cannot receive child nodes"
+      );
     }
 
     const uniqueSourceIDs = [...new Set(sourceIDs)];

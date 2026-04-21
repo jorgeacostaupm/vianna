@@ -93,6 +93,12 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
       .range(GROUP_CATEGORICAL_PALETTE);
     const x = d3.scaleLinear().domain([xMin, xMax]).range([0, chartWidth]);
     const y = d3.scaleLinear().range([chartHeight, 0]).domain([0, yMax]);
+    const densityArea = d3
+      .area()
+      .x((point) => x(point[0]))
+      .y0(() => y(0))
+      .y1((point) => y(point[1]))
+      .curve(d3.curveMonotoneX);
 
     let yGridG = null;
     if (showGrid) {
@@ -133,17 +139,7 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
       .attr("stroke-width", (d) => strokeWidthByGroup(d.group))
       .attr("opacity", DEFAULT_DISTRIBUTION_OPACITY)
       .classed("hide", (d) => hide.includes(d.group))
-      .attr("d", (d) =>
-        d3
-          .line()
-          .x(function (d) {
-            return x(d[0]);
-          })
-          .y(function (d) {
-            return y(d[1]);
-          })
-          .curve(d3.curveBasis)(d.value),
-      )
+      .attr("d", (d) => densityArea(d.value))
       .on("mouseover", function (e, d) {
         showStats(d.group);
         const values = (groupedValues.get(d.group) || []).map((pt) => +pt.value);
@@ -343,8 +339,10 @@ export function getNumericDomain(
     accessor = (d) => +d.value,
   } = {},
 ) {
+  const normalizedRange = normalizeRange(range);
+
   if (!data || data.length === 0) {
-    return [range[0], range[1]];
+    return normalizedRange;
   }
 
   const { min, max } = data.reduce(
@@ -360,15 +358,27 @@ export function getNumericDomain(
   );
 
   if (!Number.isFinite(min) || !Number.isFinite(max)) {
-    return [range[0], range[1]];
+    return normalizedRange;
   }
 
   const rangeV = max - min || 1;
   const plotMargin = margin * rangeV;
 
   return useCustomRange
-    ? [range[0], range[1]]
+    ? normalizedRange
     : [min - plotMargin, max + plotMargin];
+}
+
+function normalizeRange(range) {
+  const input = Array.isArray(range) ? range : [0, 1];
+  const a = Number(input[0]);
+  const b = Number(input[1]);
+  const safeA = Number.isFinite(a) ? a : 0;
+  const safeB = Number.isFinite(b) ? b : 1;
+  if (safeA === safeB) {
+    return [safeA - 0.5, safeB + 0.5];
+  }
+  return safeA < safeB ? [safeA, safeB] : [safeB, safeA];
 }
 
 export function computeEstimator(numPoints, min, max) {

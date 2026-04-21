@@ -241,5 +241,5 @@ export const welschAnova = {
       },
     };
   },
-  metric: { measure: "Omega Squared (SS-based)", symbol: "ω²" },
+  metric: { measure: "Omega Squared", symbol: "ω²" },
 };

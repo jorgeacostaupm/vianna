@@ -7,7 +7,9 @@ const dtypeColors = {
   root: "white",
 };
 
-const hasNodeFormula = (nodeData) => {
+export const hasValidAggregationFormula = (nodeData) => {
+  if (nodeData?.type !== "aggregation") return false;
+
   const formulaCandidates = [
     nodeData?.info?.formula,
     nodeData?.formula,
@@ -23,6 +25,12 @@ const hasNodeFormula = (nodeData) => {
   });
 };
 
+export const canNodeAcceptChildren = (nodeData) => {
+  if (!nodeData) return false;
+  if (nodeData.type !== "aggregation") return true;
+  return !hasValidAggregationFormula(nodeData);
+};
+
 export function colorNode(node) {
   if (node?.data?.isActive === false) {
     return "var(--color-surface-muted)";
@@ -30,7 +38,7 @@ export function colorNode(node) {
 
   const isRootNode = node?.data?.type === "root" || node?.data?.id === 0;
   const isAggregationWithoutFormula =
-    node?.data?.type === "aggregation" && !hasNodeFormula(node?.data);
+    node?.data?.type === "aggregation" && !hasValidAggregationFormula(node?.data);
 
   if (isRootNode || isAggregationWithoutFormula) {
     return dtypeColors.root;
@@ -99,7 +107,7 @@ export const computeNavioColumnsFromHierarchy = (attrs = []) => {
         ? node.info.exec.trim().length > 0
         : Boolean(node.info?.exec);
 
-    return hasExec && hasNodeFormula(node);
+    return hasExec && hasValidAggregationFormula(node);
   };
 
   const visitNode = (node) => {

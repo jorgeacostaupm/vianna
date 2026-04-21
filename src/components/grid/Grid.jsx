@@ -40,6 +40,7 @@ export default function Grid({
   panel,
   panelPlacement = "top",
   panelGridLayout,
+  compactType = null,
 }) {
   const normalizedRegistry = useMemo(
     () => normalizeViewRegistry(registry),
@@ -168,7 +169,7 @@ export default function Grid({
             isDraggable={true}
             isResizable={true}
             draggableHandle=".drag-handle"
-            compactType={null}
+            compactType={compactType}
             containerPadding={[10, 10]}
           >
             {hasLeftPanel && (

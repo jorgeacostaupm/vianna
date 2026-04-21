@@ -2,7 +2,7 @@ import * as d3 from "d3";
 import { CHART_OUTLINE, CHART_OUTLINE_MUTED } from "@/utils/chartTheme";
 
 import { transitionDuration } from "./constants";
-import { colorNode } from "./helpers";
+import { canNodeAcceptChildren, colorNode } from "./helpers";
 
 const getNodeShapeKind = (node) => {
   const { type } = node?.data || {};
@@ -42,6 +42,7 @@ const ensureNodeShape = (group, node) => {
 
 const canReceiveDrop = (graph, targetNode) => {
   if (!targetNode || graph.nodesDragged.length === 0) return false;
+  if (!canNodeAcceptChildren(targetNode?.data)) return false;
 
   return graph.nodesDragged.every((draggedNode) => {
     if (!draggedNode) return false;
@@ -68,6 +69,9 @@ const bindGhostDropEvents = (ghostCircles, graph) => {
       d3.select(this).attr("fill-opacity", 0);
     });
 };
+
+const isCollapsedWithHiddenChildren = (node) =>
+  Boolean(node?._children?.length) && !node?.children;
 
 export function drawHierarchy(source, instant = false) {
   const { root } = this;
@@ -117,6 +121,14 @@ export function drawNodes(source, instant = false) {
         });
 
         g.append("circle")
+          .attr("class", "collapsedHalo collapsedHaloCircle")
+          .attr("pointer-events", "none");
+
+        g.append("rect")
+          .attr("class", "collapsedHalo collapsedHaloRect")
+          .attr("pointer-events", "none");
+
+        g.append("circle")
           .attr("class", "ghostCircle")
           .attr("r", this.getAssignRadius())
           .attr("opacity", 0.2)
@@ -159,10 +171,32 @@ export function drawNodes(source, instant = false) {
 
   const currentNodeHalfSize = this.getNodeHalfSize();
   const currentCornerRadius = this.getNodeCornerRadius();
+  const haloPadding = 5 * this.viewConfig.nodeScale;
 
   gnode.each(function (d) {
     ensureNodeShape(d3.select(this), d);
   });
+
+  gnode
+    .select("circle.collapsedHaloCircle")
+    .attr("r", currentNodeHalfSize + haloPadding)
+    .attr("display", (d) =>
+      isCollapsedWithHiddenChildren(d) && getNodeShapeKind(d) === "circle"
+        ? null
+        : "none",
+    );
+  gnode
+    .select("rect.collapsedHaloRect")
+    .attr("x", -(currentNodeHalfSize + haloPadding))
+    .attr("y", -(currentNodeHalfSize + haloPadding))
+    .attr("width", (currentNodeHalfSize + haloPadding) * 2)
+    .attr("height", (currentNodeHalfSize + haloPadding) * 2)
+    .attr("rx", currentCornerRadius + 3 * this.viewConfig.nodeScale)
+    .attr("display", (d) =>
+      isCollapsedWithHiddenChildren(d) && getNodeShapeKind(d) === "rect"
+        ? null
+        : "none",
+    );
 
   gnode.selectAll("circle.showCircle").attr("r", currentNodeHalfSize);
   gnode

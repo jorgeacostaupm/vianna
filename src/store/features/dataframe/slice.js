@@ -7,6 +7,7 @@ import {
   generateEmpty,
   removeBatch,
   removeColumn,
+  syncNavioColumns,
 } from "./thunks";
 
 import { updateHierarchy } from "../metadata/thunks";
@@ -65,12 +66,6 @@ const dataSlice = createSlice({
       if (!areColumnsEqual(state.navioColumns, nextColumns)) {
         state.navioColumns = nextColumns;
       }
-
-      state.hasEmptyValues = selectionHasEmptyValues({
-        dataframe: state.dataframe,
-        selectionRef: state.selectionRef,
-        visibleColumns: state.navioColumns,
-      });
     },
 
     setSelection: (state, action) => {
@@ -150,6 +145,17 @@ const dataSlice = createSlice({
     });
 
     builder
+      .addCase(syncNavioColumns.fulfilled, (state, action) => {
+        const nextColumns = Array.isArray(action.payload?.columns)
+          ? action.payload.columns
+          : [];
+
+        if (!areColumnsEqual(state.navioColumns, nextColumns)) {
+          state.navioColumns = nextColumns;
+        }
+
+        state.hasEmptyValues = Boolean(action.payload?.hasEmptyValues);
+      })
       .addCase(generateColumn.fulfilled, (state, action) => {
         syncSelectionFromDataframe(state, action.payload.data);
         state.version += 1;

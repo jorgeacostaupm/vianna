@@ -6,6 +6,12 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { buildMetaFromVariableTypes } from "../metadata/thunks";
 import { setDataframe } from "./slice";
 import {
+  areColumnsEqual,
+} from "./utils/sliceUtils";
+import {
+  selectionHasEmptyValues,
+} from "./utils/selectionRef";
+import {
   computeAggregationRows,
   getAggregationDependencies,
   normalizeNumericColumn,
@@ -13,6 +19,35 @@ import {
   recomputeAggregationColumns,
   sortAggregationsByDependency,
 } from "./utils/thunkUtils";
+
+export const syncNavioColumns = createAsyncThunk(
+  "dataframe/syncNavioColumns",
+  async (columns, { getState, rejectWithValue }) => {
+    try {
+      const dataframeState = getState().dataframe;
+      const nextColumns = Array.isArray(columns) ? columns : [];
+      const currentColumns = Array.isArray(dataframeState.navioColumns)
+        ? dataframeState.navioColumns
+        : [];
+      const effectiveColumns = areColumnsEqual(currentColumns, nextColumns)
+        ? currentColumns
+        : nextColumns;
+
+      const hasEmptyValues = selectionHasEmptyValues({
+        dataframe: dataframeState.dataframe,
+        selectionRef: dataframeState.selectionRef,
+        visibleColumns: effectiveColumns,
+      });
+
+      return {
+        columns: effectiveColumns,
+        hasEmptyValues,
+      };
+    } catch (err) {
+      return rejectWithValue(err?.message || "Error syncing navio columns.");
+    }
+  },
+);
 
 export const generateColumn = createAsyncThunk(
   "dataframe/agg-generate",
