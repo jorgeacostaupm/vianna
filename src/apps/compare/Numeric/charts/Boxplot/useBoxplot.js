@@ -12,7 +12,10 @@ import {
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
 import { CHART_OUTLINE, CHART_OUTLINE_MUTED } from "@/utils/chartTheme";
-import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
+import {
+  GROUP_CATEGORICAL_PALETTE,
+  sortGroupsAlphanumerically,
+} from "@/utils/groupColors";
 import { paintLayersInOrder } from "@/utils/gridInteractions";
 
 const DEFAULT_Y_DOMAIN = [0, 1];
@@ -67,6 +70,11 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
     groups
   );
   const groupsKey = selectionGroups.join("|");
+  const xGroups = useMemo(
+    () => sortGroupsAlphanumerically(selectionGroups),
+    [groupsKey],
+  );
+  const xGroupsKey = xGroups.join("|");
 
   const {
     pointSize,
@@ -80,12 +88,12 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
   const preparedData = useMemo(() => {
     const rows = Array.isArray(data) ? data : [];
     const grouped = d3.group(rows, (d) => d.type);
-    const groupCounts = getGroupCounts(rows, selectionGroups);
+    const groupCounts = getGroupCounts(rows, xGroups);
     const summaries = new Map();
     const allValues = [];
     const whiskerValues = [];
 
-    selectionGroups.forEach((group) => {
+    xGroups.forEach((group) => {
       const groupRows = grouped.get(group) || [];
       const numericValues = groupRows
         .map((d) => +d.value)
@@ -127,7 +135,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       valueDomain,
       whiskerDomain,
     };
-  }, [data, selectionGroups, showPoints]);
+  }, [data, xGroups, showPoints]);
 
   useEffect(() => {
     if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
@@ -159,7 +167,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
 
     const x = d3
       .scaleBand()
-      .domain(selectionGroups)
+      .domain(xGroups)
       .range([0, chartWidth])
       .padding(0.4);
 
@@ -184,7 +192,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
 
     const groupsG = chart
       .selectAll(".boxplot")
-      .data(selectionGroups)
+      .data(xGroups)
       .join("g")
       .attr("class", "boxplot")
       .attr("transform", (d) => `translate(${x(d)}, 0)`);
@@ -369,7 +377,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
     });
 
     if (showLegend !== false) {
-      renderLegend(legend, selectionGroups, color, {
+      renderLegend(legend, xGroups, color, {
         labelByGroup: showGroupCountInLegend
           ? (group) => formatGroupCountLabel(group, groupCounts)
           : undefined,
@@ -392,7 +400,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
     }
   }, [
     dimensions,
-    groupsKey,
+    xGroupsKey,
     showPoints,
     showLegend,
     showGrid,

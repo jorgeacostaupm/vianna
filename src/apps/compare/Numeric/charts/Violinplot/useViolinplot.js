@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { moveTooltip } from "@/utils/functions";
@@ -16,7 +16,10 @@ import {
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
 import { CHART_OUTLINE_MUTED } from "@/utils/chartTheme";
-import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
+import {
+  GROUP_CATEGORICAL_PALETTE,
+  sortGroupsAlphanumerically,
+} from "@/utils/groupColors";
 import {
   attachTickLabelGridHover,
   paintLayersInOrder,
@@ -33,6 +36,11 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
     groups
   );
   const groupsKey = selectionGroups.join("|");
+  const xGroups = useMemo(
+    () => sortGroupsAlphanumerically(selectionGroups),
+    [groupsKey],
+  );
+  const xGroupsKey = xGroups.join("|");
 
   useEffect(() => {
     if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
@@ -75,11 +83,11 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
     // X for groups
     const x = d3
       .scaleBand()
-      .domain(selectionGroups)
+      .domain(xGroups)
       .range([0, chartWidth])
       .padding(0.4);
     const grouped = d3.group(data, (d) => d.type);
-    const groupCounts = getGroupCounts(data, selectionGroups);
+    const groupCounts = getGroupCounts(data, xGroups);
 
     const [xMin, xMax] = getNumericDomain(data, {
       margin,
@@ -88,7 +96,7 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
     });
 
     const pointEstimator = computeEstimator(nPoints, xMin, xMax);
-    const densities = getDensities(data, selectionGroups, pointEstimator);
+    const densities = getDensities(data, xGroups, pointEstimator);
     const maxWidth = getYMax(densities);
 
     const y = d3
@@ -178,7 +186,7 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
     });
 
     if (showLegend !== false) {
-      renderLegend(legend, selectionGroups, color, {
+      renderLegend(legend, xGroups, color, {
         labelByGroup: showGroupCountInLegend
           ? (group) => formatGroupCountLabel(group, groupCounts)
           : undefined,
@@ -191,5 +199,5 @@ export default function useViolinplot({ chartRef, legendRef, data, config }) {
         layers: [xAxisG, yAxisG, yGridG],
       });
     }
-  }, [data, dimensions, groupsKey, config, colorDomain]);
+  }, [data, dimensions, xGroupsKey, config, colorDomain]);
 }

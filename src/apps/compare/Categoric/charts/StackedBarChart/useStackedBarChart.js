@@ -3,6 +3,7 @@ import { useLayoutEffect } from "react";
 import { deepCopy, moveTooltip } from "@/utils/functions";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import { paintLayersInOrder } from "@/utils/gridInteractions";
+import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
 import {
   catMargins,
   renderLegend,
@@ -33,7 +34,6 @@ export default function useStackedBarChart({
     d3.select(chartRef.current).selectAll("*").remove();
     d3.select(legendRef.current).selectAll("*").remove();
 
-    const colorScheme = d3.schemeCategory10;
     const chartWidth = width - catMargins.left - catMargins.right;
     const chartHeight = height - catMargins.top - catMargins.bottom;
 
@@ -115,7 +115,7 @@ export default function useStackedBarChart({
     const color = d3
       .scaleOrdinal()
       .domain(orderedCategories)
-      .range(colorScheme);
+      .range(GROUP_CATEGORICAL_PALETTE);
 
     const xAxisG = chart
       .append("g")

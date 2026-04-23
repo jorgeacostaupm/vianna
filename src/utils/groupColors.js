@@ -24,6 +24,17 @@ export function normalizeGroupList(groups) {
   return normalized;
 }
 
+export function compareGroupsAlphanumerically(a, b) {
+  return String(a).localeCompare(String(b), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
+export function sortGroupsAlphanumerically(groups) {
+  return normalizeGroupList(groups).sort(compareGroupsAlphanumerically);
+}
+
 export function getOrderedGroupsFromDataframe(dataframe, groupVar) {
   if (!Array.isArray(dataframe) || !groupVar) return [];
 
