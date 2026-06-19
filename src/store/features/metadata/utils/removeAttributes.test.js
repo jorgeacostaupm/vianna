@@ -35,7 +35,6 @@ test("applyAttributeRemovals removes selected descendants in one batch", () => {
         aggregationConfig: { usedAttributes: [] },
       },
     ],
-    recoverableOperations: [],
     hierarchyRevision: 0,
   };
 

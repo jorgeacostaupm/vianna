@@ -1,4 +1,3 @@
-import React from "react";
 import { useSelector } from "react-redux";
 import { DownloadOutlined } from "@ant-design/icons";
 import Papa from "papaparse";

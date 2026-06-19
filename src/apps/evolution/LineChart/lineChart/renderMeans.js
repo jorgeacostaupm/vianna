@@ -2,28 +2,11 @@ import * as d3 from "d3";
 
 import { moveTooltip } from "@/utils/functions";
 
-import { getDiscreteDefaultMeanRadius } from "./discreteGeometry";
-
-export function getEffectiveMeanMarkerSizes({
-  isDiscreteAggregatedMode,
-  meanPointSize,
-  bandwidth,
-}) {
+export function getMeanMarkerRadius(meanPointSize) {
   const normalizedPointSize = Number.isFinite(Number(meanPointSize))
     ? Number(meanPointSize)
     : 4;
-  const meanPointRadius =
-    isDiscreteAggregatedMode && Number.isFinite(Number(bandwidth))
-      ? getDiscreteDefaultMeanRadius(bandwidth)
-      : normalizedPointSize;
-  const meanVisualRadius = isDiscreteAggregatedMode
-    ? meanPointRadius
-    : Math.max(normalizedPointSize, 4);
-
-  return {
-    meanPointRadius,
-    meanVisualRadius,
-  };
+  return Math.max(normalizedPointSize, 4);
 }
 
 export function renderMeans({
@@ -39,7 +22,6 @@ export function renderMeans({
   meanAsBoxplot,
   meanStrokeWidth,
   meanPointSize,
-  isDiscreteAggregatedMode,
 }) {
   if (!data?.meanData) return;
 
@@ -52,8 +34,6 @@ export function renderMeans({
   const { applyMeanLineStyle, applyMeanPointStyle } = createMeanStyling({
     meanStrokeWidth,
     meanPointSize,
-    isDiscreteAggregatedMode,
-    bandwidth: x.bandwidth(),
   });
 
   if (showStds) {
@@ -208,7 +188,6 @@ export function renderOverallMean({
   meanAsBoxplot,
   meanStrokeWidth,
   meanPointSize,
-  isDiscreteAggregatedMode,
 }) {
   const overall = overallMeanData;
   if (!showOverallMean || !overall?.values?.length) {
@@ -228,8 +207,6 @@ export function renderOverallMean({
   const { applyMeanLineStyle, applyMeanPointStyle } = createMeanStyling({
     meanStrokeWidth,
     meanPointSize,
-    isDiscreteAggregatedMode,
-    bandwidth: x.bandwidth(),
   });
 
   const overallSelection = chart
@@ -363,14 +340,8 @@ export function renderOverallMean({
 function createMeanStyling({
   meanStrokeWidth,
   meanPointSize,
-  isDiscreteAggregatedMode,
-  bandwidth,
 }) {
-  const { meanVisualRadius } = getEffectiveMeanMarkerSizes({
-    isDiscreteAggregatedMode,
-    meanPointSize,
-    bandwidth,
-  });
+  const meanVisualRadius = getMeanMarkerRadius(meanPointSize);
   const meanLineDasharray = "8 16";
   const meanPointStroke = "black";
   const meanPointStrokeWidth = 2;

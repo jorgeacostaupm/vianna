@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Tooltip } from "antd";
 
 import styles from "./DropArea.module.css";
@@ -12,12 +11,9 @@ const BasicAttribute = ({ idx, node, onDragStart, isHidden = false }) => {
         justifySelf: "center",
       }}
     >
-      <motion.div
+      <div
         className={styles.attributeItem}
-        layout
-        layoutId={node.id}
         id={`aggregationConfig.usedAttributes.${idx}`}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
         draggable={true}
         onDragStart={(e) => {
           onDragStart(e, { id: node.id, name: node.name });
@@ -29,7 +25,7 @@ const BasicAttribute = ({ idx, node, onDragStart, isHidden = false }) => {
             {node.name}
           </div>
         </Tooltip>
-      </motion.div>
+      </div>
     </div>
   );
 };

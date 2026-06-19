@@ -1,8 +1,5 @@
 export const APP_NAME = "VIANNA";
 
-export const DEFAULT_GROUP_VARIABLE = "site";
-export const DEFAULT_TIMESTAMP_VARIABLE = "visit";
-
 export const ORDER_VARIABLE = "__ord";
 const DESCRIPTION_VARIABLE = "__desc";
 

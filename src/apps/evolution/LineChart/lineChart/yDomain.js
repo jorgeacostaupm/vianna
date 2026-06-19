@@ -130,18 +130,6 @@ export function getYRange(
   return [min - pad, max + pad];
 }
 
-export function getDiscreteYRange(subjects = []) {
-  if (!Array.isArray(subjects) || !subjects.length) return [0, 1];
-
-  const values = subjects
-    .flatMap((subject) => subject?.values || [])
-    .map((entry) => Number(entry?.value))
-    .filter((value) => Number.isFinite(value));
-
-  if (!values.length) return [0, 1];
-  return [Math.min(...values), Math.max(...values)];
-}
-
 export function resolveYDomain(autoDomain = [0, 1], config = {}) {
   const [safeAutoMin, safeAutoMax] = normalizeYDomain(autoDomain);
   if (config?.yAxisMode !== "manual") {

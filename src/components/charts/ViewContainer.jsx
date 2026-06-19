@@ -1,4 +1,3 @@
-import React from "react";
 import ChartBar from "@/components/charts/ChartBar";
 import styles from "@/styles/Charts.module.css";
 import { normalizeViewContainerProps } from "./view/viewContainerModel";

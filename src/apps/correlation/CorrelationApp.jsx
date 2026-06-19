@@ -4,8 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Apps } from "@/utils/constants";
 import registry from "./registry";
 import Grid from "@/components/grid";
-import Panel from "./Panel";
-import { createCorrelationPanelCommands } from "./panelCommands";
+import Panel from "./Panel/Panel";
 import { setWorkspace } from "@/store/features/correlation";
 
 export default function CorrelationApp() {
@@ -16,10 +15,9 @@ export default function CorrelationApp() {
     [dispatch],
   );
 
-  const panel = (addView) => {
-    const commands = createCorrelationPanelCommands({ addView });
-    return <Panel commands={commands} />;
-  };
+  const panel = (addView) => (
+    <Panel addChart={(type) => type && addView(type)} />
+  );
 
   return (
     <Grid

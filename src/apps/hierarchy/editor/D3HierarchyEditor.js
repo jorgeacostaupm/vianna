@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { CHART_OUTLINE_MUTED } from "@/utils/chartTheme";
+import { getChartTooltip } from "@/utils/chartTooltip";
 
-import store from "@/store/store";
 import { pubsub } from "@/utils/pubsub";
 
 import {
@@ -131,7 +131,6 @@ export default class D3HierarchyEditor {
     if (options.orientation) this.setOrientation(options.orientation);
     if (options.linkStyle) this.setLinkStyle(options.linkStyle);
 
-    this.descriptions = store.getState().main.descriptions;
     this.dims = container.getBoundingClientRect();
 
     this.width = this.dims.width;
@@ -204,10 +203,7 @@ export default class D3HierarchyEditor {
 
     this.addSubscriptions();
 
-    this.tooltip = d3.select("body").select("div.tooltip");
-    if (this.tooltip.empty()) {
-      this.tooltip = d3.select("body").append("div").attr("class", "tooltip");
-    }
+    this.tooltip = getChartTooltip();
 
     this.update(data);
   }

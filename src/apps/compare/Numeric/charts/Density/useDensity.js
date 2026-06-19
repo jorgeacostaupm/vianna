@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { getChartTooltip } from "@/utils/chartTooltip";
 import jstat from "jstat";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -89,10 +90,7 @@ export default function useDensity({ chartRef, data, config }) {
 
     const svg = d3.select(chartRef.current);
     const legend = appendLegendRoot(svg, legendLayout);
-    let tooltip = d3.select("body").select("div.tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div").attr("class", "tooltip");
-    }
+    const tooltip = getChartTooltip();
 
     const chart = svg
       .append("g")

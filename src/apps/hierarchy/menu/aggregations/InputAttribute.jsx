@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { HorizontalDropIndicator as DropIndicator } from "./DropIndicator";
 import { InputNumber, Tooltip } from "antd";
 import styles from "./DropArea.module.css";
@@ -21,10 +20,8 @@ const InputAttribute = ({
       }}
     >
       <DropIndicator used={`${node.used}`} nodeID={node.id} />
-      <motion.div
+      <div
         className={styles.inputAttributeItem}
-        layout
-        layoutId={node.id}
         id={`aggregationConfig.usedAttributes.${idx}`}
         draggable={true}
         onDragStart={(e) => onDragStart(e, { id: node.id, name: node.name })}
@@ -51,7 +48,7 @@ const InputAttribute = ({
             onChange={handleChange}
           />
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };

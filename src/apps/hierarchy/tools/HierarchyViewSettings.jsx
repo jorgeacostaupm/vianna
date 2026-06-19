@@ -1,6 +1,7 @@
-import { Select, Slider, Switch, Typography } from "antd";
+import { Select, Slider, Typography } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import SwitchControl from "@/components/ui/SwitchControl";
 import { AppButton } from "@/components/buttons/core";
 
 const { Text } = Typography;
@@ -67,14 +68,11 @@ export default function HierarchyViewSettings({
           />
         </div>
 
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Animations</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Animations"
+          size="small"
             checked={viewConfig.animateTransitions !== false}
             onChange={(value) => update("animateTransitions", value)}
-          />
-        </div>
+        />
       </div>
 
       <div className={panelStyles.section}>

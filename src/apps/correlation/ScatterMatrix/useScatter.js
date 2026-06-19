@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { getChartTooltip } from "@/utils/chartTooltip";
 import { useEffect, useMemo, useState } from "react";
 import { moveTooltip } from "@/utils/functions";
 import useResizeObserver from "@/hooks/useResizeObserver";
@@ -70,10 +71,7 @@ export default function useScatter({ chartRef, data, config }) {
     const chartHeight = legendLayout.chartHeight;
     const chartSize = Math.min(chartWidth, chartHeight);
 
-    let tooltip = d3.select("body").select("div.tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div").attr("class", "tooltip");
-    }
+    const tooltip = getChartTooltip();
 
     const svg = d3.select(chartRef.current);
     const legend = appendLegendRoot(svg, legendLayout);

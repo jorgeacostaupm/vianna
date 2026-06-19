@@ -1,4 +1,3 @@
-import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { WarningTwoTone } from "@ant-design/icons";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";

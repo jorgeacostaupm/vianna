@@ -3,8 +3,10 @@ import { PCA } from "ml-pca";
 import * as aq from "arquero";
 import tests from "@/utils/tests";
 
-import { VariableTypes, ORDER_VARIABLE } from "./constants";
+import { VariableTypes } from "./constants";
 import { extractErrorMessage } from "@/components/notifications";
+
+export { getVariableTypes } from "./variableTypes";
 
 export function getFileName(route) {
   return route
@@ -424,130 +426,6 @@ export function generateFileName(baseName = "data") {
   return fileName;
 }
 
-export function pickColumns(items, columns) {
-  if (!Array.isArray(items)) return [];
-
-  return items.map((item) => {
-    const obj = { [ORDER_VARIABLE]: item[ORDER_VARIABLE] };
-    columns.forEach((col) => {
-      if (Object.prototype.hasOwnProperty.call(item, col)) {
-        obj[col] = item[col];
-      }
-    });
-    return obj;
-  });
-}
-
-export const getVariableTypes = (data, options = {}) => {
-  const {
-    maxNumDistictForCategorical = 10,
-    maxNumDistictForOrdered = 90,
-    howManyItemsShouldSearchForNotNull = 100,
-    addAllAttribsIncludeObjects = false,
-    addAllAttribsIncludeArrays = false,
-  } = options;
-
-  const result = {};
-
-  if (!data || data.length === 0) {
-    return result;
-  }
-
-  const columnNames = Object.keys(data[0]);
-
-  const getAttrib = (item, attrib) => {
-    if (typeof attrib === "function") {
-      try {
-        return attrib(item);
-      } catch {
-        return undefined;
-      }
-    } else {
-      return item[attrib];
-    }
-  };
-
-  const findNotNull = (data, attr) => {
-    let val;
-    for (
-      let i = 0;
-      i < howManyItemsShouldSearchForNotNull && i < data.length;
-      i++
-    ) {
-      val = getAttrib(data[i], attr);
-      if (val !== null && val !== undefined && val !== "") {
-        return val;
-      }
-    }
-    return val;
-  };
-
-  columnNames.forEach((col) => {
-    if (col === "__seqId" || col === "__i" || col === "selected") {
-      return;
-    }
-
-    const firstNotNull = findNotNull(data, col);
-
-    if (
-      firstNotNull === null ||
-      firstNotNull === undefined ||
-      firstNotNull === ""
-    ) {
-      const distinctValues = new Set(
-        data
-          .slice(0, howManyItemsShouldSearchForNotNull)
-          .map((d) => getAttrib(d, col))
-          .filter((v) => v !== null && v !== undefined && v !== ""),
-      ).size;
-
-      if (distinctValues < maxNumDistictForCategorical) {
-        result[col] = "string";
-      } else if (distinctValues < maxNumDistictForOrdered) {
-        result[col] = "number";
-      } else {
-        result[col] = "string";
-      }
-    } else if (typeof firstNotNull === "number") {
-      const hasNegative = data.some((d) => {
-        const val = getAttrib(d, col);
-        return val !== null && val !== undefined && val < 0;
-      });
-
-      result[col] = hasNegative ? "number" : "number";
-    } else if (firstNotNull instanceof Date) {
-      result[col] = "date";
-    } else if (typeof firstNotNull === "boolean") {
-      result[col] = "string";
-    } else if (Array.isArray(firstNotNull)) {
-      if (addAllAttribsIncludeArrays) {
-        result[col] = "string";
-      }
-    } else if (typeof firstNotNull === "object") {
-      if (addAllAttribsIncludeObjects) {
-        result[col] = "string";
-      }
-    } else {
-      const distinctValues = new Set(
-        data
-          .slice(0, howManyItemsShouldSearchForNotNull)
-          .map((d) => getAttrib(d, col))
-          .filter((v) => v !== null && v !== undefined && v !== ""),
-      ).size;
-
-      if (distinctValues < maxNumDistictForCategorical) {
-        result[col] = "string";
-      } else if (distinctValues < maxNumDistictForOrdered) {
-        result[col] = "number";
-      } else {
-        result[col] = "string";
-      }
-    }
-  });
-
-  return result;
-};
-
 // TOOLTIP FUNCTIONS
 
 export function fixTooltipToNode(
@@ -625,10 +503,6 @@ export function getRandomInt(min = 0, max = 999999999) {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-export function deepCopy(obj) {
-  return JSON.parse(JSON.stringify(obj));
 }
 
 // REVISAR :S (abajo)

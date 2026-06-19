@@ -43,73 +43,34 @@ const toOperationFailureLabel = (entry) => {
 
 const start = notificationsListenerMiddleware.startListening;
 
-start({
-  type: "metadata/setDescriptions",
-  effect: async (_, listenerApi) => {
-    notifySuccess(listenerApi, {
-      message: "Descriptions imported",
-    });
-  },
-});
+const listenForSuccess = (type, message, silent = false) =>
+  start({
+    type,
+    effect: async (action, listenerApi) => {
+      if (silent && action.meta?.arg?.silentSuccess) return;
+      notifySuccess(listenerApi, { message });
+    },
+  });
 
-start({
-  type: "metadata/updateHierarchy/fulfilled",
-  effect: async (action, listenerApi) => {
-    if (action.meta?.arg?.silentSuccess) return;
+const listenForError = (type, message, fallback, pauseOnHover = false) =>
+  start({
+    type,
+    effect: async (action, listenerApi) => {
+      notifyError(listenerApi, {
+        message,
+        error: action.payload || action.error,
+        fallback,
+        pauseOnHover,
+      });
+    },
+  });
 
-    notifySuccess(listenerApi, {
-      message: "Hierarchy uploaded",
-    });
-  },
-});
-
-start({
-  type: "metadata/updateHierarchy/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Could not update hierarchy",
-      error: action.payload || action.error,
-      fallback: "Hierarchy update failed.",
-      pauseOnHover: true,
-    });
-  },
-});
-
-start({
-  type: "metadata/buildMetaFromVariableTypes/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Import Hierarchy Failure",
-      error: action.payload || action.error,
-      fallback: "Failed to import hierarchy.",
-      pauseOnHover: true,
-    });
-  },
-});
-
-start({
-  type: "metadata/createToMeta/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Failure to Save Created Hierarchy",
-      error: action.payload || action.error,
-      fallback: "Failed to save generated hierarchy.",
-      pauseOnHover: true,
-    });
-  },
-});
-
-start({
-  type: "metadata/removeAttribute/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Could not remove node",
-      error: action.payload || action.error,
-      fallback: "Node removal failed.",
-      pauseOnHover: true,
-    });
-  },
-});
+listenForSuccess("metadata/setDescriptions", "Descriptions imported");
+listenForSuccess("metadata/updateHierarchy/fulfilled", "Hierarchy uploaded", true);
+listenForError("metadata/updateHierarchy/rejected", "Could not update hierarchy", "Hierarchy update failed.", true);
+listenForError("metadata/buildMetaFromVariableTypes/rejected", "Import Hierarchy Failure", "Failed to import hierarchy.", true);
+listenForError("metadata/createToMeta/rejected", "Failure to Save Created Hierarchy", "Failed to save generated hierarchy.", true);
+listenForError("metadata/removeAttribute/rejected", "Could not remove node", "Node removal failed.", true);
 
 start({
   type: "metadata/applyOperation/fulfilled",
@@ -144,84 +105,13 @@ start({
   },
 });
 
-start({
-  type: "metadata/applyOperation/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Operation failed",
-      error: action.payload || action.error,
-      fallback: "Error applying operation to selected nodes.",
-      pauseOnHover: true,
-    });
-  },
-});
-
-start({
-  type: "main/nulls-to-quarantine/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Could not update quarantine data",
-      error: action.payload || action.error,
-      fallback: "Failed to move null values into quarantine.",
-    });
-  },
-});
-
-start({
-  type: "dataframe/load-import/fulfilled",
-  effect: async (action, listenerApi) => {
-    if (action.meta?.arg?.silentSuccess) return;
-
-    notifySuccess(listenerApi, {
-      message: "Data updated",
-    });
-  },
-});
-
-start({
-  type: "dataframe/load-import/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Could not update dataset",
-      error: action.payload || action.error,
-      fallback: "The dataset could not be processed.",
-    });
-  },
-});
-
-start({
-  type: "metadata/updateDescriptions/fulfilled",
-  effect: async (action, listenerApi) => {
-    if (action.meta?.arg?.silentSuccess) return;
-
-    notifySuccess(listenerApi, {
-      message: "Descriptions updated",
-    });
-  },
-});
-
-start({
-  type: "metadata/updateDescriptions/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Could not update descriptions",
-      error: action.payload || action.error,
-      fallback: "Description update failed.",
-      pauseOnHover: true,
-    });
-  },
-});
-
-start({
-  type: "dataframe/agg-generate/fulfilled",
-  effect: async (action, listenerApi) => {
-    if (action.meta?.arg?.silentSuccess) return;
-
-    notifySuccess(listenerApi, {
-      message: "Aggregation created",
-    });
-  },
-});
+listenForError("metadata/applyOperation/rejected", "Operation failed", "Error applying operation to selected nodes.", true);
+listenForError("main/nulls-to-quarantine/rejected", "Could not update quarantine data", "Failed to move null values into quarantine.");
+listenForSuccess("dataframe/load-import/fulfilled", "Data updated", true);
+listenForError("dataframe/load-import/rejected", "Could not update dataset", "The dataset could not be processed.");
+listenForSuccess("metadata/updateDescriptions/fulfilled", "Descriptions updated", true);
+listenForError("metadata/updateDescriptions/rejected", "Could not update descriptions", "Description update failed.", true);
+listenForSuccess("dataframe/agg-generate/fulfilled", "Aggregation created", true);
 
 start({
   type: "dataframe/agg-generate/rejected",
@@ -241,38 +131,9 @@ start({
   },
 });
 
-start({
-  type: "dataframe/agg-generate-batch/fulfilled",
-  effect: async (action, listenerApi) => {
-    if (action.meta?.arg?.silentSuccess) return;
-
-    notifySuccess(listenerApi, {
-      message: "Aggregations computed",
-    });
-  },
-});
-
-start({
-  type: "dataframe/agg-generate-batch/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Could not compute aggregations",
-      error: action.payload || action.error,
-      fallback: "Batch aggregation failed.",
-    });
-  },
-});
-
-start({
-  type: "dataframe/replaceValuesWithNull/rejected",
-  effect: async (action, listenerApi) => {
-    notifyError(listenerApi, {
-      message: "Could not nullify values",
-      error: action.payload || action.error,
-      fallback: "Failed to replace selected values with null.",
-    });
-  },
-});
+listenForSuccess("dataframe/agg-generate-batch/fulfilled", "Aggregations computed", true);
+listenForError("dataframe/agg-generate-batch/rejected", "Could not compute aggregations", "Batch aggregation failed.");
+listenForError("dataframe/replaceValuesWithNull/rejected", "Could not nullify values", "Failed to replace selected values with null.");
 
 start({
   type: "metadata/updateAttribute/fulfilled",
@@ -303,14 +164,7 @@ start({
   },
 });
 
-start({
-  type: "main/loadDemoData/fulfilled",
-  effect: async (_, listenerApi) => {
-    notifySuccess(listenerApi, {
-      message: "Demo data loaded",
-    });
-  },
-});
+listenForSuccess("main/loadDemoData/fulfilled", "Demo data loaded");
 
 start({
   type: "main/loadDemoData/rejected",
@@ -321,34 +175,6 @@ start({
       message: "Could not load demo data",
       error: action.payload?.message || action.payload || action.error,
       fallback: "An error occurred while loading demo files.",
-    });
-  },
-});
-
-start({
-  type: "compare/runAllComparisonTests/rejected",
-  effect: async (action, listenerApi) => {
-    const error = action.payload || action.error?.message;
-
-    notifyError(listenerApi, {
-      message: "Could not run test for all variables",
-      error,
-      fallback: "Failed to execute ranking test for selected variables.",
-      source: "test",
-    });
-  },
-});
-
-start({
-  type: "compare/runTest/rejected",
-  effect: async (action, listenerApi) => {
-    const error = action.payload || action.error?.message;
-
-    notifyError(listenerApi, {
-      message: "Could not run selected test",
-      error,
-      fallback: "Failed to execute the selected test.",
-      source: "test",
     });
   },
 });

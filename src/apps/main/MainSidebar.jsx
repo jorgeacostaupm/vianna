@@ -1,4 +1,3 @@
-import React from "react";
 import AppSidebar from "@/components/ui/AppSidebar";
 import { APP_DESC } from "@/utils/constants";
 import AppsButtons from "./AppsButtons";

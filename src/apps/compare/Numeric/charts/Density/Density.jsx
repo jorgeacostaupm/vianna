@@ -1,12 +1,4 @@
-import { useRef } from "react";
-
 import useDensity from "./useDensity";
-import BasicChart from "@/components/charts/BasicChart";
+import createD3Chart from "@/components/charts/createD3Chart";
 
-export default function Density({ data, config, id }) {
-  const chartRef = useRef(null);
-
-  useDensity({ chartRef, data, config });
-
-  return <BasicChart id={id} chartRef={chartRef} />;
-}
+export default createD3Chart(useDensity);

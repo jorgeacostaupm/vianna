@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { getChartTooltip } from "@/utils/chartTooltip";
 import { useEffect } from "react";
 
 import useResizeObserver from "@/hooks/useResizeObserver";
@@ -41,10 +42,7 @@ export default function usePointRangeChart({
     const chartWidth = totalWidth - margin.left - margin.right;
     const chartHeight = totalHeight - margin.top - margin.bottom;
 
-    let tooltip = d3.select("body").select("div.tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div").attr("class", "tooltip");
-    }
+    const tooltip = getChartTooltip();
 
     const svg = container
       .append("svg")

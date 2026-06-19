@@ -1,12 +1,4 @@
-import { useRef } from "react";
-
 import useStackedBarChart from "./useStackedBarChart";
-import BasicChart from "@/components/charts/BasicChart";
+import createD3Chart from "@/components/charts/createD3Chart";
 
-export default function StackedBarChart({ data, config, id }) {
-  const chartRef = useRef(null);
-
-  useStackedBarChart({ chartRef, data, config });
-
-  return <BasicChart id={id} chartRef={chartRef} />;
-}
+export default createD3Chart(useStackedBarChart);

@@ -7,24 +7,7 @@ import { paintLayersInOrder } from "@/utils/gridInteractions";
 import { selectEvolutionAnalysisContext } from "@/store/features/main";
 
 import {
-  buildAggregatedEdges,
-  buildAggregatedNodes,
-  clearSelectedNodes,
-  computeCompatibleSubjects,
-  computeEdgeCompatibleCounts,
-  computeEdgeTotals,
-  computeNodeCompatibleCounts,
-  computeNodeTotals,
-  detectDiscreteLowCardinality,
-  detectSingleActiveEvolution,
-  hasSelectedNodes,
-  toggleNodeSelection,
-  toggleVisitSelection,
-  valueToKey,
-} from "./lineChart/discreteAggregation";
-import { renderDiscreteAggregated } from "./lineChart/discreteRendering";
-import {
-  getEffectiveMeanMarkerSizes,
+  getMeanMarkerRadius,
   renderMeans,
   renderOverallMean,
 } from "./lineChart/renderMeans";
@@ -32,11 +15,7 @@ import { renderLineLegend } from "./lineChart/legend";
 import { renderLmm } from "./lineChart/renderLmm";
 import { renderParticipants } from "./lineChart/renderParticipants";
 import { initializeLineChartScene } from "./lineChart/setupChart";
-import {
-  getDiscreteYRange,
-  getYRange,
-  resolveYDomain,
-} from "./lineChart/yDomain";
+import { getYRange, resolveYDomain } from "./lineChart/yDomain";
 
 const DEFAULT_HIDDEN_GROUPS = ["All"];
 
@@ -54,14 +33,6 @@ export default function useLineChart({ chartRef, data, config }) {
     showLegend,
     showGrid,
     showGridBehindAll,
-    disableAutoDiscreteAggregatedMode,
-    forceDiscreteAggregatedMode,
-    ratioNodeScale,
-    ratioEdgeScale,
-    ratioNodeMinPx,
-    ratioNodeMaxPx,
-    ratioEdgeMinPx,
-    ratioEdgeMaxPx,
     meanPointSize,
     meanAsBoxplot,
     meanStrokeWidth,
@@ -103,93 +74,8 @@ export default function useLineChart({ chartRef, data, config }) {
     () => (data?.times || []).map((timestamp) => String(timestamp)),
     [data?.times],
   );
-  const selectionTimestampsKey = selectionTimestamps.join("|");
-
   const [hide, setHide] = useState(DEFAULT_HIDDEN_GROUPS);
   const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
-  const [selectedNodesByVisit, setSelectedNodesByVisit] = useState({});
-  const [hoveredNode, setHoveredNode] = useState(null);
-  const [hoveredEdge, setHoveredEdge] = useState(null);
-
-  const visibleParticipantGroups = useMemo(() => {
-    const source = Array.isArray(data?.participantData) ? data.participantData : [];
-    const hiddenSet = new Set((hide || []).map((entry) => String(entry)));
-    return Array.from(
-      new Set(
-        source
-          .map((entry) => entry?.group)
-          .filter((group) => group != null && !hiddenSet.has(String(group)))
-          .map((group) => String(group)),
-      ),
-    );
-  }, [data?.participantData, hide]);
-
-  const activeSingleEvolutionId = useMemo(
-    () => detectSingleActiveEvolution(visibleParticipantGroups),
-    [visibleParticipantGroups],
-  );
-  const isSingleEvolutionMode = Boolean(activeSingleEvolutionId);
-
-  const activeEvolutionSubjects = useMemo(() => {
-    if (!isSingleEvolutionMode || !Array.isArray(data?.participantData)) return [];
-    return data.participantData.filter(
-      (subject) => String(subject?.group) === String(activeSingleEvolutionId),
-    );
-  }, [data?.participantData, activeSingleEvolutionId, isSingleEvolutionMode]);
-
-  const isDiscreteLowCardinalityMode = useMemo(
-    () =>
-      detectDiscreteLowCardinality(
-        activeEvolutionSubjects,
-        selectionTimestamps,
-        10,
-      ),
-    [activeEvolutionSubjects, selectionTimestampsKey],
-  );
-
-  const isDiscreteAggregatedMode =
-    isSingleEvolutionMode &&
-    (forceDiscreteAggregatedMode ||
-      (isDiscreteLowCardinalityMode && !disableAutoDiscreteAggregatedMode));
-
-  const compatibleSubjects = useMemo(
-    () =>
-      computeCompatibleSubjects(selectedNodesByVisit, activeEvolutionSubjects),
-    [selectedNodesByVisit, activeEvolutionSubjects],
-  );
-
-  const discreteAggregates = useMemo(() => {
-    if (!isDiscreteAggregatedMode) return null;
-
-    const nodes = buildAggregatedNodes(activeEvolutionSubjects, selectionTimestamps);
-    const edges = buildAggregatedEdges(activeEvolutionSubjects, selectionTimestamps);
-    const nodeTotals = computeNodeTotals(nodes);
-    const nodeCompatibleCounts = computeNodeCompatibleCounts(
-      nodes,
-      compatibleSubjects,
-    );
-    const edgeTotals = computeEdgeTotals(edges);
-    const edgeCompatibleCounts = computeEdgeCompatibleCounts(
-      edges,
-      compatibleSubjects,
-    );
-
-    return {
-      nodes,
-      edges,
-      nodeTotals,
-      nodeCompatibleCounts,
-      edgeTotals,
-      edgeCompatibleCounts,
-      compatibleSubjects,
-    };
-  }, [
-    isDiscreteAggregatedMode,
-    activeEvolutionSubjects,
-    selectionTimestamps,
-    compatibleSubjects,
-  ]);
-
   const chartStateRef = useRef({
     svg: null,
     chart: null,
@@ -219,38 +105,24 @@ export default function useLineChart({ chartRef, data, config }) {
   }, [data?.participantData]);
 
   useEffect(() => {
-    if (!isDiscreteAggregatedMode) return;
-    setSelectedSubjectIds([]);
-  }, [isDiscreteAggregatedMode]);
-
-  useEffect(() => {
-    if (isDiscreteAggregatedMode) return;
-    setSelectedNodesByVisit(clearSelectedNodes());
-    setHoveredNode(null);
-    setHoveredEdge(null);
-  }, [isDiscreteAggregatedMode, activeSingleEvolutionId]);
-
-  useEffect(() => {
     if (!dimensions || !data || !chartRef.current) return;
 
     const hiddenGroupSet = new Set((hide || []).map((group) => String(group)));
-    const autoYDomain = isDiscreteAggregatedMode
-      ? getDiscreteYRange(activeEvolutionSubjects)
-      : getYRange(
-          data.participantData,
-          data.meanData,
-          data.overallMeanData,
-          data.lmm?.predictions,
-          showMeans,
-          showOverallMean,
-          showStds,
-          meanAsBoxplot,
-          showObs,
-          showCIs,
-          showLmmFit,
-          showLmmCI,
-          hiddenGroupSet,
-        );
+    const autoYDomain = getYRange(
+      data.participantData,
+      data.meanData,
+      data.overallMeanData,
+      data.lmm?.predictions,
+      showMeans,
+      showOverallMean,
+      showStds,
+      meanAsBoxplot,
+      showObs,
+      showCIs,
+      showLmmFit,
+      showLmmCI,
+      hiddenGroupSet,
+    );
     const yDomain = resolveYDomain(autoYDomain, {
       yAxisMode,
       yAxisMin,
@@ -266,7 +138,7 @@ export default function useLineChart({ chartRef, data, config }) {
       useNiceY: yAxisMode !== "manual",
       showGrid,
       showLegend: showLegend !== false,
-      legendMaxWidth: isDiscreteAggregatedMode ? 268 : 208,
+      legendMaxWidth: 208,
     });
     const {
       chart,
@@ -295,121 +167,56 @@ export default function useLineChart({ chartRef, data, config }) {
       meanAsBoxplot,
       meanStrokeWidth,
       meanPointSize,
-      isDiscreteAggregatedMode,
     };
 
-    if (isDiscreteAggregatedMode) {
-      if (showMeans) {
-        renderMeans(meanRendererProps);
-      }
-      renderOverallMean({
+    if (showObs) {
+      renderParticipants({
         chart,
-        overallMeanData: data?.overallMeanData,
+        data,
         x,
         y,
         color,
         hide,
         tooltip,
-        showOverallMean,
-        showCIs,
-        meanAsBoxplot,
-        meanStrokeWidth,
-        meanPointSize,
-        isDiscreteAggregatedMode,
+        selectedSubjectIds,
+        setSelectedSubjectIds,
+        subjectPointSize,
+        subjectStrokeWidth,
       });
+    }
 
-      renderDiscreteAggregated({
+    if (showMeans) {
+      renderMeans(meanRendererProps);
+    }
+
+    renderOverallMean({
+      chart,
+      overallMeanData: data?.overallMeanData,
+      x,
+      y,
+      color,
+      hide,
+      tooltip,
+      showOverallMean,
+      showCIs,
+      meanAsBoxplot,
+      meanStrokeWidth,
+      meanPointSize,
+    });
+
+    if (showLmmFit || showLmmCI) {
+      renderLmm({
         chart,
-        x,
-        y,
-        color,
-        activeGroup: activeSingleEvolutionId,
-        tooltip,
-        discreteAggregates,
-        selectedNodesByVisit,
-        onToggleNodeSelection: (visit, value) =>
-          setSelectedNodesByVisit((prev) =>
-            toggleNodeSelection(prev, visit, value),
-          ),
-        onNodeHover: setHoveredNode,
-        onEdgeHover: setHoveredEdge,
-        hoveredEdge,
-        ratioNodeScale,
-        ratioEdgeScale,
-        ratioNodeMinPx,
-        ratioNodeMaxPx,
-        ratioEdgeMinPx,
-        ratioEdgeMaxPx,
-      });
-
-      xAxisG
-        .selectAll(".tick")
-        .style("cursor", "pointer")
-        .on("click", function (event, tickValue) {
-          event.preventDefault();
-          event.stopPropagation();
-          const visit = String(tickValue);
-          const valuesAtVisit = (discreteAggregates?.nodes || [])
-            .filter((node) => String(node.visit) === visit)
-            .map((node) => valueToKey(node.value));
-
-          if (!valuesAtVisit.length) return;
-
-          setSelectedNodesByVisit((prev) =>
-            toggleVisitSelection(prev, visit, valuesAtVisit),
-          );
-        });
-    } else {
-      if (showObs) {
-        renderParticipants({
-          chart,
-          data,
-          x,
-          y,
-          color,
-          hide,
-          tooltip,
-          selectedSubjectIds,
-          setSelectedSubjectIds,
-          subjectPointSize,
-          subjectStrokeWidth,
-        });
-      }
-
-      if (showMeans) {
-        renderMeans(meanRendererProps);
-      }
-
-      renderOverallMean({
-        chart,
-        overallMeanData: data?.overallMeanData,
+        data,
         x,
         y,
         color,
         hide,
         tooltip,
-        showOverallMean,
-        showCIs,
-        meanAsBoxplot,
+        showLmmFit,
+        showLmmCI,
         meanStrokeWidth,
-        meanPointSize,
-        isDiscreteAggregatedMode,
       });
-
-      if (showLmmFit || showLmmCI) {
-        renderLmm({
-          chart,
-          data,
-          x,
-          y,
-          color,
-          hide,
-          tooltip,
-          showLmmFit,
-          showLmmCI,
-          meanStrokeWidth,
-        });
-      }
     }
 
     const inactiveOpacity = 0.12;
@@ -442,17 +249,6 @@ export default function useLineChart({ chartRef, data, config }) {
       applySort(".evolutionOverallMean");
       applySort(".evolutionOverallCI");
 
-      if (isDiscreteAggregatedMode) {
-        if (activeGroup != null) {
-          chart
-            .selectAll(".evolutionMean")
-            .filter((entry) => String(entry?.group) === String(activeGroup))
-            .raise();
-        } else {
-          chart.selectAll(".discrete-aggregated-edges").raise();
-          chart.selectAll(".discrete-aggregated-nodes").raise();
-        }
-      }
     };
 
     const setGroupHighlight = (activeGroup = null) => {
@@ -506,18 +302,8 @@ export default function useLineChart({ chartRef, data, config }) {
               .filter((entry) => entry !== normalizedGroup);
           });
         },
-        clearSelectionVisible:
-          (isDiscreteAggregatedMode &&
-            hasSelectedNodes(selectedNodesByVisit)) ||
-          selectedSubjectIds.length > 0,
-        onClearSelection: () => {
-          setSelectedNodesByVisit(clearSelectedNodes());
-          setSelectedSubjectIds([]);
-        },
-        showDiscreteAggregatedLegend: isDiscreteAggregatedMode,
-        discreteLegendColor: color(activeSingleEvolutionId),
-        discreteHasSelection:
-          isDiscreteAggregatedMode && hasSelectedNodes(selectedNodesByVisit),
+        clearSelectionVisible: selectedSubjectIds.length > 0,
+        onClearSelection: () => setSelectedSubjectIds([]),
         maxWidth: Math.max(0, scene.legendLayout.legendInnerWidth - 43),
       });
     }
@@ -545,13 +331,6 @@ export default function useLineChart({ chartRef, data, config }) {
     selectionTimestamps,
     colorDomain,
     hide,
-    activeSingleEvolutionId,
-    isDiscreteAggregatedMode,
-    discreteAggregates,
-    activeEvolutionSubjects,
-    selectedNodesByVisit,
-    hoveredEdge?.key,
-    hoveredNode?.key,
     selectedSubjectIds,
     selectionGroups,
     showMeans,
@@ -564,14 +343,6 @@ export default function useLineChart({ chartRef, data, config }) {
     showLegend,
     showGrid,
     showGridBehindAll,
-    forceDiscreteAggregatedMode,
-    disableAutoDiscreteAggregatedMode,
-    ratioNodeScale,
-    ratioEdgeScale,
-    ratioNodeMinPx,
-    ratioNodeMaxPx,
-    ratioEdgeMinPx,
-    ratioEdgeMaxPx,
     meanPointSize,
     meanAsBoxplot,
     meanStrokeWidth,
@@ -585,12 +356,8 @@ export default function useLineChart({ chartRef, data, config }) {
   useEffect(() => {
     if (!chartStateRef.current.chart) return;
 
-    const { chart, x } = chartStateRef.current;
-    const { meanVisualRadius } = getEffectiveMeanMarkerSizes({
-      isDiscreteAggregatedMode,
-      meanPointSize,
-      bandwidth: x?.bandwidth?.(),
-    });
+    const { chart } = chartStateRef.current;
+    const meanVisualRadius = getMeanMarkerRadius(meanPointSize);
 
     if (meanPointSize != null) {
       chart
@@ -622,7 +389,6 @@ export default function useLineChart({ chartRef, data, config }) {
     subjectPointSize,
     meanStrokeWidth,
     subjectStrokeWidth,
-    isDiscreteAggregatedMode,
   ]);
 
   useEffect(() => {

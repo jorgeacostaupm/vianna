@@ -28,24 +28,6 @@ export function applyAttributeRemovals(state, attributeIDs, recover) {
 
     const parentNode = state.attributes[parentIdx];
 
-    if (recover == null || recover) {
-      const attrRelatedPos = toRelatedList(parentNode).findIndex(
-        (id) => id === attributeID,
-      );
-
-      if (attribute.type === "attribute") {
-        state.recoverableOperations = [];
-      } else {
-        state.recoverableOperations.push({
-          change: "removeNode",
-          associatedId: attributeID,
-          associatedNodePosition: attrRelatedPos,
-          associatedParent: parentNode.id,
-          associatedData: { ...attribute },
-        });
-      }
-    }
-
     parentNode.related = toRelatedList(parentNode).filter(
       (id) => id !== attributeID,
     );

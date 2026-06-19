@@ -1,4 +1,3 @@
-import React from "react";
 import * as d3 from "d3";
 import { Typography } from "antd";
 import { BgColorsOutlined } from "@ant-design/icons";

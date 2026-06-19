@@ -1,25 +1,16 @@
 import React, { useMemo } from "react";
-import { Dropdown } from "antd";
-import { TableOutlined } from "@ant-design/icons";
+import { FileTextOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
-import { selectNavioVars } from "@/store/features/main";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import { generateFileName } from "@/utils/functions";
-import useAnchoredOverlay from "@/components/ui/useAnchoredOverlay";
+import { toCsv } from "@/utils/csv";
 import {
   normalizeOrderValues,
   sortRowsByOrderVariable,
   uniqueColumns,
 } from "@/utils/viewRecords";
-import styles from "./DownloadButton.module.css";
-
-const EXPORT_MODES = [
-  { key: "visible", label: "Visible variables" },
-  { key: "all", label: "All variables" },
-  { key: "required", label: "Required variables" },
-];
 
 export default function ViewRecordsDownloadButton({
   filename = "records",
@@ -27,7 +18,6 @@ export default function ViewRecordsDownloadButton({
   requiredVariables = [],
 }) {
   const fullData = useSelector((state) => state.dataframe.dataframe);
-  const visibleVariables = useSelector(selectNavioVars);
   const normalizedOrders = useMemo(
     () => normalizeOrderValues(recordOrders),
     [recordOrders],
@@ -58,72 +48,41 @@ export default function ViewRecordsDownloadButton({
   }, [normalizedOrders, rowsByOrder]);
 
   const disabled = rows.length === 0;
-  const { open, overlayStyle, isFixedOverlay, triggerRef, handleOpenChange } =
-    useAnchoredOverlay({ disabled });
-
-  const onMenuClick = ({ key }) => {
-    const columns = resolveColumns({
-      mode: key,
-      rows,
-      visibleVariables,
-      requiredVariables,
-    });
+  const downloadRecords = () => {
+    const columns = resolveColumns({ rows, requiredVariables });
     if (!columns.length) return;
 
-    const csv = buildCsv(rows, columns);
+    const csv = toCsv(rows, columns);
     if (!csv) return;
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const href = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = href;
-    link.download = generateFileName(`${filename}_${key}`);
+    link.download = generateFileName(`${filename}_required`);
     link.click();
     URL.revokeObjectURL(href);
   };
 
-  const menu = {
-    items: EXPORT_MODES,
-    onClick: onMenuClick,
-  };
-
   return (
-    <Dropdown
-      menu={menu}
-      open={open}
-      onOpenChange={handleOpenChange}
-      placement="bottomRight"
-      trigger={["click"]}
+    <AppButton
+      preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
+      tooltip="Download view data"
+      ariaLabel="Download view data"
+      icon={<FileTextOutlined />}
       disabled={disabled}
-      overlayClassName={isFixedOverlay ? styles.dropdownOverlayFixed : ""}
-      overlayStyle={overlayStyle}
-      getPopupContainer={() => document.body}
-    >
-      <span ref={triggerRef}>
-        <AppButton
-          preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
-          tooltip="Download records"
-          icon={<TableOutlined />}
-          disabled={disabled}
-        />
-      </span>
-    </Dropdown>
+      onClick={downloadRecords}
+    />
   );
 }
 
-function resolveColumns({ mode, rows, visibleVariables, requiredVariables }) {
+function resolveColumns({ rows, requiredVariables }) {
   if (!rows?.length) return [];
 
   const row = rows[0];
 
-  const allColumns = Object.keys(row);
-  const visible = uniqueColumns(visibleVariables);
   const required = uniqueColumns(requiredVariables);
-
-  const baseColumns =
-    mode === "all" ? allColumns : mode === "required" ? required : visible;
-
-  const existing = baseColumns.filter((column) =>
+  const existing = required.filter((column) =>
     Object.prototype.hasOwnProperty.call(row, column),
   );
   const withOrder = [
@@ -131,21 +90,4 @@ function resolveColumns({ mode, rows, visibleVariables, requiredVariables }) {
     ...existing.filter((c) => c !== ORDER_VARIABLE),
   ];
   return uniqueColumns(withOrder);
-}
-
-function buildCsv(rows, columns) {
-  if (!rows?.length || !columns?.length) return "";
-
-  const header = columns.map(escapeCsvCell).join(",");
-  const body = rows.map((row) =>
-    columns.map((column) => escapeCsvCell(row?.[column])).join(","),
-  );
-  return [header, ...body].join("\n");
-}
-
-function escapeCsvCell(value) {
-  if (value === null || value === undefined) return "";
-  const text = String(value);
-  if (!/[",\n\r]/.test(text)) return text;
-  return `"${text.replace(/"/g, '""')}"`;
 }

@@ -11,8 +11,6 @@ import * as d3 from "d3";
 //   interpolateGreys,
 // } from "d3-scale-chromatic";
 
-import Popper from "popper.js";
-
 import {
   FilterByRange,
   FilterByValue,
@@ -289,14 +287,23 @@ function navio(selection, _h) {
     //   clientHeight: 0,
     // };
 
-    tooltip = new Popper(ref, tooltipElement.node(), {
-      placement: "right",
-      // modifiers: {
-      //   preventOverflow: {
-      //     boundariesElement: selection.node(),
-      //   },
-      // },
-    });
+    // ponytail: fixed right placement is sufficient for this tooltip; restore a
+    // positioning library if it needs collision-aware placement on every edge.
+    tooltipElement.attr("x-placement", "right").style("position", "fixed");
+    tooltip = {
+      scheduleUpdate() {
+        const anchor = ref.getBoundingClientRect();
+        const node = tooltipElement.node();
+        const width = node.offsetWidth;
+        const height = node.offsetHeight;
+        tooltipElement
+          .style(
+            "left",
+            `${Math.max(0, Math.min(anchor.left + 12, innerWidth - width))}px`,
+          )
+          .style("top", `${Math.max(0, anchor.top - height / 2)}px`);
+      },
+    };
   }
 
   function changeCursorOnKey(event) {

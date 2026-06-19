@@ -1,6 +1,6 @@
-import CorrelationMatrix from "./CorrelationMatrix";
-import ScatterMatrix from "./ScatterMatrix";
-import PCA from "./PCA";
+import CorrelationMatrix from "./CorrelationMatrix/CorrelationMatrix";
+import ScatterMatrix from "./ScatterMatrix/ScatterMatrix";
+import PCA from "./PCA/PCA";
 import { defineView } from "@/components/grid/viewDefinitions";
 
 export default {

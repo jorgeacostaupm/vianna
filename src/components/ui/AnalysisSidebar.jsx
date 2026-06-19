@@ -1,4 +1,3 @@
-import React from "react";
 
 import AnalysisSidebarHeader from "./AnalysisSidebarHeader";
 import sidebarStyles from "@/styles/modules/analysisSidebar.module.css";

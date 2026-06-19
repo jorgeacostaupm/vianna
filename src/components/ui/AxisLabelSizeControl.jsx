@@ -1,4 +1,3 @@
-import React from "react";
 import { Slider, Typography } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";

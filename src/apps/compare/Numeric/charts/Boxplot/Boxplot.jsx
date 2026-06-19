@@ -1,12 +1,4 @@
-import { useRef } from "react";
-
 import useBoxplot from "./useBoxplot";
-import BasicChart from "@/components/charts/BasicChart";
+import createD3Chart from "@/components/charts/createD3Chart";
 
-export default function Boxplot({ data, config, id }) {
-  const chartRef = useRef(null);
-
-  useBoxplot({ chartRef, data, config });
-
-  return <BasicChart id={id} chartRef={chartRef} />;
-}
+export default createD3Chart(useBoxplot);

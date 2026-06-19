@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { getChartTooltip } from "@/utils/chartTooltip";
 import { useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { selectCompareAnalysisContext } from "@/store/features/main";
@@ -155,10 +156,7 @@ export default function useBoxplot({ chartRef, data, config }) {
     });
     const { chartWidth, chartHeight } = legendLayout;
 
-    let tooltip = d3.select("body").select("div.tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div").attr("class", "tooltip");
-    }
+    const tooltip = getChartTooltip();
 
     const svg = d3.select(chartRef.current);
     const legend = appendLegendRoot(svg, legendLayout);

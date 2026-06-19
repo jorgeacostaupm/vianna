@@ -1,4 +1,3 @@
-import React from "react";
 
 import HierarchyEditor from "./editor/HierarchyEditor";
 import { HIER_DESC } from "@/utils/constants";

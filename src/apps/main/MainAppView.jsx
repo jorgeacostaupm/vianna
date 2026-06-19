@@ -1,8 +1,7 @@
-import React from "react";
 
 import SingleViewAppLayout from "@/components/ui/SingleViewAppLayout";
 
-import Explorer from "../explorer";
+import Explorer from "../explorer/Explorer";
 import AppsButtons from "./AppsButtons";
 import MainSidebar from "./MainSidebar";
 

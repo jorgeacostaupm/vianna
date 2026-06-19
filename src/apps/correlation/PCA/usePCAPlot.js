@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { getChartTooltip } from "@/utils/chartTooltip";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectCorrelationAnalysisContext } from "@/store/features/main";
@@ -77,10 +78,7 @@ export default function usePCAPlot({
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    let tooltip = d3.select("body").select("div.tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div").attr("class", "tooltip");
-    }
+    const tooltip = getChartTooltip();
 
     const xExtent = d3.extent(data, (d) => d.pc1);
     const yExtent = d3.extent(data, (d) => d.pc2);

@@ -1,4 +1,3 @@
-import React from "react";
 import { useSelector, shallowEqual } from "react-redux";
 
 import styles from "@/styles/Charts.module.css";

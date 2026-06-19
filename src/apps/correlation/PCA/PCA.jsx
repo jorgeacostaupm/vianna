@@ -1,4 +1,4 @@
-import React, {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -10,11 +10,11 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Settings from "./Settings";
 import LassoDock from "./LassoDock";
-import BasicChart from "@/components/charts/BasicChart";
+import createD3Chart from "@/components/charts/createD3Chart";
 import usePCAPlot from "./usePCAPlot";
 import usePCAData from "./usePCAData";
-import CorrelationView from "../view/CorrelationView";
-import { createCorrelationViewModel } from "../view/createCorrelationViewModel";
+import ViewContainer from "@/components/charts/ViewContainer";
+import { createViewModel } from "@/components/charts/view/createViewModel";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import useSelectionRows from "@/hooks/useSelectionRows";
@@ -25,6 +25,7 @@ import {
   notifyWarning,
 } from "@/components/notifications";
 import { generateFileName, getVariableTypes } from "@/utils/functions";
+import { toCsv } from "@/utils/csv";
 import { setDataframe, setNavioColumns } from "@/store/features/dataframe";
 import {
   selectCorrelationAnalysisContext,
@@ -58,27 +59,8 @@ function isUsableNumericPcaValue(raw) {
   );
 }
 
-function buildCsv(rows) {
-  if (!Array.isArray(rows) || rows.length === 0) return "";
-
-  const columns = Object.keys(rows[0]);
-  const header = columns.map(escapeCsvCell).join(",");
-  const body = rows.map((row) =>
-    columns.map((column) => escapeCsvCell(row?.[column])).join(","),
-  );
-
-  return [header, ...body].join("\n");
-}
-
-function escapeCsvCell(value) {
-  if (value === null || value === undefined) return "";
-  const text = String(value);
-  if (!/[",\n\r]/.test(text)) return text;
-  return `"${text.replace(/"/g, '""')}"`;
-}
-
 function downloadCsv(rows, filenameBase = "pca_groups") {
-  const csv = buildCsv(rows);
+  const csv = toCsv(rows, Object.keys(rows?.[0] || {}));
   if (!csv) return;
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -90,13 +72,7 @@ function downloadCsv(rows, filenameBase = "pca_groups") {
   URL.revokeObjectURL(href);
 }
 
-function Chart({ data, id, config, grouping }) {
-  const chartRef = useRef(null);
-
-  usePCAPlot({ chartRef, data, config, grouping });
-
-  return <BasicChart id={id} chartRef={chartRef} />;
-}
+const Chart = createD3Chart(usePCAPlot);
 
 export default function PCA({
   id,
@@ -596,7 +572,7 @@ export default function PCA({
     unassignedVisibleCount,
   ]);
 
-  const viewModel = createCorrelationViewModel({
+  const viewModel = createViewModel({
     title: `PCA · ${params.variables.length} Variables`,
     svgIDs: [id],
     remove,
@@ -625,5 +601,5 @@ export default function PCA({
     },
   });
 
-  return <CorrelationView view={viewModel} />;
+  return <ViewContainer view={viewModel} />;
 }

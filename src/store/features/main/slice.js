@@ -19,15 +19,10 @@ import {
 import { MAIN_CONFIG_DEFAULTS } from "./configDefaults";
 
 const initialState = {
-  init: false,
-  initQuarantine: false,
-
   quarantineData: [],
   quarantineSelection: null,
   quarantineNavioUiState: null,
   quarantineVersion: 0,
-
-  descriptions: {},
 
   idVar: null,
   groupVar: null,
@@ -46,12 +41,6 @@ const mainSlice = createSlice({
   name: "main",
   initialState,
   reducers: {
-    setInit: (state, action) => {
-      state.init = action.payload;
-    },
-    setInitQuarantine: (state, action) => {
-      state.initQuarantine = action.payload;
-    },
     setQuarantineData: (state, action) => {
       state.quarantineData = action.payload;
       state.quarantineSelection = action.payload;
@@ -134,8 +123,6 @@ const mainSlice = createSlice({
 export default mainSlice.reducer;
 
 export const {
-  setInit,
-  setInitQuarantine,
   setQuarantineData,
   setQuarantineSelection,
   setQuarantineNavioUiState,

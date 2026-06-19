@@ -18,6 +18,7 @@ import {
   updateHierarchy,
 } from "@/store/features/metadata";
 import { generateFileName } from "@/utils/functions";
+import { toCsv } from "@/utils/csv";
 import {
   notifyError,
   notifySuccess,
@@ -29,28 +30,6 @@ const { Title, Text } = Typography;
 const ACCEPTED_FORMATS = {
   "application/zip": [".zip"],
   "application/x-zip-compressed": [".zip"],
-};
-
-const escapeCsvCell = (value) => {
-  const normalized = String(value ?? "");
-  if (!/[",\n\r]/.test(normalized)) return normalized;
-  return `"${normalized.replace(/"/g, '""')}"`;
-};
-
-const buildCsv = (rows) => {
-  if (!Array.isArray(rows) || rows.length === 0) return "";
-  const keys = Array.from(
-    rows.reduce((set, row) => {
-      Object.keys(row || {}).forEach((key) => set.add(key));
-      return set;
-    }, new Set()),
-  );
-  return [
-    keys.map(escapeCsvCell).join(","),
-    ...rows.map((row) =>
-      keys.map((key) => escapeCsvCell(row?.[key])).join(","),
-    ),
-  ].join("\n");
 };
 
 const downloadBlob = ({ blob, filename }) => {
@@ -89,7 +68,7 @@ const Info = () => {
 
   const handleExport = () => {
     const zip = createAssetBundleZip([
-      { name: "data.csv", content: buildCsv(rows) },
+      { name: "data.csv", content: toCsv(rows) },
       {
         name: "hierarchy.json",
         content: JSON.stringify(hierarchy || [], null, 2),

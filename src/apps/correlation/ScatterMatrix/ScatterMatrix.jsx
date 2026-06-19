@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import Settings from "./Settings";
 import useScatter from "./useScatter";
 import useScatterData from "./useScatterData";
-import CorrelationView from "../view/CorrelationView";
-import { createCorrelationViewModel } from "../view/createCorrelationViewModel";
-import BasicChart from "@/components/charts/BasicChart";
+import ViewContainer from "@/components/charts/ViewContainer";
+import { createViewModel } from "@/components/charts/view/createViewModel";
+import createD3Chart from "@/components/charts/createD3Chart";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import useSelectionRows from "@/hooks/useSelectionRows";
@@ -18,13 +18,7 @@ import {
 import { selectCorrelationAnalysisContext } from "@/store/features/main";
 import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
-function Chart({ data, id, config }) {
-  const chartRef = useRef(null);
-
-  useScatter({ chartRef, data, config });
-
-  return <BasicChart id={id} chartRef={chartRef} />;
-}
+const Chart = createD3Chart(useScatter);
 
 export default function ScatterMatrix({
   id,
@@ -97,7 +91,7 @@ export default function ScatterMatrix({
     return <Chart data={data} config={config} id={id} />;
   }, [config, data]);
 
-  const viewModel = createCorrelationViewModel({
+  const viewModel = createViewModel({
     title: "Scatter Plot Matrix",
     svgIDs: [id],
     remove,
@@ -112,5 +106,5 @@ export default function ScatterMatrix({
     },
   });
 
-  return <CorrelationView view={viewModel} />;
+  return <ViewContainer view={viewModel} />;
 }

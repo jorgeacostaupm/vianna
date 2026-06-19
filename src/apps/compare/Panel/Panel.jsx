@@ -1,4 +1,3 @@
-import React from "react";
 
 import AnalysisSidebar from "@/components/ui/AnalysisSidebar";
 import AnalysisPanelSection from "@/components/ui/AnalysisPanelSection";

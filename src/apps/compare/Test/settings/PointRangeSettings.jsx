@@ -1,7 +1,7 @@
-import React from "react";
-import { Typography, Switch, Select } from "antd";
+import { Typography, Select } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import GroupSettings from "../../GroupSettings";
 import { IntervalSettings, MarkerSettings } from "./common";
@@ -46,15 +46,12 @@ export default function PointRangeSettings({ config, setConfig }) {
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Guides</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Zero line</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Zero line"
+          size="small"
             checked={showZeroLine}
             disabled={disabled}
             onChange={(v) => update("showZeroLine", v)}
-          />
-        </div>
+        />
         <div className={panelStyles.row}>
           <Text className={panelStyles.label}>Sort by</Text>
           <Select

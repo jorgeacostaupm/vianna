@@ -209,14 +209,11 @@ const clearAssignmentHistory = (state) => {
 };
 
 const initialState = {
-  init: false,
   filename: null,
   descriptionsFilename: null,
   attributes: [],
-  source: null,
   loadingHierarchy: false,
   loadingDescriptions: false,
-  recoverableOperations: [],
   assignmentUndoStack: [],
   assignmentRedoStack: [],
   hierarchyRevision: -1,
@@ -226,10 +223,6 @@ const metaSlice = createSlice({
   name: "metadata",
   initialState: initialState,
   reducers: (create) => ({
-    setInit: create.reducer((state, action) => {
-      state.init = action.payload;
-    }),
-
     setFullMeta: create.reducer((state, action) => {
       const { hierarchy, filename } = action.payload;
       state.attributes = Array.isArray(hierarchy)
@@ -292,7 +285,7 @@ const metaSlice = createSlice({
     }),
 
     changeRelationship: create.reducer((state, action) => {
-      const { sourceID, targetID, recover } = action.payload || {};
+      const { sourceID, targetID } = action.payload || {};
       const sourceIdx = findParentIndexByChildId(state.attributes, sourceID);
       const targetIdx = findNodeIndexById(state.attributes, targetID);
 
@@ -302,19 +295,6 @@ const metaSlice = createSlice({
       const targetParent = state.attributes[targetIdx];
       if (isUsedByAggregationParent(sourceParent, sourceID)) return;
 
-      if (recover == null || recover) {
-        state.recoverableOperations.push({
-          change: "relationshipNode",
-          associatedId: sourceID,
-          associatedParent: sourceParent.id,
-          associatedData: {
-            originalPos: toRelatedList(sourceParent).findIndex(
-              (n) => n === sourceID,
-            ),
-          },
-        });
-      }
-
       const moves = applyAssignmentChange(state, [sourceID], targetParent.id);
       if (moves.length === 0) return;
 
@@ -323,48 +303,26 @@ const metaSlice = createSlice({
     }),
 
     changeRelationshipBatch: create.reducer((state, action) => {
-      const { sourceIDs, targetID, recover } = action.payload || {};
+      const { sourceIDs, targetID } = action.payload || {};
       if (!Array.isArray(sourceIDs) || sourceIDs.length === 0) return;
 
       const targetIdx = findNodeIndexById(state.attributes, targetID);
       if (targetIdx === -1) return;
 
       const targetParent = state.attributes[targetIdx];
-      const moveCandidates = [];
-
-      [...new Set(sourceIDs)].forEach((sourceID) => {
+      const moveCandidates = [...new Set(sourceIDs)].filter((sourceID) => {
         const sourceIdx = findParentIndexByChildId(state.attributes, sourceID);
-        if (sourceIdx === -1) return;
+        if (sourceIdx === -1) return false;
 
         const sourceParent = state.attributes[sourceIdx];
-        if (isUsedByAggregationParent(sourceParent, sourceID)) return;
-
-        moveCandidates.push({ sourceID, sourceIdx });
+        return !isUsedByAggregationParent(sourceParent, sourceID);
       });
 
       if (moveCandidates.length === 0) return;
 
-      if (recover == null || recover) {
-        moveCandidates.forEach(({ sourceID, sourceIdx }) => {
-          const sourceParent = state.attributes[sourceIdx];
-          if (!sourceParent) return;
-
-          state.recoverableOperations.push({
-            change: "relationshipNode",
-            associatedId: sourceID,
-            associatedParent: sourceParent.id,
-            associatedData: {
-              originalPos: toRelatedList(sourceParent).findIndex(
-                (n) => n === sourceID,
-              ),
-            },
-          });
-        });
-      }
-
       const moves = applyAssignmentChange(
         state,
-        moveCandidates.map((move) => move.sourceID),
+        moveCandidates,
         targetParent.id,
       );
       if (moves.length === 0) return;
@@ -444,7 +402,6 @@ const metaSlice = createSlice({
         id,
         name,
         type,
-        recover,
         aggregationConfig,
         childIDs,
         parentID,
@@ -455,10 +412,7 @@ const metaSlice = createSlice({
       if (!parentNode) return;
 
       const newAggregationConfig =
-        aggregationConfig ??
-        (type === "aggregation"
-          ? createEmptyAggregationConfig()
-          : createEmptyAggregationConfig());
+        aggregationConfig ?? createEmptyAggregationConfig();
 
       const newNode = sanitizeHierarchyNode({
         id,
@@ -488,17 +442,6 @@ const metaSlice = createSlice({
           n.related.includes(source),
         );
         if (!sourceNode) return;
-
-        if (recover == null || recover) {
-          state.recoverableOperations.push({
-            change: "relationshipNode",
-            associatedId: source,
-            associatedParent: sourceNode.id,
-            associatedData: {
-              originalPos: sourceNode.related.findIndex((n) => n === source),
-            },
-          });
-        }
 
         sourceNode.related = sourceNode.related.filter((n) => n !== source);
         targetNode.related = [
@@ -580,7 +523,6 @@ const metaSlice = createSlice({
         name,
         parentID,
         type,
-        recover,
         aggregationConfig,
         dtype,
       } = action.payload;
@@ -589,21 +531,9 @@ const metaSlice = createSlice({
       );
       if (parentPosition === -1) return;
 
-      if (recover == null || recover) {
-        state.recoverableOperations.push({
-          change: "addNode",
-          associatedId: id,
-          associatedParent: null,
-          associatedData: null,
-        });
-      }
-
-      let newAggregationConfig;
-      if (aggregationConfig == null) {
-        newAggregationConfig = createEmptyAggregationConfig();
-      } else {
-        newAggregationConfig = sanitizeAggregationConfig(aggregationConfig);
-      }
+      const newAggregationConfig = aggregationConfig == null
+        ? createEmptyAggregationConfig()
+        : sanitizeAggregationConfig(aggregationConfig);
 
       state.attributes.push(sanitizeHierarchyNode({
         id: id,
@@ -643,15 +573,6 @@ const metaSlice = createSlice({
       const idx = state.attributes.findIndex((n) => n.id === node.id);
       if (idx == null || idx === -1) return;
 
-      if (recover == null || recover) {
-        state.recoverableOperations.push({
-          change: "updateNode",
-          associatedId: node.id,
-          associatedParent: null,
-          associatedData: { ...state.attributes[idx] },
-        });
-      }
-
       state.attributes[idx] = {
         ...state.attributes[idx],
         ...sanitizeHierarchyNode(node),
@@ -675,7 +596,6 @@ const metaSlice = createSlice({
 });
 
 export const {
-  setInit,
   setFullMeta,
   setDescriptions,
   toggleAttribute,

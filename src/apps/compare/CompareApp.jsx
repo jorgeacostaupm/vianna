@@ -6,7 +6,7 @@ import { setSelectedVar, setWorkspace } from "@/store/features/compare";
 import { Apps } from "@/utils/constants";
 import registry from "./registry";
 import Grid from "@/components/grid";
-import Panel from "./Panel";
+import Panel from "./Panel/Panel";
 import { createComparePanelCommands } from "./panelCommands";
 
 export default function CompareApp() {

@@ -117,16 +117,6 @@ export const getNodeId = (node) => node?.data?.id ?? node?.id ?? null;
 
 export const getNodeName = (node) => node?.data?.name ?? node?.name ?? null;
 
-export const setHierarchyRootName = (hierarchy) => {
-  if (!Array.isArray(hierarchy)) return hierarchy;
-
-  return hierarchy.map((node) => {
-    const isRootNode = node?.type === "root" || node?.id === 0;
-    if (!isRootNode || node?.name === ROOT_NODE_NAME) return node;
-    return { ...node, name: ROOT_NODE_NAME };
-  });
-};
-
 export const getNodeLabel = (node) => {
   const nodeName = getNodeName(node);
   const nodeId = getNodeId(node);

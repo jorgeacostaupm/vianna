@@ -1,16 +1,15 @@
-import React from "react";
 import {
   Checkbox,
-  Switch,
-  Slider,
   Typography,
   Select,
   InputNumber,
 } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import SwitchControl from "@/components/ui/SwitchControl";
 import evolutionTests from "@/utils/evolution_tests";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import EvolutionVariableSettings from "../VariableSettings";
+import SliderControl from "@/components/ui/SliderControl";
 
 const { Text } = Typography;
 
@@ -45,13 +44,6 @@ export default function Settings({
     showIncomplete,
     incompleteRequiredTimes = [],
     lmmReferenceGroup,
-    forceDiscreteAggregatedMode,
-    ratioNodeScale,
-    ratioEdgeScale,
-    ratioNodeMinPx,
-    ratioNodeMaxPx,
-    ratioEdgeMinPx,
-    ratioEdgeMaxPx,
     lmmCovariates = [],
     lmmIncludeInteraction,
     lmmTimeCoding,
@@ -245,17 +237,13 @@ export default function Settings({
               />
             </div>
 
-            <div className={panelStyles.row}>
-              <Text className={panelStyles.label}>
-                Include Time × Group interaction
-              </Text>
-              <Switch
-                size="small"
-                checked={Boolean(lmmIncludeInteraction)}
-                disabled={!lmmSelected || interactionDisabled}
-                onChange={(value) => update("lmmIncludeInteraction", value)}
-              />
-            </div>
+            <SwitchControl
+              label="Include Time × Group interaction"
+              size="small"
+              checked={Boolean(lmmIncludeInteraction)}
+              disabled={!lmmSelected || interactionDisabled}
+              onChange={(value) => update("lmmIncludeInteraction", value)}
+            />
             {interactionDisabled && (
               <Text className={panelStyles.helper}>
                 Interaction is available only when a group variable is selected.
@@ -305,92 +293,65 @@ export default function Settings({
     <div className={panelStyles.panel}>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Displayed Series</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Means</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Means"
+          size="small"
             checked={showMeans}
             onChange={(v) => update("showMeans", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Overall mean</Text>
-          <Switch
-            checked={showOverallMean}
+        />
+        <SwitchControl label="Overall mean"
+          checked={showOverallMean}
             size="small"
             onChange={(v) => update("showOverallMean", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Items</Text>
-          <Switch
-            size="small"
+        />
+        <SwitchControl label="Items"
+          size="small"
             checked={showObs}
             onChange={(v) => update("showObs", v)}
-          />
-        </div>
+        />
       </div>
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Uncertainty</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>STDs</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="STDs"
+          size="small"
             checked={showStds}
             onChange={(v) => update("showStds", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>95% CIs</Text>
-          <Switch
-            size="small"
+        />
+        <SwitchControl label="95% CIs"
+          size="small"
             checked={showCIs}
             onChange={(v) => update("showCIs", v)}
-          />
-        </div>
+        />
       </div>
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>LMM</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>LMM fit</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="LMM fit"
+          size="small"
             checked={showLmmFit}
             disabled={!lmmSelected}
             onChange={(v) => update("showLmmFit", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>LMM 95% CIs</Text>
-          <Switch
-            size="small"
+        />
+        <SwitchControl label="LMM 95% CIs"
+          size="small"
             checked={showLmmCI}
             disabled={!lmmSelected}
             onChange={(v) => update("showLmmCI", v)}
-          />
-        </div>
+        />
       </div>
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>View Modifiers</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Complete items</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Complete items"
+          size="small"
             checked={showComplete}
             onChange={(v) => update("showComplete", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Incomplete items</Text>
-          <Switch
-            size="small"
+        />
+        <SwitchControl label="Incomplete items"
+          size="small"
             checked={Boolean(showIncomplete)}
             onChange={(v) => update("showIncomplete", v)}
-          />
-        </div>
+        />
         {Boolean(showIncomplete) && (
           <div className={panelStyles.rowStack}>
             <Text className={panelStyles.label}>
@@ -419,113 +380,17 @@ export default function Settings({
           </div>
         )}
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
-        {/*         <div className={panelStyles.row}>
-          <span className={panelStyles.labelInline}>
-            <Text className={panelStyles.label}>Ratio Mode</Text>
-            <Popover
-              trigger="hover"
-              placement="bottomLeft"
-              content={
-                <div className={panelStyles.compactPopover}>
-                  Activates automatically with one visible group and
-                  low-cardinality values per visit. This switch forces that
-                  ratio view.
-                </div>
-              }
-            >
-              <InfoCircleOutlined className={panelStyles.infoIcon} />
-            </Popover>
-          </span>
-          <Switch
-            size="small"
-            checked={Boolean(forceDiscreteAggregatedMode)}
-            onChange={(v) => update("forceDiscreteAggregatedMode", v)}
-          />
-        </div> */}
-        {Boolean(forceDiscreteAggregatedMode) && (
-          <>
-            <div className={panelStyles.rowStack}>
-              <Text className={panelStyles.label}>Node size scale</Text>
-              <div className={panelStyles.scaleInline}>
-                <Select
-                  size="small"
-                  className={panelStyles.scaleSelect}
-                  value={ratioNodeScale || "sqrt"}
-                  options={[
-                    { label: "Square root", value: "sqrt" },
-                    { label: "Linear", value: "linear" },
-                    { label: "Logarithmic", value: "log" },
-                  ]}
-                  onChange={(v) => update("ratioNodeScale", v)}
-                />
-                <InputNumber
-                  size="small"
-                  className={panelStyles.scaleNumber}
-                  min={1}
-                  value={ratioNodeMinPx}
-                  onChange={(v) => update("ratioNodeMinPx", v)}
-                  addonBefore="min"
-                />
-                <InputNumber
-                  size="small"
-                  className={panelStyles.scaleNumber}
-                  min={1}
-                  value={ratioNodeMaxPx}
-                  onChange={(v) => update("ratioNodeMaxPx", v)}
-                  addonBefore="max"
-                />
-              </div>
-            </div>
-            <div className={panelStyles.rowStack}>
-              <Text className={panelStyles.label}>Edge size scale</Text>
-              <div className={panelStyles.scaleInline}>
-                <Select
-                  size="small"
-                  className={panelStyles.scaleSelect}
-                  value={ratioEdgeScale || "sqrt"}
-                  options={[
-                    { label: "Square root", value: "sqrt" },
-                    { label: "Linear", value: "linear" },
-                    { label: "Logarithmic", value: "log" },
-                  ]}
-                  onChange={(v) => update("ratioEdgeScale", v)}
-                />
-                <InputNumber
-                  size="small"
-                  className={panelStyles.scaleNumber}
-                  min={0.5}
-                  step={0.5}
-                  value={ratioEdgeMinPx}
-                  onChange={(v) => update("ratioEdgeMinPx", v)}
-                  addonBefore="min"
-                />
-                <InputNumber
-                  size="small"
-                  className={panelStyles.scaleNumber}
-                  min={0.5}
-                  step={0.5}
-                  value={ratioEdgeMaxPx}
-                  onChange={(v) => update("ratioEdgeMaxPx", v)}
-                  addonBefore="max"
-                />
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Y Axis</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Manual range</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Manual range"
+          size="small"
             checked={yAxisMode === "manual"}
             onChange={(enabled) =>
               update("yAxisMode", enabled ? "manual" : "auto")
             }
-          />
-        </div>
+        />
         <Text className={panelStyles.helper}>
           {yAxisMode === "manual"
             ? "Set min and max manually. You can leave one side empty to keep the automatic bound."
@@ -563,6 +428,7 @@ export default function Settings({
         <SliderControl
           label="Mean size"
           value={meanPointSize}
+          valueLabel={`${meanPointSize}px`}
           min={1}
           max={40}
           onChange={(v) => update("meanPointSize", v)}
@@ -570,6 +436,7 @@ export default function Settings({
         <SliderControl
           label="Mean stroke"
           value={meanStrokeWidth}
+          valueLabel={`${meanStrokeWidth}px`}
           min={1}
           max={30}
           onChange={(v) => update("meanStrokeWidth", v)}
@@ -577,6 +444,7 @@ export default function Settings({
         <SliderControl
           label="Item size"
           value={subjectPointSize}
+          valueLabel={`${subjectPointSize}px`}
           min={1}
           max={20}
           onChange={(v) => update("subjectPointSize", v)}
@@ -584,70 +452,42 @@ export default function Settings({
         <SliderControl
           label="Item stroke"
           value={subjectStrokeWidth}
+          valueLabel={`${subjectStrokeWidth}px`}
           min={1}
           max={10}
           onChange={(v) => update("subjectStrokeWidth", v)}
         />
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Means as boxplots</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Means as boxplots"
+          size="small"
             checked={Boolean(meanAsBoxplot)}
             onChange={(v) => update("meanAsBoxplot", v)}
-          />
-        </div>
+        />
       </div>
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Guides</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Legend</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Legend"
+          size="small"
             checked={showLegend}
             onChange={(v) => update("showLegend", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Grid</Text>
-          <Switch
-            size="small"
+        />
+        <SwitchControl label="Grid"
+          size="small"
             checked={showGrid}
             onChange={(v) => update("showGrid", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Grid behind all</Text>
-          <Switch
-            size="small"
+        />
+        <SwitchControl label="Grid behind all"
+          size="small"
             checked={Boolean(showGridBehindAll)}
             disabled={!showGrid}
             onChange={(v) => update("showGridBehindAll", v)}
-          />
-        </div>
+        />
       </div>
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Variables</div>
         <EvolutionVariableSettings />
       </div>
-    </div>
-  );
-}
-
-function SliderControl({ label, value, min, max, onChange }) {
-  return (
-    <div className={panelStyles.sliderInlineRow}>
-      <Text className={panelStyles.label}>{label}</Text>
-      <Text className={panelStyles.value}>{value}px</Text>
-      <Slider
-        className={panelStyles.sliderInlineControl}
-        min={min}
-        max={max}
-        step={1}
-        value={value}
-        onChange={onChange}
-      />
     </div>
   );
 }

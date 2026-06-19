@@ -7,11 +7,11 @@ import {
   useLocation,
 } from "react-router-dom";
 
-import MainApp from "@/apps/main";
+import MainApp from "@/apps/main/MainApp";
 import WelcomeApp from "@/apps/main/WelcomeApp";
-import CompareApp from "@/apps/compare";
-import EvolutionApp from "@/apps/evolution";
-import CorrelationApp from "@/apps/correlation";
+import CompareApp from "@/apps/compare/CompareApp";
+import EvolutionApp from "@/apps/evolution/EvolutionApp";
+import CorrelationApp from "@/apps/correlation/CorrelationApp";
 import QuarantineApp from "@/apps/quarantine/QuarantineApp";
 import HierarchyApp from "@/apps/hierarchy/HierarchyApp";
 import {

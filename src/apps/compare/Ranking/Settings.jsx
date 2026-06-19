@@ -1,7 +1,7 @@
-import React from "react";
-import { Typography, Radio, Slider, Switch } from "antd";
+import { Typography, Radio, Slider } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import GroupSettings from "../GroupSettings";
 
@@ -75,14 +75,11 @@ export default function Settings({ config, setConfig, maxEffectSize = 0 }) {
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Guides</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Grid lines</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Grid lines"
+          size="small"
             checked={showGrid}
             onChange={(v) => update("showGrid", v)}
-          />
-        </div>
+        />
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
 

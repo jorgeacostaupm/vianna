@@ -1,9 +1,6 @@
 import React from "react";
-import { Dropdown } from "antd";
-import { DownloadOutlined } from "@ant-design/icons";
+import { FileImageOutlined } from "@ant-design/icons";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
-import styles from "./DownloadButton.module.css";
-import useAnchoredOverlay from "@/components/ui/useAnchoredOverlay";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SVG_STYLE_PROPERTIES = [
@@ -56,47 +53,22 @@ const SVG_STYLE_PROPERTIES = [
   "transform-box",
 ];
 
-const downloadFormats = [
-  { key: "png", label: "PNG (.png)" },
-  { key: "svg", label: "SVG (.svg)" },
-  { key: "jpg", label: "JPG (.jpg)" },
-];
-
 export default function DownloadButton({ filename = "chart", svgIds = [] }) {
   const disabled = !svgIds?.length;
-  const { open, overlayStyle, isFixedOverlay, triggerRef, handleOpenChange } =
-    useAnchoredOverlay({ disabled });
-
-  const menu = {
-    items: downloadFormats,
-    onClick: ({ key }) => handleDownload(filename, svgIds, key),
-  };
 
   return (
-    <Dropdown
-      menu={menu}
-      open={open}
-      onOpenChange={handleOpenChange}
-      placement="bottomRight"
-      trigger={["click"]}
+    <AppButton
+      preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
+      tooltip="Download SVG"
+      ariaLabel="Download SVG"
+      icon={<FileImageOutlined />}
       disabled={disabled}
-      overlayClassName={isFixedOverlay ? styles.dropdownOverlayFixed : ""}
-      overlayStyle={overlayStyle}
-      getPopupContainer={() => document.body}
-    >
-      <span ref={triggerRef}>
-        <AppButton
-          preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
-          tooltip="Download image"
-          icon={<DownloadOutlined />}
-          disabled={disabled}
-        />
-      </span>
-    </Dropdown>
+      onClick={() => handleDownload(filename, svgIds)}
+    />
   );
 }
 
-function handleDownload(filename, svgIds, format) {
+function handleDownload(filename, svgIds) {
   try {
     const svgs = [];
 
@@ -144,65 +116,8 @@ function handleDownload(filename, svgIds, format) {
       .replace(/[:.]/g, "-")
       .slice(0, -1);
 
-    const normalizedFormat = (format || "svg").toLowerCase();
-    const isSvg = normalizedFormat === "svg";
-    const isJpg = normalizedFormat === "jpg" || normalizedFormat === "jpeg";
-    const extension = isSvg ? "svg" : isJpg ? "jpg" : "png";
-    const fullFilename = `${filename}_${timestamp}.${extension}`;
-
-    if (isSvg) {
-      const blob = new Blob([serialized], { type: "image/svg+xml" });
-      triggerDownload(blob, fullFilename);
-      return;
-    }
-
-    const svgBlob = new Blob([serialized], {
-      type: "image/svg+xml;charset=utf-8",
-    });
-    const svgUrl = URL.createObjectURL(svgBlob);
-    const image = new Image();
-
-    image.onload = () => {
-      const dpr = window.devicePixelRatio || 1;
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.ceil(totalWidth * dpr);
-      canvas.height = Math.ceil(maxHeight * dpr);
-      canvas.style.width = `${totalWidth}px`;
-      canvas.style.height = `${maxHeight}px`;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        URL.revokeObjectURL(svgUrl);
-        return;
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      if (isJpg) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, totalWidth, maxHeight);
-      }
-
-      ctx.drawImage(image, 0, 0, totalWidth, maxHeight);
-
-      const mimeType = isJpg ? "image/jpeg" : "image/png";
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            triggerDownload(blob, fullFilename);
-          }
-        },
-        mimeType,
-        0.95,
-      );
-
-      URL.revokeObjectURL(svgUrl);
-    };
-
-    image.onerror = () => {
-      URL.revokeObjectURL(svgUrl);
-    };
-
-    image.src = svgUrl;
+    const blob = new Blob([serialized], { type: "image/svg+xml" });
+    triggerDownload(blob, `${filename}_${timestamp}.svg`);
   } catch (err) {
     console.error("Download error:", err);
   }

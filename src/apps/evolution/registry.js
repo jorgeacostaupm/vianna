@@ -1,4 +1,4 @@
-import LineChart from "./LineChart";
+import LineChart from "./LineChart/LineChart";
 import { defineView } from "@/components/grid/viewDefinitions";
 
 export default {

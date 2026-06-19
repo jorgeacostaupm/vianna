@@ -1,6 +1,7 @@
 import * as d3 from "d3";
+import { getChartTooltip } from "@/utils/chartTooltip";
 import { useLayoutEffect } from "react";
-import { deepCopy, moveTooltip } from "@/utils/functions";
+import { moveTooltip } from "@/utils/functions";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import { paintLayersInOrder } from "@/utils/gridInteractions";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
@@ -42,10 +43,7 @@ export default function useStackedBarChart({
     });
     const { chartWidth, chartHeight } = legendLayout;
 
-    let tooltip = d3.select("body").select("div.tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div").attr("class", "tooltip");
-    }
+    const tooltip = getChartTooltip();
 
     const svg = d3.select(chartRef.current);
     const legend = appendLegendRoot(svg, legendLayout);
@@ -78,7 +76,7 @@ export default function useStackedBarChart({
     );
     const visibleCategories =
       categoriesWithValues?.length > 0 ? categoriesWithValues : categories;
-    const orderedCategories = deepCopy(visibleCategories).sort((a, b) => {
+    const orderedCategories = [...visibleCategories].sort((a, b) => {
       if (categoryOrder === "count") {
         return (categoryTotals.get(b) || 0) - (categoryTotals.get(a) || 0);
       }

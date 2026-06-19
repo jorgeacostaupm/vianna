@@ -1,6 +1,6 @@
-import React from "react";
-import { Typography, Radio, Select, Switch } from "antd";
+import { Typography, Radio, Select } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import GroupSettings from "../GroupSettings";
 
@@ -47,22 +47,16 @@ export default function Settings({ config, setConfig }) {
             </Radio.Group>
           </div>
         )}
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Legend</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Legend"
+          size="small"
             checked={config.showLegend}
             onChange={(v) => update("showLegend", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Grid</Text>
-          <Switch
-            size="small"
+        />
+        <SwitchControl label="Grid"
+          size="small"
             checked={config.showGrid}
             onChange={(v) => update("showGrid", v)}
-          />
-        </div>
+        />
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
 

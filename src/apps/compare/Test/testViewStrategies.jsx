@@ -1,4 +1,3 @@
-import React from "react";
 
 import { PairwiseChart, PointRangeChart } from "./charts";
 import PairwiseSettings from "./settings/PairwiseSettings";

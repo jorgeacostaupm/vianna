@@ -5,7 +5,6 @@ const initialState = {
   idVar: null,
   groupVar: null,
   timeVar: null,
-  selectedChart: null,
   workspace: {
     views: [],
     layout: [],
@@ -17,9 +16,6 @@ const correlationSlice = createSlice({
   name: "correlation",
   initialState,
   reducers: {
-    setSelectedChart: (state, action) => {
-      state.selectedChart = action.payload;
-    },
     setIdVar: (state, action) => {
       state.idVar = action.payload;
     },
@@ -54,6 +50,5 @@ export const {
   setIdVar,
   setGroupVar,
   setTimeVar,
-  setSelectedChart,
   setWorkspace,
 } = correlationSlice.actions;

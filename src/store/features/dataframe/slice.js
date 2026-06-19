@@ -176,22 +176,3 @@ export const {
   setNavioUiState,
   updateConfig,
 } = dataSlice.actions;
-
-/* const deriveOperation = (a, o, t, f) => {
-  switch (t) {
-    case "string":
-      return `(r) => string(r[\"${a}\"])`;
-    case "number":
-      return `(r) => parse_float(r[\"${a}\"])`;
-    case "date":
-      if (o == "string") {
-        return `(r) => parseDate(r[\"${a}\"], \"${f}\")`; // todo add format
-      } else if (o == "number") {
-        return `(r) => parseUnixDate(r[\"${a}\"])`; // todo add format
-      } else {
-        return `(r) => r[\"${a}\"]`;
-      }
-    default:
-      return "(r) => null";
-  }
-}; */

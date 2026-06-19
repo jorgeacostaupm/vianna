@@ -4,8 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Apps } from "@/utils/constants";
 import registry from "./registry";
 import Grid from "@/components/grid";
-import Panel from "./Panel";
-import { createEvolutionPanelCommands } from "./panelCommands";
+import Panel from "./Panel/Panel";
 import { setWorkspace } from "@/store/features/evolution";
 
 export default function EvolutionApp() {
@@ -16,10 +15,13 @@ export default function EvolutionApp() {
     [dispatch],
   );
 
-  const panel = (addView) => {
-    const commands = createEvolutionPanelCommands({ addView });
-    return <Panel generateEvolution={commands.addEvolution} />;
-  };
+  const panel = (addView) => (
+    <Panel
+      generateEvolution={(variable) =>
+        variable && addView("evolution", { variable })
+      }
+    />
+  );
 
   return (
     <Grid

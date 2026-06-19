@@ -1,4 +1,3 @@
-import React from "react";
 import { useSelector } from "react-redux";
 import { Select, Typography, InputNumber, Slider } from "antd";
 import { getTopCorrelations } from "@/utils/functionsCorrelation";

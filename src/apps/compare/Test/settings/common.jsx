@@ -1,7 +1,9 @@
-import React from "react";
-import { Typography, Slider, Radio, Switch } from "antd";
+import { Typography, Radio, Switch } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import SliderControl from "@/components/ui/SliderControl";
+
+export { default as SliderControl } from "@/components/ui/SliderControl";
 
 const { Text } = Typography;
 
@@ -60,33 +62,6 @@ export function IntervalSettings({ showCaps, capSize, disabled, update }) {
         value={capSize}
         disabled={disabled}
         onChange={(v) => update("capSize", v)}
-      />
-    </div>
-  );
-}
-
-export function SliderControl({
-  label,
-  valueLabel,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-  disabled,
-}) {
-  return (
-    <div className={panelStyles.sliderInlineRow}>
-      <Text className={panelStyles.label}>{label}</Text>
-      <Text className={panelStyles.value}>{valueLabel}</Text>
-      <Slider
-        className={panelStyles.sliderInlineControl}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        disabled={disabled}
-        onChange={onChange}
       />
     </div>
   );

@@ -1,11 +1,11 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import Settings from "./Settings";
-import BasicChart from "@/components/charts/BasicChart";
+import createD3Chart from "@/components/charts/createD3Chart";
 import useCorrelationMatrix from "./useCorrelationMatrix";
 import useCorrelationMatrixData from "./useCorrelationMatrixData";
-import CorrelationView from "../view/CorrelationView";
-import { createCorrelationViewModel } from "../view/createCorrelationViewModel";
+import ViewContainer from "@/components/charts/ViewContainer";
+import { createViewModel } from "@/components/charts/view/createViewModel";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import useSelectionRows from "@/hooks/useSelectionRows";
@@ -20,11 +20,7 @@ import {
 } from "./correlationMatrixDefaults";
 import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
-function Chart({ data, id, config, params }) {
-  const chartRef = useRef(null);
-  useCorrelationMatrix({ chartRef, data: data, config, params });
-  return <BasicChart id={id} chartRef={chartRef} />;
-}
+const Chart = createD3Chart(useCorrelationMatrix);
 
 export default function CorrelationMatrix({
   id,
@@ -88,7 +84,7 @@ export default function CorrelationMatrix({
     return <Chart data={data} config={config} params={params} id={id} />;
   }, [config, data, params]);
 
-  const viewModel = createCorrelationViewModel({
+  const viewModel = createViewModel({
     title: "Correlation Matrix",
     svgIDs: [id],
     remove,
@@ -112,5 +108,5 @@ export default function CorrelationMatrix({
     },
   });
 
-  return <CorrelationView view={viewModel} />;
+  return <ViewContainer view={viewModel} />;
 }

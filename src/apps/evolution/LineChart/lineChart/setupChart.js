@@ -4,6 +4,7 @@ import { numMargin } from "@/apps/compare/Numeric/charts/Density/useDensity";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
 import { attachTickLabelGridHover } from "@/utils/gridInteractions";
 import { appendLegendRoot, createLegendLayout } from "@/utils/chartLegend";
+import { getChartTooltip } from "@/utils/chartTooltip";
 
 export function initializeLineChartScene({
   chartRef,
@@ -81,14 +82,7 @@ export function initializeLineChartScene({
     });
   }
 
-  let tooltip = d3.select("body").select("div.tooltip");
-  if (tooltip.empty()) {
-    tooltip = d3
-      .select("body")
-      .append("div")
-      .attr("class", "tooltip")
-      .style("opacity", 0);
-  }
+  const tooltip = getChartTooltip().style("opacity", 0);
 
   return {
     svg,

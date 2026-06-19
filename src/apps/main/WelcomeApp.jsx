@@ -1,4 +1,3 @@
-import React from "react";
 
 import SingleViewAppLayout from "@/components/ui/SingleViewAppLayout";
 

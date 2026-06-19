@@ -1,6 +1,6 @@
-import Numeric from "./Numeric";
-import Ranking from "./Ranking";
-import Categoric from "./Categoric";
+import Numeric from "./Numeric/Numeric";
+import Ranking from "./Ranking/Ranking";
+import Categoric from "./Categoric/Categoric";
 import { PointRange, Pairwise } from "./Test";
 import { defineView } from "@/components/grid/viewDefinitions";
 

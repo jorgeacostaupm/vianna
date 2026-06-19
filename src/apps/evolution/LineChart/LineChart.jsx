@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useEffect } from "react";
+import { useCallback, useMemo, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Tabs, Typography } from "antd";
 
@@ -7,9 +7,9 @@ import Settings from "./Settings";
 
 import useLineChart from "./useLineChart";
 import useEvolutionData from "./useLineChartData";
-import BasicChart from "@/components/charts/BasicChart";
-import EvolutionView from "../view/EvolutionView";
-import { createEvolutionViewModel } from "../view/createEvolutionViewModel";
+import createD3Chart from "@/components/charts/createD3Chart";
+import ViewContainer from "@/components/charts/ViewContainer";
+import { createViewModel } from "@/components/charts/view/createViewModel";
 import EvolutionTestsInfo from "./EvolutionTestsInfo";
 import lineChartDefaultConfig from "./lineChartDefaultConfig";
 import {
@@ -30,13 +30,7 @@ import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
 const { Text } = Typography;
 
-function Chart({ data, config, id }) {
-  const chartRef = useRef(null);
-
-  useLineChart({ chartRef, data, config });
-
-  return <BasicChart id={id} chartRef={chartRef} />;
-}
+const Chart = createD3Chart(useLineChart);
 
 function ToolbarTabs({ configContent, resultsContent, emptyMessage }) {
   return (
@@ -324,7 +318,7 @@ export default function LineChart({
     />
   );
 
-  const viewModel = createEvolutionViewModel({
+  const viewModel = createViewModel({
     title: `Evolution · ${variable}`,
     hoverTitle: variableDescription || undefined,
     svgIDs: [id],
@@ -384,5 +378,5 @@ export default function LineChart({
     },
   });
 
-  return <EvolutionView view={viewModel} />;
+  return <ViewContainer view={viewModel} />;
 }

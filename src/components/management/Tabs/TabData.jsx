@@ -1,4 +1,3 @@
-import React from "react";
 import { useSelector } from "react-redux";
 import { Typography } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
@@ -6,14 +5,9 @@ import DragDropData from "../DragDrop/DragDropData";
 import styles from "../Data.module.css";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 import { generateFileName } from "@/utils/functions";
+import { getRowColumns, toCsv } from "@/utils/csv";
 
 const { Title, Text } = Typography;
-
-const escapeCsvCell = (value) => {
-  const normalized = String(value ?? "");
-  if (!/[",\n\r]/.test(normalized)) return normalized;
-  return `"${normalized.replace(/"/g, '""')}"`;
-};
 
 const downloadTextFile = ({ content, filename, mimeType }) => {
   const blob = new Blob([content], { type: mimeType });
@@ -25,36 +19,13 @@ const downloadTextFile = ({ content, filename, mimeType }) => {
   URL.revokeObjectURL(href);
 };
 
-const buildCsv = (rows) => {
-  if (!Array.isArray(rows) || rows.length === 0) return "";
-  const keys = Array.from(
-    rows.reduce((set, row) => {
-      Object.keys(row || {}).forEach((key) => set.add(key));
-      return set;
-    }, new Set()),
-  );
-  return [
-    keys.map(escapeCsvCell).join(","),
-    ...rows.map((row) =>
-      keys.map((key) => escapeCsvCell(row?.[key])).join(","),
-    ),
-  ].join("\n");
-};
-
 const isMissingValue = (value) =>
   value == null || (typeof value === "string" && value.trim() === "");
 
 const Info = () => {
   const filename = useSelector((state) => state.dataframe.filename);
   const dt = useSelector((state) => state.dataframe.dataframe);
-  const columns = Array.isArray(dt)
-    ? Array.from(
-        dt.reduce((set, row) => {
-          Object.keys(row || {}).forEach((key) => set.add(key));
-          return set;
-        }, new Set()),
-      )
-    : [];
+  const columns = getRowColumns(dt);
   const columnCount = columns.length;
   const missingValues = Array.isArray(dt)
     ? dt.reduce(
@@ -120,7 +91,7 @@ const Info = () => {
           className={styles.primaryExportButton}
           onClick={() =>
             downloadTextFile({
-              content: buildCsv(dt),
+              content: toCsv(dt, columns),
               filename: `${generateFileName("data")}.csv`,
               mimeType: "text/csv;charset=utf-8;",
             })

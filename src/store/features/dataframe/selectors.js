@@ -29,11 +29,6 @@ export const selectSelectionOrderValues = createSelector(
     getSelectionOrderValuesFromDataframe(selectionRef, dataframe),
 );
 
-export const selectSelectionCount = createSelector(
-  [selectSelectionOrderValues],
-  (orderValues) => orderValues.length,
-);
-
 export const selectSelection = createSelector(
   [selectDataframe, selectSelectionRef, selectNavioColumns],
   (dataframe, selectionRef, navioColumns) =>

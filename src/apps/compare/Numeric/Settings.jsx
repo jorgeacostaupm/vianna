@@ -1,8 +1,9 @@
-import React from "react";
-import { Typography, Radio, Slider, InputNumber, Switch } from "antd";
+import { Typography, Radio, InputNumber } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import GroupSettings from "../GroupSettings";
+import SliderControl from "@/components/ui/SliderControl";
 
 const { Text } = Typography;
 
@@ -59,36 +60,27 @@ export default function Settings({ config, setConfig }) {
             <Radio.Button value="box">Boxplots</Radio.Button>
           </Radio.Group>
         </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Legend</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Legend"
+          size="small"
             checked={showLegend}
             onChange={(v) => update("showLegend", v)}
-          />
-        </div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Grid</Text>
-          <Switch
-            size="small"
+        />
+        <SwitchControl label="Grid"
+          size="small"
             checked={showGrid}
             onChange={(v) => update("showGrid", v)}
-          />
-        </div>
+        />
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
 
       {chartType === "box" && (
         <div className={panelStyles.section}>
           <div className={panelStyles.sectionTitle}>Observations</div>
-          <div className={panelStyles.row}>
-            <Text className={panelStyles.label}>Show points</Text>
-            <Switch
-              size="small"
+          <SwitchControl label="Show points"
+          size="small"
               checked={showPoints}
               onChange={(v) => update("showPoints", v)}
-            />
-          </div>
+        />
           <SliderControl
             label="Point size"
             valueLabel={`${pointSize}px`}
@@ -136,14 +128,11 @@ export default function Settings({ config, setConfig }) {
       {(chartType === "density" || chartType === "violin") && (
         <div className={panelStyles.section}>
           <div className={panelStyles.sectionTitle}>Range</div>
-          <div className={panelStyles.row}>
-            <Text className={panelStyles.label}>Custom range</Text>
-            <Switch
-              size="small"
+          <SwitchControl label="Custom range"
+          size="small"
               checked={useCustomRange}
               onChange={(checked) => update("useCustomRange", checked)}
-            />
-          </div>
+        />
           <div className={panelStyles.inline}>
             <span className={panelStyles.helper}>Min</span>
             <InputNumber
@@ -165,63 +154,27 @@ export default function Settings({ config, setConfig }) {
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Groups</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Count in legend</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Count in legend"
+          size="small"
             checked={showGroupCountInLegend}
             onChange={(v) => update("showGroupCountInLegend", v)}
-          />
-        </div>
+        />
         {supportsAxisLabels && (
-          <div className={panelStyles.row}>
-            <Text className={panelStyles.label}>Count in group labels</Text>
-            <Switch
-              size="small"
+          <SwitchControl label="Count in group labels"
+          size="small"
               checked={showGroupCountInAxis}
               onChange={(v) => update("showGroupCountInAxis", v)}
-            />
-          </div>
+        />
         )}
         {chartType === "density" && (
-          <div className={panelStyles.row}>
-            <Text className={panelStyles.label}>Density stroke by size</Text>
-            <Switch
-              size="small"
+          <SwitchControl label="Density stroke by size"
+          size="small"
               checked={scaleDensityStrokeByGroupSize}
               onChange={(v) => update("scaleDensityStrokeByGroupSize", v)}
-            />
-          </div>
+        />
         )}
         <GroupSettings />
       </div>
-    </div>
-  );
-}
-
-function SliderControl({
-  label,
-  valueLabel,
-  min,
-  max,
-  step,
-  value,
-  onChange,
-  disabled,
-}) {
-  return (
-    <div className={panelStyles.sliderInlineRow}>
-      <Text className={panelStyles.label}>{label}</Text>
-      <Text className={panelStyles.value}>{valueLabel}</Text>
-      <Slider
-        className={panelStyles.sliderInlineControl}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-      />
     </div>
   );
 }

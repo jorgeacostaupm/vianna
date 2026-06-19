@@ -1,11 +1,12 @@
-import React from "react";
 import { useSelector } from "react-redux";
-import { Select, Slider, Switch, Typography } from "antd";
+import { Select, Typography } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
+import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import { AppButton } from "@/components/buttons/core";
 import CorrelationVariableSettings from "../VariableSettings";
+import SliderControl from "@/components/ui/SliderControl";
 
 const { Text } = Typography;
 
@@ -83,14 +84,11 @@ export default function Settings({
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Legend</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Show legend</Text>
-          <Switch
-            size="small"
+        <SwitchControl label="Show legend"
+          size="small"
             checked={config.showLegend}
             onChange={(v) => update("showLegend", v)}
-          />
-        </div>
+        />
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
 
@@ -148,23 +146,6 @@ export default function Settings({
           </Text>
         </div>
       </div>
-    </div>
-  );
-}
-
-function SliderControl({ label, valueLabel, min, max, step, value, onChange }) {
-  return (
-    <div className={panelStyles.sliderInlineRow}>
-      <Text className={panelStyles.label}>{label}</Text>
-      <Text className={panelStyles.value}>{valueLabel}</Text>
-      <Slider
-        className={panelStyles.sliderInlineControl}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={onChange}
-      />
     </div>
   );
 }

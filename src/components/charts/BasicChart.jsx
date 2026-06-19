@@ -1,4 +1,3 @@
-import React from "react";
 import styles from "@/styles/Charts.module.css";
 
 export default function BasicChart({ id, chartRef }) {

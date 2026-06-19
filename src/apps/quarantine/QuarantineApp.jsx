@@ -1,4 +1,3 @@
-import React from "react";
 
 import Quarantine from "./Quarantine";
 import { QUARANTINE_DESC } from "@/utils/constants";

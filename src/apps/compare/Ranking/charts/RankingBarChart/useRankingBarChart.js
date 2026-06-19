@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { getChartTooltip } from "@/utils/chartTooltip";
 import { useEffect, useRef } from "react";
 
 import useResizeObserver from "@/hooks/useResizeObserver";
@@ -38,10 +39,7 @@ export default function useRankingBarChart({
       .append("g")
       .attr("transform", `translate(${margins.left}, ${margins.top})`);
 
-    let tooltip = d3.select("body").select("div.tooltip");
-    if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div").attr("class", "tooltip");
-    }
+    const tooltip = getChartTooltip();
 
     let descTooltip = d3.select("body").select("div.descTooltip");
     if (descTooltip.empty()) {
