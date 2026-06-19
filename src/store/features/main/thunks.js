@@ -1,9 +1,9 @@
 import { DATASETS, ORDER_VARIABLE } from "@/utils/constants";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { setDataframe } from "../dataframe/slice";
-import { pickColumns } from "@/utils/functions";
 import { updateData } from "../dataframe/thunks";
 import { updateDescriptions, updateHierarchy } from "../metadata/thunks";
+import { getMissingOrderValuesInSelection } from "../dataframe/utils/missingValues";
 import {
   fetchDescriptionsCSV,
   fetchHierarchy,
@@ -14,24 +14,6 @@ const { dataPath, hierarchyPath, descriptionsPath, idVar } = import.meta.env
   .PROD
   ? DATASETS.prod
   : DATASETS.dev;
-
-export const setTimeVar = createAsyncThunk(
-  "main/setTimeVar",
-  async (timeVar) => {
-    return { timeVar };
-  },
-);
-
-export const setGroupVar = createAsyncThunk(
-  "main/setGroupVar",
-  async (groupVar) => {
-    return { groupVar };
-  },
-);
-
-export const setIdVar = createAsyncThunk("main/setIdVar", async (nextIdVar) => {
-  return { idVar: nextIdVar };
-});
 
 export const loadDemoData = createAsyncThunk(
   "main/loadDemoData",
@@ -68,9 +50,7 @@ export const loadDemoData = createAsyncThunk(
         }),
       ).unwrap();
 
-      await dispatch(setIdVar(idVar)).unwrap();
-
-      return true;
+      return { idVar };
     } catch (error) {
       const isNestedThunkError = typeof error === "string";
       const message =
@@ -91,30 +71,27 @@ export const nullsToQuarantine = createAsyncThunk(
   "main/nulls-to-quarantine",
   async (_, { getState, rejectWithValue, dispatch }) => {
     try {
-      const originalDt = getState().dataframe.dataframe;
-      const cols = getState().dataframe.navioColumns;
+      const dataframeState = getState().dataframe;
+      const originalDt = Array.isArray(dataframeState.dataframe)
+        ? dataframeState.dataframe
+        : [];
+      const affectedOrderValues = getMissingOrderValuesInSelection({
+        dataframe: originalDt,
+        selectionRef: dataframeState.selectionRef,
+        missingByAttribute: dataframeState.missingByAttribute,
+        attributeIds: dataframeState.navioColumns,
+      });
 
-      const visibleData = pickColumns(originalDt, cols);
+      if (affectedOrderValues.length === 0) return { quarantineData: [] };
 
-      const idsWithNull = visibleData.filter((row) =>
-        Object.values(row).some(
-          (value) =>
-            value === null ||
-            value === undefined ||
-            (typeof value === "number" && isNaN(value)),
-        ),
-      );
-
-      if (idsWithNull.length === 0) return;
-
+      const affectedSet = new Set(affectedOrderValues);
       const data = originalDt.filter(
-        (row) =>
-          !idsWithNull.some((r) => r[ORDER_VARIABLE] === row[ORDER_VARIABLE]),
+        (row) => !affectedSet.has(row?.[ORDER_VARIABLE]),
       );
       dispatch(setDataframe(data));
 
       const quarantineData = originalDt.filter((row) =>
-        idsWithNull.some((r) => r[ORDER_VARIABLE] === row[ORDER_VARIABLE]),
+        affectedSet.has(row?.[ORDER_VARIABLE]),
       );
 
       return { quarantineData };

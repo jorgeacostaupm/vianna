@@ -1,4 +1,4 @@
-import { APP_NAME, Apps } from "@/utils/constants";
+import { APP_NAME, Apps } from "../utils/constants.js";
 import {
   HomeOutlined,
   PartitionOutlined,
@@ -13,7 +13,7 @@ export const APP_NAV = Object.freeze({
     id: "overview",
     label: Apps.OVERVIEW,
     title: APP_NAME,
-    path: "/",
+    path: "overview",
     windowName: "vianna-app-overview",
     icon: HomeOutlined,
   },
@@ -59,6 +59,14 @@ export const APP_NAV = Object.freeze({
   },
 });
 
+export const WELCOME_NAV = Object.freeze({
+  id: "welcome",
+  label: "Welcome",
+  title: APP_NAME,
+  path: "welcome",
+  windowName: "vianna-welcome",
+});
+
 const toPathname = (path) => {
   const normalizedPath = String(path || "").trim();
   if (!normalizedPath || normalizedPath === "/") {
@@ -78,7 +86,7 @@ const normalizePathname = (pathname) => {
 };
 
 const APP_BY_PATHNAME = Object.freeze(
-  Object.values(APP_NAV).reduce((acc, app) => {
+  [WELCOME_NAV, ...Object.values(APP_NAV)].reduce((acc, app) => {
     acc[toPathname(app.path)] = app;
     return acc;
   }, {}),
@@ -99,12 +107,16 @@ export function getAppNavigation(value) {
   return appId ? APP_NAV[appId] : null;
 }
 
+export function getAppNavigationByPathname(pathname) {
+  return APP_BY_PATHNAME[normalizePathname(pathname)] || WELCOME_NAV;
+}
+
 export function getAppTitleByPathname(pathname) {
-  const app = APP_BY_PATHNAME[normalizePathname(pathname)] || APP_NAV.overview;
+  const app = getAppNavigationByPathname(pathname);
   return app.title || APP_NAME;
 }
 
 export function getAppWindowNameByPathname(pathname) {
-  const app = APP_BY_PATHNAME[normalizePathname(pathname)] || APP_NAV.overview;
+  const app = getAppNavigationByPathname(pathname);
   return app.windowName || APP_NAV.overview.windowName;
 }

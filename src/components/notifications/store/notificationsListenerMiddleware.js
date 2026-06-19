@@ -53,34 +53,6 @@ start({
 });
 
 start({
-  type: "attributes/changeRelationship/rejected",
-  effect: async (action, listenerApi) => {
-    const isSilent = Boolean(action.meta?.arg?.silent);
-    if (isSilent) return;
-
-    notifyError(listenerApi, {
-      message: "Could not reassign node",
-      error: action.payload || action.error,
-      fallback: "Unable to update parent-child relation for the node.",
-    });
-  },
-});
-
-start({
-  type: "attributes/changeRelationshipBatch/rejected",
-  effect: async (action, listenerApi) => {
-    const isSilent = Boolean(action.meta?.arg?.silent);
-    if (isSilent) return;
-
-    notifyError(listenerApi, {
-      message: "Could not reassign node selection",
-      error: action.payload || action.error,
-      fallback: "Unable to update parent-child relation for selected nodes.",
-    });
-  },
-});
-
-start({
   type: "metadata/updateHierarchy/fulfilled",
   effect: async (action, listenerApi) => {
     if (action.meta?.arg?.silentSuccess) return;

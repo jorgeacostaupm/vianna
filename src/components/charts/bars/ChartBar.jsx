@@ -6,6 +6,9 @@ import { resolveChartBarActions } from "./chartBarActionStrategies";
 export default function ChartBar({
   settings,
   testsSettings,
+  testsTitle,
+  lmmSettings,
+  results,
   title,
   hoverTitle,
   svgIDs,
@@ -27,6 +30,9 @@ export default function ChartBar({
     context: {
       settings,
       testsSettings,
+      testsTitle,
+      lmmSettings,
+      results,
       title,
       hoverTitle,
       svgIDs,

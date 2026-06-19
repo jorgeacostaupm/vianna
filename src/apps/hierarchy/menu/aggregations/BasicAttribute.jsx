@@ -1,4 +1,3 @@
-import { Field } from "formik";
 import { motion } from "framer-motion";
 import { Tooltip } from "antd";
 
@@ -17,7 +16,7 @@ const BasicAttribute = ({ idx, node, onDragStart, isHidden = false }) => {
         className={styles.attributeItem}
         layout
         layoutId={node.id}
-        id={`info.usedAttributes.${idx}`}
+        id={`aggregationConfig.usedAttributes.${idx}`}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         draggable={true}
         onDragStart={(e) => {
@@ -26,14 +25,9 @@ const BasicAttribute = ({ idx, node, onDragStart, isHidden = false }) => {
         }}
       >
         <Tooltip title={node.name}>
-          <Field
-            as="div"
-            id={`info.usedAttributes.${idx}.name`}
-            name={`info.usedAttributes.${idx}.name`}
-            className={styles.inputAttributeName}
-          >
+          <div id={`used-attribute-${idx}-name`} className={styles.inputAttributeName}>
             {node.name}
-          </Field>
+          </div>
         </Tooltip>
       </motion.div>
     </div>

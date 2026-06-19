@@ -7,7 +7,7 @@ import {
   ExclamationCircleOutlined,
 } from "@ant-design/icons";
 
-import { selectVars } from "@/store/features/main";
+import { selectCompareAnalysisContext, selectVars } from "@/store/features/main";
 import { checkAssumptions, setSelectedVar } from "@/store/features/compare";
 
 import { getColorByDtype, getNameByDtype } from "@/utils/constants";
@@ -64,7 +64,7 @@ export default function AssumptionsTags() {
   const assumptions = useSelector((s) => s.compare.assumptions);
   const selectedVar = useSelector((s) => s.compare.selectedVar);
   const varTypes = useSelector((s) => s.main.varTypes);
-  const groupVar = useSelector((s) => s.compare.groupVar);
+  const { groupVar } = useSelector(selectCompareAnalysisContext);
 
   const allNormal = assumptions.normality?.every((d) => d.normal);
   const type = varTypes[selectedVar] || null;

@@ -1,5 +1,6 @@
 # IA
 .codex
+AGENTS.md
 
 # Logs
 logs
@@ -12,6 +13,9 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-electron
+dist-linux
+release
 dist-ssr
 *.local
 
@@ -28,3 +32,8 @@ dist-ssr
 
 # private data
 public/vis/csv/private/*
+
+# appimage
+release
+electron
+

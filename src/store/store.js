@@ -14,6 +14,12 @@ import {
 } from "./middleware/sharedStateSync";
 import notificationsListenerMiddleware from "@/components/notifications/store/notificationsListenerMiddleware";
 import { registerNotificationDispatch } from "@/components/notifications/store/notificationDispatchBridge";
+import {
+  RESTORE_WORKSPACE_ACTION,
+  applyWorkspaceState,
+  createWorkspaceSnapshot,
+  saveAutosaveWorkspace,
+} from "@/workspace/workspace";
 
 const baseReducer = combineReducers({
   main: mainReducer,
@@ -25,7 +31,17 @@ const baseReducer = combineReducers({
   notifications: notificationsReducer,
 });
 
-const reducer = withSharedStateSyncReducer(baseReducer);
+const appReducer = (state, action) => {
+  if (action?.type === RESTORE_WORKSPACE_ACTION) {
+    return baseReducer(applyWorkspaceState(state, action.payload), {
+      type: "@@workspace/restored",
+    });
+  }
+
+  return baseReducer(state, action);
+};
+
+const reducer = withSharedStateSyncReducer(appReducer);
 
 const store = configureStore({
   reducer,
@@ -51,5 +67,18 @@ export const initializeStoreSync = () => {
   }
   return syncInitializationPromise;
 };
+
+let autosaveTimer = null;
+
+const scheduleWorkspaceAutosave = () => {
+  if (typeof window === "undefined") return;
+  window.clearTimeout(autosaveTimer);
+  autosaveTimer = window.setTimeout(() => {
+    const route = window.location?.hash || "#/";
+    saveAutosaveWorkspace(createWorkspaceSnapshot(store.getState(), route));
+  }, 800);
+};
+
+store.subscribe(scheduleWorkspaceAutosave);
 
 export default store;

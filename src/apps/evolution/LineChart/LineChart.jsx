@@ -1,74 +1,62 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useCallback, useMemo, useRef, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { Tabs, Typography } from "antd";
 
 import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
 import Settings from "./Settings";
 
 import useLineChart from "./useLineChart";
 import useEvolutionData from "./useLineChartData";
-import ChartWithLegend from "@/components/charts/ChartWithLegend";
+import BasicChart from "@/components/charts/BasicChart";
 import EvolutionView from "../view/EvolutionView";
 import { createEvolutionViewModel } from "../view/createEvolutionViewModel";
 import EvolutionTestsInfo from "./EvolutionTestsInfo";
-import { selectVars, selectVarTypes } from "@/store/features/main";
+import lineChartDefaultConfig from "./lineChartDefaultConfig";
+import {
+  selectEvolutionAnalysisContext,
+  selectVars,
+  selectVarTypes,
+} from "@/store/features/main";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import useSelectionRows from "@/hooks/useSelectionRows";
+import { selectSubjectIdsByCompleteness } from "@/utils/evolutionCompleteness";
 import {
   extractOrderValues,
   isFiniteNumericValue,
   uniqueColumns,
 } from "@/utils/viewRecords";
+import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
-const defaultConfig = {
-  isSync: true,
-  showObs: false,
-  showMeans: true,
-  showOverallMean: true,
-  showStds: false,
-  showCIs: false,
-  showLmmFit: true,
-  showLmmCI: false,
-  showComplete: true,
-  showIncomplete: false,
-  showLegend: true,
-  showGrid: true,
-  showGridBehindAll: false,
-  disableAutoDiscreteAggregatedMode: true,
-  forceDiscreteAggregatedMode: false,
-  ratioNodeScale: "sqrt",
-  ratioEdgeScale: "sqrt",
-  ratioNodeMinPx: 10,
-  ratioNodeMaxPx: 30,
-  ratioEdgeMinPx: 2.5,
-  ratioEdgeMaxPx: 16,
-  lmmReferenceGroup: "All",
-  lmmCovariates: [],
-  lmmIncludeInteraction: false,
-  lmmTimeCoding: "ordered-index",
-  meanPointSize: 8,
-  meanAsBoxplot: false,
-  subjectPointSize: 3,
-  meanStrokeWidth: 5,
-  subjectStrokeWidth: 1,
-  testIds: ["lmm-random-intercept"],
-  testTimeFrom: null,
-  testTimeTo: null,
-  axisLabelFontSize: 16,
-};
+const { Text } = Typography;
 
 function Chart({ data, config, id }) {
   const chartRef = useRef(null);
-  const legendRef = useRef(null);
 
-  useLineChart({ chartRef, legendRef, data, config });
+  useLineChart({ chartRef, data, config });
 
+  return <BasicChart id={id} chartRef={chartRef} />;
+}
+
+function ToolbarTabs({ configContent, resultsContent, emptyMessage }) {
   return (
-    <ChartWithLegend
-      id={id}
-      chartRef={chartRef}
-      legendRef={legendRef}
-      showLegend={config.showLegend}
+    <Tabs
+      defaultActiveKey="config"
+      items={[
+        {
+          key: "config",
+          label: "Config",
+          children: configContent,
+        },
+        {
+          key: "results",
+          label: "Results",
+          children:
+            resultsContent || (
+              <Text type="secondary">{emptyMessage || "No results available."}</Text>
+            ),
+        },
+      ]}
     />
   );
 }
@@ -78,14 +66,24 @@ export default function LineChart({
   variable,
   remove,
   sourceOrderValues = [],
+  config: persistedConfig,
+  updateView,
 }) {
-  const [config, setConfig] = useState(defaultConfig);
+  const handleConfigChange = useCallback(
+    (nextConfig) => updateView?.({ config: nextConfig }),
+    [updateView],
+  );
+  const [config, setConfig] = useWorkspaceBackedState({
+    defaultValue: lineChartDefaultConfig,
+    persistedValue: persistedConfig,
+    onChange: handleConfigChange,
+  });
   const varTypes = useSelector(selectVarTypes);
   const allSelectableVars = useSelector(selectVars);
   const attributes = useSelector((s) => s.metadata.attributes);
-  const groupVar = useSelector((s) => s.evolution.groupVar);
-  const timeVar = useSelector((s) => s.evolution.timeVar);
-  const idVar = useSelector((s) => s.main.idVar);
+  const { groupVar, timeVar, idVar } = useSelector(
+    selectEvolutionAnalysisContext,
+  );
   const selectionColumns = useMemo(() => {
     const isLmmEnabled = (config.testIds || []).includes(
       "lmm-random-intercept",
@@ -118,6 +116,7 @@ export default function LineChart({
     config.isSync,
     config.showComplete,
     config.showIncomplete,
+    config.incompleteRequiredTimes,
     config.testIds,
     timeRange,
     {
@@ -144,35 +143,22 @@ export default function LineChart({
     const includeComplete = Boolean(config.showComplete);
     const includeIncomplete = Boolean(config.showIncomplete);
     if (!includeComplete && !includeIncomplete) return [];
-    if (includeComplete && includeIncomplete)
-      return extractOrderValues(baseRows);
     const timeValues = Array.isArray(data?.times)
       ? data.times.map((value) => String(value))
       : [];
     if (!timeValues.length) return [];
-
-    const timesById = new Map();
-    baseRows.forEach((row) => {
-      const identifier = row?.[idVar];
-      const timestamp = String(row?.[timeVar]);
-      if (!timesById.has(identifier)) {
-        timesById.set(identifier, new Set());
-      }
-      timesById.get(identifier).add(timestamp);
+    const { selectedIds } = selectSubjectIdsByCompleteness(baseRows, timeValues, {
+      idVar,
+      timeVar,
+      valueVar: variable,
+      showComplete: includeComplete,
+      showIncomplete: includeIncomplete,
+      incompleteRequiredTimes: config.incompleteRequiredTimes,
     });
-
-    const completeIds = new Set(
-      [...timesById.entries()]
-        .filter(([, values]) => timeValues.every((time) => values.has(time)))
-        .map(([identifier]) => identifier),
-    );
 
     return extractOrderValues(baseRows, (row) => {
       const subjectId = row?.[idVar];
-      const isComplete = completeIds.has(subjectId);
-      if (includeComplete && !includeIncomplete) return isComplete;
-      if (!includeComplete && includeIncomplete) return !isComplete;
-      return true;
+      return selectedIds.has(subjectId);
     });
   }, [
     selection,
@@ -182,6 +168,9 @@ export default function LineChart({
     idVar,
     config.showComplete,
     config.showIncomplete,
+    Array.isArray(config.incompleteRequiredTimes)
+      ? config.incompleteRequiredTimes.join("|")
+      : "",
     Array.isArray(data?.times) ? data.times.join("|") : "",
   ]);
 
@@ -220,6 +209,29 @@ export default function LineChart({
       }
       if (from === prev.testTimeFrom && to === prev.testTimeTo) return prev;
       return { ...prev, testTimeFrom: from, testTimeTo: to };
+    });
+  }, [availableTimes.join("|")]);
+
+  useEffect(() => {
+    const available = new Set(availableTimes);
+    setConfig((prev) => {
+      const nextIncompleteRequiredTimes = (
+        Array.isArray(prev.incompleteRequiredTimes)
+          ? prev.incompleteRequiredTimes
+          : []
+      ).filter((time) => available.has(String(time)));
+      if (
+        nextIncompleteRequiredTimes.length ===
+        (Array.isArray(prev.incompleteRequiredTimes)
+          ? prev.incompleteRequiredTimes.length
+          : 0)
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        incompleteRequiredTimes: nextIncompleteRequiredTimes,
+      };
     });
   }, [availableTimes.join("|")]);
 
@@ -270,17 +282,52 @@ export default function LineChart({
   const variableDescription = useMemo(() => {
     const description = attributes?.find(
       (attr) => attr?.name === variable,
-    )?.desc;
+    )?.description;
     return typeof description === "string" ? description.trim() : "";
   }, [attributes, variable]);
+  const globalTestResults = useMemo(
+    () => (data?.tests || []).filter((test) => test.variant !== "lmm"),
+    [data?.tests],
+  );
+  const lmmResults = useMemo(
+    () => (data?.tests || []).filter((test) => test.variant === "lmm"),
+    [data?.tests],
+  );
+  const globalSettingsContent = (
+    <Settings
+      mode="tests"
+      config={config}
+      setConfig={setConfig}
+      availableTimes={availableTimes}
+      availableGroups={availableGroups}
+      variable={variable}
+      idVar={idVar}
+      timeVar={timeVar}
+      groupVar={groupVar}
+      variableOptions={allSelectableVars}
+      varTypes={varTypes}
+    />
+  );
+  const lmmSettingsContent = (
+    <Settings
+      mode="lmm"
+      config={config}
+      setConfig={setConfig}
+      availableTimes={availableTimes}
+      availableGroups={availableGroups}
+      variable={variable}
+      idVar={idVar}
+      timeVar={timeVar}
+      groupVar={groupVar}
+      variableOptions={allSelectableVars}
+      varTypes={varTypes}
+    />
+  );
 
   const viewModel = createEvolutionViewModel({
     title: `Evolution · ${variable}`,
     hoverTitle: variableDescription || undefined,
-    svgIDs: [id, `${id}-legend`],
-    info: data?.tests?.length ? (
-      <EvolutionTestsInfo tests={data.tests} />
-    ) : null,
+    svgIDs: [id],
     remove,
     settings: (
       <Settings
@@ -298,23 +345,38 @@ export default function LineChart({
       />
     ),
     testsSettings: (
-      <Settings
-        mode="tests"
-        config={config}
-        setConfig={setConfig}
-        availableTimes={availableTimes}
-        availableGroups={availableGroups}
-        variable={variable}
-        idVar={idVar}
-        timeVar={timeVar}
-        groupVar={groupVar}
-        variableOptions={allSelectableVars}
-        varTypes={varTypes}
+      <ToolbarTabs
+        configContent={globalSettingsContent}
+        resultsContent={
+          globalTestResults.length ? (
+            <EvolutionTestsInfo tests={globalTestResults} />
+          ) : null
+        }
+        emptyMessage="No global test results available."
+      />
+    ),
+    testsTitle: "GLOBAL",
+    lmmSettings: (
+      <ToolbarTabs
+        configContent={lmmSettingsContent}
+        resultsContent={
+          lmmResults.length ? <EvolutionTestsInfo tests={lmmResults} /> : null
+        }
+        emptyMessage="No LMM results available."
       />
     ),
     chart,
     config,
     setConfig,
+    actions: [
+      "sync",
+      "records-export",
+      "download",
+      "tests",
+      "lmm",
+      "settings",
+      "close",
+    ],
     recordsExport: {
       filename: `evolution_${variable || "view"}`,
       recordOrders,

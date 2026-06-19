@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 
 import Settings from "./Settings";
@@ -6,7 +6,7 @@ import useScatter from "./useScatter";
 import useScatterData from "./useScatterData";
 import CorrelationView from "../view/CorrelationView";
 import { createCorrelationViewModel } from "../view/createCorrelationViewModel";
-import ChartWithLegend from "@/components/charts/ChartWithLegend";
+import BasicChart from "@/components/charts/BasicChart";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import useSelectionRows from "@/hooks/useSelectionRows";
@@ -15,35 +15,46 @@ import {
   isFiniteNumericValue,
   uniqueColumns,
 } from "@/utils/viewRecords";
+import { selectCorrelationAnalysisContext } from "@/store/features/main";
+import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
 function Chart({ data, id, config }) {
   const chartRef = useRef(null);
-  const legendRef = useRef(null);
 
-  useScatter({ chartRef, legendRef, data, config });
+  useScatter({ chartRef, data, config });
 
-  return (
-    <ChartWithLegend
-      id={id}
-      chartRef={chartRef}
-      legendRef={legendRef}
-      showLegend={config.showLegend}
-      legendWidthMode="content"
-    />
-  );
+  return <BasicChart id={id} chartRef={chartRef} />;
 }
 
-export default function ScatterMatrix({ id, remove, sourceOrderValues = [] }) {
-  const groupVar = useSelector((s) => s.correlation.groupVar);
+export default function ScatterMatrix({
+  id,
+  remove,
+  sourceOrderValues = [],
+  config: persistedConfig,
+  updateView,
+}) {
+  const { groupVar } = useSelector(selectCorrelationAnalysisContext);
 
-  const [config, setConfig] = useState({
-    isSync: true,
-    pointSize: 4,
-    pointOpacity: 0.75,
-    groupVar: groupVar,
-    variables: [],
-    showLegend: true,
-    axisLabelFontSize: 16,
+  const defaultConfig = useMemo(
+    () => ({
+      isSync: true,
+      pointSize: 4,
+      pointOpacity: 0.75,
+      groupVar: groupVar,
+      variables: [],
+      showLegend: true,
+      axisLabelFontSize: 16,
+    }),
+    [groupVar],
+  );
+  const handleConfigChange = useCallback(
+    (nextConfig) => updateView?.({ config: nextConfig }),
+    [updateView],
+  );
+  const [config, setConfig] = useWorkspaceBackedState({
+    defaultValue: defaultConfig,
+    persistedValue: persistedConfig,
+    onChange: handleConfigChange,
   });
 
   useEffect(() => {
@@ -88,7 +99,7 @@ export default function ScatterMatrix({ id, remove, sourceOrderValues = [] }) {
 
   const viewModel = createCorrelationViewModel({
     title: "Scatter Plot Matrix",
-    svgIDs: [id, `${id}-legend`],
+    svgIDs: [id],
     remove,
     settings: <Settings config={config} setConfig={setConfig} />,
     chart,

@@ -2,7 +2,7 @@
 
 /* chartLayout.module.css */
 .viewContainer {
-  --view-bar-height: 52px;
+  --view-bar-height: 40px;
   position: relative;
   width: 100%;
   height: 100%;
@@ -102,6 +102,20 @@
   overflow-y: auto;
 }
 
+.hierarchyWorkspace {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.hierarchyViewMenu {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 900;
+}
+
 .legendSvg {
   display: block;
   overflow: visible;
@@ -120,8 +134,9 @@
 
 .nodeInfo {
   position: absolute;
-  top: calc(var(--view-bar-height) + 5px);
-  right: 5px;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 1100;
   color: var(--color-ink);
   max-height: 90%;
   border: 1px solid var(--color-border);
@@ -219,4 +234,55 @@
   width: 100%;
   justify-content: flex-start;
   gap: var(--space-2);
+}
+
+.hierarchySendTo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hierarchySendToResults {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.hierarchySendToOption {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.hierarchySendToOption:last-child {
+  border-bottom: 0;
+}
+
+.hierarchySendToOption:hover,
+.hierarchySendToOption:focus-visible {
+  background: var(--color-brand-soft);
+  outline: none;
+}
+
+.hierarchySendToName {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hierarchySendToPath {
+  font-size: 12px;
+  color: var(--color-ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

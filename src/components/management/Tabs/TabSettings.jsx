@@ -1,6 +1,6 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Divider, Radio, Switch, Typography } from "antd";
+import { Radio, Switch, Typography } from "antd";
 
 import {
   selectAppOpenMode,
@@ -9,7 +9,7 @@ import {
 } from "@/store/features/main";
 import styles from "../Data.module.css";
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
 
 export default function TabSettings() {
   const dispatch = useDispatch();

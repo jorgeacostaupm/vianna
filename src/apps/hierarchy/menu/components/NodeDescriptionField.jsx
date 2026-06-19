@@ -4,7 +4,7 @@ import { Input, Typography } from "antd";
 const { Text } = Typography;
 
 export default function NodeDescriptionField() {
-  const [field, , helpers] = useField("desc");
+  const [field, , helpers] = useField("description");
 
   const onChange = (event) => {
     helpers.setValue(event.target.value);
@@ -20,7 +20,7 @@ export default function NodeDescriptionField() {
     >
       <Text strong>Description:</Text>
       <Input.TextArea
-        id="desc"
+        id="description"
         {...field}
         rows={4}
         onChange={onChange}

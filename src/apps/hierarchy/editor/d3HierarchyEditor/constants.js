@@ -1,5 +1,10 @@
 export const transitionDuration = 500;
+export const resolveTransitionDuration = ({
+  instant = false,
+  animateTransitions = true,
+} = {}) => (instant || animateTransitions === false ? 0 : transitionDuration);
 export const dragClickThreshold = 5;
+export const tooltipHoverDelayMs = 2000;
 export const nodeHalfSize = 12.5;
 export const nodeCornerRadius = 4;
 export const triangleTopFactor = 1.152;
@@ -16,4 +21,5 @@ export const defaultViewConfig = Object.freeze({
   labelMaxLength: 20,
   linkWidth: 1,
   showLabels: true,
+  animateTransitions: true,
 });

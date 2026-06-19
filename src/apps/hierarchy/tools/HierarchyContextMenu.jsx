@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from "react";
-import { useDispatch } from "react-redux";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import * as d3 from "d3";
+import { Empty, Input, Modal } from "antd";
 
 import {
   EyeOutlined,
+  SendOutlined,
+  SearchOutlined,
   SubnodeOutlined,
   DeleteOutlined,
   PlusOutlined,
@@ -24,11 +27,15 @@ import {
 import { getRandomInt } from "@/utils/functions";
 import OperationModal from "./OperationModal";
 import { AppButton, APP_BUTTON_VARIANTS } from "@/components/buttons/core";
+import { createUniqueNodeName } from "@/apps/hierarchy/nodeNames";
+import { notifyError } from "@/components/notifications";
+import { getSendToDestinations } from "./sendToDestinations";
 
 const { subscribe, unsubscribe, publish } = pubsub;
 
 export default function HierarchyContextMenu({ editor }) {
   const dispatch = useDispatch();
+  const attributes = useSelector((state) => state.metadata.attributes || []);
 
   const [active, setActive] = useState(false);
   const [node, setNode] = useState(null);
@@ -36,6 +43,9 @@ export default function HierarchyContextMenu({ editor }) {
   const [isSelection, setIsSelection] = useState(false);
   const [hasSelectedNodes, setHasSelectedNodes] = useState(false);
   const [operationModalOpen, setOperationModalOpen] = useState(false);
+  const [sendToOpen, setSendToOpen] = useState(false);
+  const [sendToSearch, setSendToSearch] = useState("");
+  const [sendToNodes, setSendToNodes] = useState([]);
   const [selectedNodes, setSelectedNodes] = useState([]);
 
   const getSelectedNodes = useCallback(() => {
@@ -76,22 +86,38 @@ export default function HierarchyContextMenu({ editor }) {
 
   const inspectNode = () => {
     if (!node) return;
-    publish("inspectNode", { nodeId: node.id });
+    const nodeId = node?.data?.id ?? node?.id;
+    if (nodeId == null) return;
+    publish("inspectNode", { nodeId });
     setActive(false);
   };
 
-  const addNode = () => {
+  const addNode = async () => {
     if (!node) return;
+    const parentID = node?.data?.id ?? node?.id;
+    if (parentID == null) return;
 
     const newNode = {
       id: getRandomInt(),
-      name: `Node ${editor.nNodes + 1}`,
+      name: createUniqueNodeName(
+        attributes,
+        "",
+        (editor?.nNodes ?? attributes.length) + 1,
+      ),
       type: "aggregation",
     };
 
-    dispatch(addAttribute({ parentID: node.id, ...newNode }));
-    publish("nodeInspectionNode", { nodeId: newNode.id, required: true });
-    setActive(false);
+    try {
+      await dispatch(addAttribute({ parentID, ...newNode })).unwrap();
+      publish("nodeInspectionNode", { nodeId: newNode.id, required: true });
+    } catch (error) {
+      notifyError({
+        message: "Could not add child node",
+        error,
+      });
+    } finally {
+      setActive(false);
+    }
   };
 
   const removeNodeById = () => {
@@ -181,6 +207,43 @@ export default function HierarchyContextMenu({ editor }) {
     setActive(false);
   };
 
+  const openSendTo = () => {
+    if (!node) return;
+
+    const selectedNodesForSend = getSelectedNodes();
+    const isRootTarget =
+      (node?.data?.type || node?.type) === "root" || node?.id === 0;
+    const nodesToMove =
+      isSelection && selectedNodesForSend.length > 0 && !isRootTarget
+        ? selectedNodesForSend
+        : [node];
+
+    setSendToNodes(nodesToMove);
+    setSendToSearch("");
+    setSendToOpen(true);
+    setActive(false);
+  };
+
+  const closeSendTo = () => {
+    setSendToOpen(false);
+    setSendToSearch("");
+    setSendToNodes([]);
+  };
+
+  const sendToDestination = (destinationId) => {
+    const nodeIds = sendToNodes
+      .map((selectedNode) => selectedNode?.id)
+      .filter((nodeId) => nodeId != null);
+
+    if (nodeIds.length === 0) return;
+
+    publish("addSelectedNodes", {
+      parent: destinationId,
+      nodeIds,
+    });
+    closeSendTo();
+  };
+
   const removeSelectedNodes = () => {
     publish("removeSelectedNodes");
     setActive(false);
@@ -202,8 +265,6 @@ export default function HierarchyContextMenu({ editor }) {
     setOperationModalOpen(true);
   };
 
-  if (!active || !node) return null;
-
   const nodeName = node?.data?.name || node?.name || "Node";
   const nodeType = node?.data?.type || "node";
   const isNodeActive = node?.data?.isActive !== false;
@@ -220,6 +281,19 @@ export default function HierarchyContextMenu({ editor }) {
   const isSelectionFullyInactive =
     hasToggleableSelection &&
     selectionToggleableNodes.every((n) => n?.data?.isActive === false);
+  const sendToTitle =
+    sendToNodes.length > 1
+      ? `Send ${sendToNodes.length} nodes to...`
+      : `Send ${sendToNodes[0]?.data?.name || sendToNodes[0]?.name || "node"} to...`;
+  const sendToDestinations = useMemo(
+    () =>
+      getSendToDestinations({
+        root: editor?.root,
+        movingNodes: sendToNodes,
+        query: sendToSearch,
+      }).slice(0, 80),
+    [editor, sendToNodes, sendToSearch],
+  );
 
   const MenuAction = ({ label, icon, onClick, danger, disabled }) => (
     <AppButton
@@ -237,130 +311,199 @@ export default function HierarchyContextMenu({ editor }) {
 
   return (
     <>
-      <div
-        className={styles.hierarchyMenu}
-        style={{
-          left: position.x + 20,
-          top: position.y - 10,
-        }}
-      >
-        <div className={styles.hierarchyMenuHeader}>
-          <span className={styles.hierarchyMenuTitle}>{nodeName}</span>
-          <span className={styles.hierarchyMenuMeta}>· {nodeType}</span>
-          <span className={styles.hierarchyMenuMeta}>
-            · {selectionCount} selected
-          </span>
-        </div>
+      {active && node && (
+        <div
+          className={styles.hierarchyMenu}
+          style={{
+            left: position.x + 20,
+            top: position.y - 10,
+          }}
+        >
+          <div className={styles.hierarchyMenuHeader}>
+            <span className={styles.hierarchyMenuTitle}>{nodeName}</span>
+            <span className={styles.hierarchyMenuMeta}>· {nodeType}</span>
+            <span className={styles.hierarchyMenuMeta}>
+              · {selectionCount} selected
+            </span>
+          </div>
 
-        {!showSelectionMenu && (
-          <div className={styles.hierarchyMenuSection}>
-            <div className={styles.hierarchyMenuSectionTitle}>Node</div>
-            <div className={styles.hierarchyMenuActions}>
-              {isRootNode ? (
-                <>
-                  <MenuAction
-                    label="Add Child"
-                    icon={<SubnodeOutlined />}
-                    onClick={addNode}
-                  />
-                  <MenuAction
-                    label="Add Selection"
-                    icon={<PlusOutlined />}
-                    onClick={addSelectedNodes}
-                    disabled={!hasActiveSelection}
-                  />
-                </>
-              ) : (
-                <>
-                  <MenuAction
-                    label="Inspect"
-                    icon={<EyeOutlined />}
-                    onClick={inspectNode}
-                  />
-                  <MenuAction
-                    label="Operate"
-                    icon={<ExperimentOutlined />}
-                    onClick={openModalSpecial}
-                  />
-                  {!showSelectionMenu && (
+          {!showSelectionMenu && (
+            <div className={styles.hierarchyMenuSection}>
+              <div className={styles.hierarchyMenuSectionTitle}>Node</div>
+              <div className={styles.hierarchyMenuActions}>
+                {isRootNode ? (
+                  <>
                     <MenuAction
                       label="Add Child"
                       icon={<SubnodeOutlined />}
                       onClick={addNode}
                     />
-                  )}
-                  <MenuAction
-                    label="Add Selection"
-                    icon={<PlusOutlined />}
-                    onClick={addSelectedNodes}
-                    disabled={!hasActiveSelection}
-                  />
-                  <MenuAction
-                    label={isNodeActive ? "Hide" : "Show"}
-                    icon={
-                      isNodeActive ? (
-                        <MinusCircleOutlined />
-                      ) : (
-                        <CheckCircleOutlined />
-                      )
-                    }
-                    onClick={toggleNodeOverviewAccess}
-                    disabled={isRootNode}
-                  />
-                  <MenuAction
-                    label="Delete"
-                    icon={<DeleteOutlined />}
-                    onClick={removeNodeById}
-                  />
-                </>
-              )}
+                    <MenuAction
+                      label="Add Selection"
+                      icon={<PlusOutlined />}
+                      onClick={addSelectedNodes}
+                      disabled={!hasActiveSelection}
+                    />
+                    <MenuAction
+                      label="Send to"
+                      icon={<SendOutlined />}
+                      onClick={openSendTo}
+                      disabled={isRootNode}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <MenuAction
+                      label="Inspect"
+                      icon={<EyeOutlined />}
+                      onClick={inspectNode}
+                    />
+                    <MenuAction
+                      label="Operate"
+                      icon={<ExperimentOutlined />}
+                      onClick={openModalSpecial}
+                    />
+                    {!showSelectionMenu && (
+                      <MenuAction
+                        label="Add Child"
+                        icon={<SubnodeOutlined />}
+                        onClick={addNode}
+                      />
+                    )}
+                    <MenuAction
+                      label="Add Selection"
+                      icon={<PlusOutlined />}
+                      onClick={addSelectedNodes}
+                      disabled={!hasActiveSelection}
+                    />
+                    <MenuAction
+                      label="Send to"
+                      icon={<SendOutlined />}
+                      onClick={openSendTo}
+                    />
+                    <MenuAction
+                      label={isNodeActive ? "Hide" : "Show"}
+                      icon={
+                        isNodeActive ? (
+                          <MinusCircleOutlined />
+                        ) : (
+                          <CheckCircleOutlined />
+                        )
+                      }
+                      onClick={toggleNodeOverviewAccess}
+                      disabled={isRootNode}
+                    />
+                    <MenuAction
+                      label="Delete"
+                      icon={<DeleteOutlined />}
+                      onClick={removeNodeById}
+                    />
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {showSelectionMenu && (
-          <div className={styles.hierarchyMenuSection}>
-            <div className={styles.hierarchyMenuSectionTitle}>Selection</div>
-            <div className={styles.hierarchyMenuActions}>
-              <MenuAction
-                label="Aggregate"
-                icon={<NodeCollapseOutlined />}
-                onClick={aggregateSelectedNodes}
-              />
-              <MenuAction
-                label="Operate"
-                icon={<ExperimentFilled />}
-                onClick={openModal}
-              />
+          {showSelectionMenu && (
+            <div className={styles.hierarchyMenuSection}>
+              <div className={styles.hierarchyMenuSectionTitle}>Selection</div>
+              <div className={styles.hierarchyMenuActions}>
+                <MenuAction
+                  label="Aggregate"
+                  icon={<NodeCollapseOutlined />}
+                  onClick={aggregateSelectedNodes}
+                />
+                <MenuAction
+                  label="Operate"
+                  icon={<ExperimentFilled />}
+                  onClick={openModal}
+                />
+                <MenuAction
+                  label="Send to"
+                  icon={<SendOutlined />}
+                  onClick={openSendTo}
+                />
 
-              <MenuAction
-                label={isSelectionFullyInactive ? "Show" : "Hide"}
-                icon={
-                  isSelectionFullyInactive ? (
-                    <CheckCircleOutlined />
-                  ) : (
-                    <MinusCircleOutlined />
-                  )
-                }
-                onClick={toggleSelectionOverviewAccess}
-                disabled={!hasToggleableSelection}
-              />
-              <MenuAction
-                label="Delete"
-                icon={<DeleteOutlined />}
-                onClick={removeSelectedNodes}
-              />
+                <MenuAction
+                  label={isSelectionFullyInactive ? "Show" : "Hide"}
+                  icon={
+                    isSelectionFullyInactive ? (
+                      <CheckCircleOutlined />
+                    ) : (
+                      <MinusCircleOutlined />
+                    )
+                  }
+                  onClick={toggleSelectionOverviewAccess}
+                  disabled={!hasToggleableSelection}
+                />
+                <MenuAction
+                  label="Delete"
+                  icon={<DeleteOutlined />}
+                  onClick={removeSelectedNodes}
+                />
+              </div>
             </div>
+          )}
+        </div>
+      )}
+      {node && (
+        <OperationModal
+          node={node}
+          selectedNodes={selectedNodes}
+          open={operationModalOpen}
+          setOpen={setOperationModalOpen}
+          setActive={setActive}
+        />
+      )}
+      <Modal
+        title={sendToTitle}
+        open={sendToOpen}
+        footer={null}
+        onCancel={closeSendTo}
+        width={520}
+      >
+        <div className={styles.hierarchySendTo}>
+          <Input
+            autoFocus
+            allowClear
+            prefix={
+              <SearchOutlined style={{ color: "var(--color-ink-tertiary)" }} />
+            }
+            placeholder="Search destination node..."
+            value={sendToSearch}
+            onChange={(event) => setSendToSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && sendToDestinations[0]) {
+                sendToDestination(sendToDestinations[0].id);
+              }
+            }}
+          />
+          <div className={styles.hierarchySendToResults}>
+            {sendToDestinations.length === 0 ? (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="No valid destination"
+              />
+            ) : (
+              sendToDestinations.map((destination) => (
+                <button
+                  key={destination.id}
+                  type="button"
+                  className={styles.hierarchySendToOption}
+                  onClick={() => sendToDestination(destination.id)}
+                >
+                  <span className={styles.hierarchySendToName}>
+                    {destination.name}
+                  </span>
+                  <span className={styles.hierarchySendToPath}>
+                    {destination.path}
+                  </span>
+                </button>
+              ))
+            )}
           </div>
-        )}
-      </div>
-      <OperationModal
-        node={node}
-        selectedNodes={selectedNodes}
-        open={operationModalOpen}
-        setOpen={setOperationModalOpen}
-        setActive={setActive}
-      />
+        </div>
+      </Modal>
     </>
   );
 }

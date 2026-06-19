@@ -4,8 +4,7 @@ import { useFormikContext } from "formik";
 import { SearchOutlined } from "@ant-design/icons";
 import { Typography } from "antd";
 
-import { get_parser } from "../logic/parser";
-import buildAggregation from "../logic/formulaGenerator";
+import { compileAggregationFormula } from "@/store/features/metadata/utils/thunkUtils";
 
 import CustomFormulaHelpModalButton from "./CustomFormulaHelpModalButton";
 import styles from "./DropArea.module.css";
@@ -14,13 +13,11 @@ import SaveButton from "../components/SaveButton";
 
 const { Text } = Typography;
 
-let parser = get_parser();
-
 const CustomMeasure = ({ formula }) => {
   const attributes = useSelector((state) => state.metadata.attributes);
   const nodes = attributes.filter((n) => n.id !== 0);
 
-  const { errors, setFieldError, setFieldValue, values, setTouched } =
+  const { errors, setFieldError, setFieldValue, values } =
     useFormikContext();
 
   const [searchText, updateSearch] = useState("");
@@ -35,32 +32,29 @@ const CustomMeasure = ({ formula }) => {
     .sort((a, b) => a.name.length - b.name.length);
 
   const validateFormula = (e) => {
-    let parsed;
-    try {
-      parsed = parser.parse(e.target.value);
-    } catch {
-      setFieldError("info.formula", "Invalid formula");
+    const compiled = compileAggregationFormula(e.target.value);
+    if (!compiled.valid) {
+      setFieldError(
+        "aggregationConfig.formula",
+        compiled.message || "Invalid formula",
+      );
       return;
     }
 
     try {
-      const executable_code = buildAggregation(parsed);
-      setFieldValue("info.exec", executable_code.formula, false);
-      setTouched("info.exec", false);
-
-      const used = executable_code.nodes.map((o) => ({
-        name: o,
-        used: true,
-        weight: 1,
-        id: nodes.find((n) => n.name === o)?.id,
-      }));
-      setFieldValue("info.usedAttributes", used);
+      const used = compiled.nodes
+        .map((o) => nodes.find((n) => n.name === o)?.id)
+        .filter((id) => Number.isInteger(id));
+      setFieldValue("aggregationConfig.usedAttributes", used);
     } catch (error) {
-      setFieldError("info.formula", `${error.error} : ${error.msg}`);
+      setFieldError(
+        "aggregationConfig.formula",
+        `${error.error} : ${error.msg}`,
+      );
       return;
     }
 
-    setFieldValue("info.formula", textRef.current.value, true);
+    setFieldValue("aggregationConfig.formula", textRef.current.value, true);
   };
 
   const handleInputChange = (event) => {
@@ -106,9 +100,9 @@ const CustomMeasure = ({ formula }) => {
           }}
         />
       </div>
-      {errors?.info?.formula && (
+      {errors?.aggregationConfig?.formula && (
         <div style={{ color: "var(--color-error)", marginTop: 4 }}>
-          {errors.info.formula}
+          {errors.aggregationConfig.formula}
         </div>
       )}
       <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>

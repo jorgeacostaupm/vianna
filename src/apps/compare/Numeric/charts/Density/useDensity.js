@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import jstat from "jstat";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { selectCompareAnalysisContext } from "@/store/features/main";
 
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
@@ -9,6 +10,11 @@ import { notifyInfo } from "@/components/notifications";
 import { moveTooltip } from "@/utils/functions";
 import { CHART_OUTLINE } from "@/utils/chartTheme";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
+import {
+  appendLegendRoot,
+  createLegendLayout,
+  truncateSvgText,
+} from "@/utils/chartLegend";
 import {
   attachTickLabelGridHover,
   paintLayersInOrder,
@@ -18,9 +24,9 @@ export const numMargin = { top: 50, right: 50, bottom: 50, left: 90 };
 const DEFAULT_DISTRIBUTION_OPACITY = 0.5;
 const FOCUSED_DISTRIBUTION_OPACITY = 1;
 
-export default function useDensity({ chartRef, legendRef, data, config }) {
+export default function useDensity({ chartRef, data, config }) {
   const dimensions = useResizeObserver(chartRef);
-  const groupVar = useSelector((s) => s.compare.groupVar);
+  const { groupVar } = useSelector(selectCompareAnalysisContext);
   const groups = Array.from(new Set((data || []).map((d) => d.type))).filter(
     (value) => value != null
   );
@@ -40,7 +46,7 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
   }, [groupsKey]);
 
   useEffect(() => {
-    if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
+    if (!dimensions || !data || !chartRef.current) return;
 
     const { width, height } = dimensions;
     const {
@@ -71,13 +77,18 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
     const yMax = getYMax(densities);
 
     d3.select(chartRef.current).selectAll("*").remove();
-    d3.select(legendRef.current).selectAll("*").remove();
-
-    const chartWidth = width - numMargin.left - numMargin.right;
-    const chartHeight = height - numMargin.top - numMargin.bottom;
+    const legendLayout = createLegendLayout({
+      width,
+      height,
+      margin: numMargin,
+      showLegend: showLegend !== false,
+      legendMaxWidth: 204,
+      minChartWidth: 240,
+    });
+    const { chartWidth, chartHeight } = legendLayout;
 
     const svg = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = appendLegendRoot(svg, legendLayout);
     let tooltip = d3.select("body").select("div.tooltip");
     if (tooltip.empty()) {
       tooltip = d3.select("body").append("div").attr("class", "tooltip");
@@ -181,7 +192,7 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
       }
     };
 
-    if (showLegend !== false) {
+    if (showLegend !== false && legend) {
       renderLegend(
         legend,
         selectionGroups,
@@ -206,6 +217,7 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
             setHoverGroup(null);
             focusGroupInFront(group);
           },
+          maxWidth: Math.max(0, legendLayout.legendInnerWidth - 43),
         },
       );
     }
@@ -279,10 +291,10 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
   }, [data, config, dimensions, groupsKey, colorDomain]);
 
   useEffect(() => {
-    if (!chartRef.current || !legendRef.current) return;
+    if (!chartRef.current) return;
 
     const chart = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = chart.select(".chart-legend-root");
 
     chart
       .selectAll(".density")
@@ -319,7 +331,7 @@ export default function useDensity({ chartRef, legendRef, data, config }) {
           .raise();
       });
     }
-  }, [hide, hoverGroup, selectedGroups, chartRef, legendRef]);
+  }, [hide, hoverGroup, selectedGroups, chartRef]);
 }
 
 function getDistributionOpacity(group, selectedGroups, hoverGroup) {
@@ -458,6 +470,7 @@ export function renderLegend(
     labelByGroup,
     onHoverGroupChange,
     onCircleClick,
+    maxWidth,
   } = {},
 ) {
   const circleSize = 10;
@@ -526,7 +539,6 @@ export function renderLegend(
     const labels = legendItem
       .append("text")
       .attr("class", "legend-label")
-
       .attr("x", circleSize * 2 + 15)
       .attr("y", 4)
       .datum(group)
@@ -564,21 +576,7 @@ export function renderLegend(
         });
     }
   });
-
-  const bbox = legendGroup.node().getBBox();
-
-  const parent = legend.node().parentNode;
-  const { height } = parent.getBoundingClientRect();
-
-  if (height > bbox.y + bbox.height) {
-    d3.select(parent).style("align-items", "center");
-  } else {
-    d3.select(parent).style("align-items", null);
-  }
-
-  legend
-    .attr("width", bbox.x + bbox.width)
-    .attr("height", bbox.y + bbox.height);
+  truncateSvgText(legendGroup.selectAll(".legend-label"), maxWidth);
 }
 
 export function getGroupCounts(data, groups) {

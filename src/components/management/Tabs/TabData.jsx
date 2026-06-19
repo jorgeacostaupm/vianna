@@ -1,87 +1,137 @@
-import React, { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Select, Typography, Divider } from "antd";
+import React from "react";
+import { useSelector } from "react-redux";
+import { Typography } from "antd";
+import { DownloadOutlined } from "@ant-design/icons";
 import DragDropData from "../DragDrop/DragDropData";
-import NullifyValuesPanel from "../NullifyValuesPanel";
-import { setIdVar } from "@/store/features/main";
-import { selectNavioVars } from "@/store/features/main";
 import styles from "../Data.module.css";
+import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
+import { generateFileName } from "@/utils/functions";
 
 const { Title, Text } = Typography;
 
+const escapeCsvCell = (value) => {
+  const normalized = String(value ?? "");
+  if (!/[",\n\r]/.test(normalized)) return normalized;
+  return `"${normalized.replace(/"/g, '""')}"`;
+};
+
+const downloadTextFile = ({ content, filename, mimeType }) => {
+  const blob = new Blob([content], { type: mimeType });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(href);
+};
+
+const buildCsv = (rows) => {
+  if (!Array.isArray(rows) || rows.length === 0) return "";
+  const keys = Array.from(
+    rows.reduce((set, row) => {
+      Object.keys(row || {}).forEach((key) => set.add(key));
+      return set;
+    }, new Set()),
+  );
+  return [
+    keys.map(escapeCsvCell).join(","),
+    ...rows.map((row) =>
+      keys.map((key) => escapeCsvCell(row?.[key])).join(","),
+    ),
+  ].join("\n");
+};
+
+const isMissingValue = (value) =>
+  value == null || (typeof value === "string" && value.trim() === "");
+
 const Info = () => {
-  const dispatch = useDispatch();
-  const idVar = useSelector((state) => state.main.idVar);
   const filename = useSelector((state) => state.dataframe.filename);
   const dt = useSelector((state) => state.dataframe.dataframe);
-  const vars = useSelector(selectNavioVars);
-  const handleChange = useCallback(
-    (setter) => (value) => dispatch(setter(value)),
-    [dispatch],
-  );
+  const columns = Array.isArray(dt)
+    ? Array.from(
+        dt.reduce((set, row) => {
+          Object.keys(row || {}).forEach((key) => set.add(key));
+          return set;
+        }, new Set()),
+      )
+    : [];
+  const columnCount = columns.length;
+  const missingValues = Array.isArray(dt)
+    ? dt.reduce(
+        (total, row) =>
+          total +
+          columns.reduce(
+            (count, column) => count + (isMissingValue(row?.[column]) ? 1 : 0),
+            0,
+          ),
+        0,
+      )
+    : 0;
+  const cellCount = (dt?.length || 0) * columnCount;
+  const missingPercent = cellCount
+    ? `${((missingValues / cellCount) * 100).toFixed(1)}%`
+    : "0%";
 
   return (
     <div className={styles.tabColumn}>
-      <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
-        Metadata
+      <Title level={5} style={{ marginTop: 0, color: "var(--primary-color)" }}>
+        Current
       </Title>
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          File Name:
-        </Text>{" "}
-        <Text type="secondary">{filename ? filename : "—"}</Text>
-      </div>
-
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          Nº Rows:
-        </Text>{" "}
-        <Text type="secondary">{dt?.length || 0}</Text>
-      </div>
-
-      <Divider style={{ margin: "1rem 0" }} />
-
-      <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
-        ID Attribute
-      </Title>
-      <Text type="secondary">
-        Set the unique identifier used across analysis views.
-      </Text>
-
-      {[["ID measurement", idVar, setIdVar]].map(([label, value, setter]) => (
-        <div
-          key={label}
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+      <div className={styles.dataStats}>
+        <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            {label}:
-          </Text>
-          <Select
-            style={{ width: "60%", marginTop: 0 }}
-            value={value}
-            onChange={handleChange(setter)}
-            placeholder={`Select ${label.toLowerCase()}`}
-            options={vars.map((key) => ({ label: key, value: key }))}
-          />
+            File Name:
+          </Text>{" "}
+          <Text type="secondary">{filename ? filename : "—"}</Text>
         </div>
-      ))}
 
-      <Divider style={{ margin: "1rem 0" }} />
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Nº Rows:
+          </Text>{" "}
+          <Text type="secondary">{dt?.length || 0}</Text>
+        </div>
 
-      <Title
-        level={4}
-        style={{ marginBottom: 4, color: "var(--primary-color)" }}
-      >
-        Nullify Values
-      </Title>
-      <Text type="secondary">
-        Replace exact values with null across Explorer and Quarantine.
-      </Text>
-      <NullifyValuesPanel />
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Nº Columns:
+          </Text>{" "}
+          <Text type="secondary">{columnCount}</Text>
+        </div>
+
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Missing Values:
+          </Text>{" "}
+          <Text type="secondary">{missingValues}</Text>
+        </div>
+
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Missing %:
+          </Text>{" "}
+          <Text type="secondary">{missingPercent}</Text>
+        </div>
+      </div>
+
+      <div className={styles.exportButtonRow}>
+        <AppButton
+          preset={APP_BUTTON_PRESETS.ACTION}
+          className={styles.primaryExportButton}
+          onClick={() =>
+            downloadTextFile({
+              content: buildCsv(dt),
+              filename: `${generateFileName("data")}.csv`,
+              mimeType: "text/csv;charset=utf-8;",
+            })
+          }
+          disabled={!Array.isArray(dt) || dt.length === 0}
+          icon={<DownloadOutlined />}
+          shape="default"
+        >
+          Export
+        </AppButton>
+      </div>
     </div>
   );
 };
@@ -89,38 +139,10 @@ const Info = () => {
 const UploadPanel = () => {
   return (
     <div className={`${styles.tabColumn} ${styles.tabColumnWithDivider}`}>
-      <Title
-        level={4}
-        style={{ marginBottom: 4, color: "var(--primary-color)" }}
-      >
-        Upload Data
+      <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
+        Import
       </Title>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <Text type="secondary">
-          Each column becomes a measurement. Types are detected automatically
-          from the values.
-        </Text>
-      </div>
-
       <DragDropData />
-
-      <Divider style={{ margin: "1rem 0" }} />
-
-      <Title level={5} style={{ margin: 0, color: "var(--primary-color)" }}>
-        Expected File
-      </Title>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        <Text type="secondary">
-          Rows are observations and each field is a measurement.
-        </Text>
-        <Text type="secondary">
-          For JSON, upload an array of objects and make sure every object shares
-          the same keys.
-        </Text>
-        <Text type="secondary">
-          Missing values can be left blank and will be treated as nulls.
-        </Text>
-      </div>
     </div>
   );
 };

@@ -4,39 +4,28 @@ import SingleViewAppLayout from "@/components/ui/SingleViewAppLayout";
 
 import Explorer from "../explorer";
 import AppsButtons from "./AppsButtons";
-import InitialDataChoice from "./InitialDataChoice";
 import MainSidebar from "./MainSidebar";
 
 export default function MainAppView({
-  shouldShowInitialChoice,
-  isLoadingDemo,
   isDataManagementOpen,
+  isSettingsOpen,
   onDataManagementOpenChange,
-  onLoadDemo,
-  onLoadMyData,
-  onContinueWithoutData,
+  onSettingsOpenChange,
 }) {
-  const sidebar = shouldShowInitialChoice ? null : (
+  const sidebar = (
     <MainSidebar>
       <AppsButtons
         dataManagementOpen={isDataManagementOpen}
         onDataManagementOpenChange={onDataManagementOpenChange}
+        settingsOpen={isSettingsOpen}
+        onSettingsOpenChange={onSettingsOpenChange}
       />
     </MainSidebar>
   );
 
   return (
     <SingleViewAppLayout sidebar={sidebar} viewKey="explorer">
-      {shouldShowInitialChoice ? (
-        <InitialDataChoice
-          isLoadingDemo={isLoadingDemo}
-          onLoadDemo={onLoadDemo}
-          onLoadMyData={onLoadMyData}
-          onContinueWithoutData={onContinueWithoutData}
-        />
-      ) : (
-        <Explorer />
-      )}
+      <Explorer />
     </SingleViewAppLayout>
   );
 }

@@ -5,12 +5,13 @@ import { aggregateSelectedNodes, changeOrder } from "@/store/features/metadata";
 import {
   changeRelationship,
   changeRelationshipBatch,
-  removeAttribute,
+  removeAttributeBatch,
 } from "@/store/features/metadata";
 import store from "@/store/store";
 
 import { pubsub } from "@/utils/pubsub";
 import { getRandomInt } from "@/utils/functions";
+import { createUniqueNodeName } from "@/apps/hierarchy/nodeNames";
 import {
   extractErrorMessage,
   formatListPreview,
@@ -20,10 +21,9 @@ import {
   notifyWarning,
 } from "@/components/notifications";
 
-import { transitionDuration } from "./constants";
 import {
-  canNodeAcceptChildren,
   computeNavioColumnsFromHierarchy,
+  getSelectionRootsAndOrphans,
   getNodeLabel,
 } from "./helpers";
 
@@ -54,7 +54,7 @@ export function onChangeOrder(node, newIndex) {
       newIndex,
     }),
   );
-  this.scheduleNavioSync(transitionDuration + 16);
+  this.scheduleNavioSync(this.getTransitionDuration() + 16);
 }
 
 export function setNavioNodes() {
@@ -70,6 +70,12 @@ export function setNavioNodes() {
 
   this.dispatcher(setNavioColumns(columns));
 }
+
+const findParentNodeForChild = (attributes, childId) =>
+  attributes.find((node) => node.related?.includes(childId));
+
+const isUsedByAggregationParent = (parentNode, childId) =>
+  Boolean(parentNode?.aggregationConfig?.usedAttributes?.includes(childId));
 
 export function onChangeHierarchy() {
   this.svg.selectAll(".ghostCircle").attr("fill-opacity", 0);
@@ -94,11 +100,23 @@ export function onChangeHierarchy() {
     return;
   }
 
-  if (!canNodeAcceptChildren(this.targetNode?.data)) {
+  const attributes = store.getState().metadata.attributes || [];
+  const sourceParent = findParentNodeForChild(attributes, sourceID);
+  const targetExists = attributes.some((node) => node.id === targetID);
+
+  if (!sourceParent || !targetExists) {
+    notifyError({
+      message: "Could not reassign node",
+      description: "Source or target node not found.",
+    });
+    this.drawHierarchy(this.root, true);
+    return;
+  }
+
+  if (isUsedByAggregationParent(sourceParent, sourceID)) {
     notifyWarning({
       message: "Cannot reassign node",
-      description:
-        "Target measure node has a valid formula and cannot receive child nodes.",
+      description: `${getNodeLabel(draggedNode)} is part of an aggregation formula.`,
     });
     this.drawHierarchy(this.root, true);
     return;
@@ -112,21 +130,28 @@ export function onChangeHierarchy() {
       recover: true,
     }),
   );
-  this.scheduleNavioSync(transitionDuration + 16);
+  this.scheduleNavioSync(this.getTransitionDuration() + 16);
 }
 
-export async function addSelectedNodes({ parent }) {
-  const mods = this.getSelectedNodesToModify();
+export async function addSelectedNodes({ parent, nodeIds } = {}) {
+  const requestedIds = Array.isArray(nodeIds) ? new Set(nodeIds) : null;
+  const requestedNodes = requestedIds
+    ? this.root
+        ?.descendants?.()
+        .filter((node) => requestedIds.has(node.id)) || []
+    : null;
+  const mods = requestedNodes
+    ? getSelectionRootsAndOrphans(requestedNodes)
+    : this.getSelectedNodesToModify();
 
   const targetNode = this.root
     ?.descendants?.()
     .find((node) => node.id === parent);
 
-  if (!canNodeAcceptChildren(targetNode?.data)) {
+  if (!targetNode) {
     notifyWarning({
       message: "Cannot add selected nodes",
-      description:
-        "Target measure node has a valid formula and cannot receive child nodes.",
+      description: "Target node not found.",
     });
     return;
   }
@@ -137,6 +162,7 @@ export async function addSelectedNodes({ parent }) {
 
   const toMove = [];
   const failed = [];
+  const attributes = store.getState().metadata.attributes || [];
 
   mods.forEach((d) => {
     const nodeName = getNodeLabel(d);
@@ -146,30 +172,29 @@ export async function addSelectedNodes({ parent }) {
       );
       return;
     }
+
+    const sourceParent = findParentNodeForChild(attributes, d.id);
+    if (!sourceParent) {
+      failed.push(`${nodeName}: current parent not found in hierarchy.`);
+      return;
+    }
+
+    if (isUsedByAggregationParent(sourceParent, d.id)) {
+      failed.push(`${nodeName}: node is part of an existing aggregation.`);
+      return;
+    }
+
     toMove.push(d);
   });
 
   if (toMove.length > 0) {
-    try {
-      const result = await this.dispatcher(
-        changeRelationshipBatch({
-          sourceIDs: toMove.map((d) => d.id),
-          targetID: parent,
-          recover: false,
-          silent: true,
-        }),
-      ).unwrap();
-
-      if (Array.isArray(result?.failed) && result.failed.length > 0) {
-        const nodeLabelById = new Map(toMove.map((d) => [d.id, getNodeLabel(d)]));
-        result.failed.forEach(({ sourceID, reason }) => {
-          const nodeName = nodeLabelById.get(sourceID) || `Node #${sourceID}`;
-          failed.push(`${nodeName}: ${reason || "Unknown error"}`);
-        });
-      }
-    } catch (error) {
-      failed.push(extractErrorMessage(error, "Unknown error"));
-    }
+    this.dispatcher(
+      changeRelationshipBatch({
+        sourceIDs: toMove.map((d) => d.id),
+        targetID: parent,
+        recover: false,
+      }),
+    );
   }
 
   if (failed.length > 0) {
@@ -190,7 +215,7 @@ export async function addSelectedNodes({ parent }) {
   }
 
   if (toMove.length > 0) {
-    this.scheduleNavioSync(transitionDuration + 16);
+    this.scheduleNavioSync(this.getTransitionDuration() + 16);
   }
 }
 
@@ -226,9 +251,6 @@ export async function removeSelectedNodes() {
 
   if (!shouldDelete) return;
 
-  const failed = [];
-  let deletedCount = 0;
-
   const sortedNodes = deletableNodes
     .slice()
     .sort(
@@ -236,43 +258,31 @@ export async function removeSelectedNodes() {
         (b.ancestors?.()?.length ?? 0) - (a.ancestors?.()?.length ?? 0),
     );
 
-  const getDeletePrecheckError = (nodeId) => {
-    const attributes = store.getState().metadata.attributes;
-    if (!Array.isArray(attributes)) {
-      return "Metadata attributes are not available.";
+  const nodeLabelById = new Map(
+    sortedNodes.map((node) => [node.id, getNodeLabel(node)]),
+  );
+  let deletedCount = 0;
+  const failed = [];
+
+  try {
+    const result = await this.dispatcher(
+      removeAttributeBatch({
+        attributeIDs: sortedNodes.map((node) => node.id),
+      }),
+    ).unwrap();
+
+    deletedCount = Array.isArray(result?.removed) ? result.removed.length : 0;
+    if (Array.isArray(result?.failed)) {
+      result.failed.forEach(({ attributeID, reason }) => {
+        failed.push(
+          `${nodeLabelById.get(attributeID) || `Node #${attributeID}`}: ${
+            reason || "Unknown error"
+          }`,
+        );
+      });
     }
-
-    const currentNode = attributes.find((n) => n.id === nodeId);
-    if (!currentNode) return "Node no longer exists.";
-
-    const parentNode = attributes.find((n) => n.related.includes(nodeId));
-    if (!parentNode) return "Current parent not found in hierarchy.";
-
-    const isUsed = parentNode.info?.usedAttributes?.find(
-      (used) => used.id === nodeId,
-    );
-    if (isUsed) return "Node is part of an existing aggregation.";
-
-    return null;
-  };
-
-  for (const node of sortedNodes) {
-    const precheckError = getDeletePrecheckError(node.id);
-    if (precheckError) {
-      failed.push(`${getNodeLabel(node)}: ${precheckError}`);
-      continue;
-    }
-
-    try {
-      await this.dispatcher(
-        removeAttribute({ attributeID: node.id }),
-      ).unwrap();
-      deletedCount += 1;
-    } catch (error) {
-      failed.push(
-        `${getNodeLabel(node)}: ${extractErrorMessage(error, "Unknown error")}`,
-      );
-    }
+  } catch (error) {
+    failed.push(extractErrorMessage(error, "Unknown error"));
   }
 
   this.clearSelection();
@@ -313,12 +323,6 @@ export function onResize(newDim) {
 }
 
 export function aggregateSelectedNodesAction({ parent, source }) {
-  const aggregationNode = {
-    id: getRandomInt(0, 9999999),
-    name: "Unknown Aggregation",
-    type: "aggregation",
-  };
-
   const mods = this.getSelectedNodesToModify();
 
   const attributes = store.getState().metadata.attributes || [];
@@ -355,6 +359,36 @@ export function aggregateSelectedNodesAction({ parent, source }) {
     return;
   }
 
+  const generatedName = createUniqueNodeName(
+    attributes,
+    "",
+    (this.nNodes ?? attributes.length) + 1,
+  );
+  const promptedName =
+    typeof window !== "undefined" && typeof window.prompt === "function"
+      ? window.prompt("Aggregation name", generatedName)
+      : generatedName;
+  const aggregationName = createUniqueNodeName(
+    attributes,
+    promptedName == null ? generatedName : promptedName,
+    (this.nNodes ?? attributes.length) + 1,
+  );
+  const requestedName =
+    typeof promptedName === "string" ? promptedName.trim() : generatedName;
+
+  if (requestedName && requestedName !== aggregationName) {
+    notifyWarning({
+      message: "Aggregation name adjusted",
+      description: `"${requestedName}" already exists. Using "${aggregationName}".`,
+    });
+  }
+
+  const aggregationNode = {
+    id: getRandomInt(0, 9999999),
+    name: aggregationName,
+    type: "aggregation",
+  };
+
   this.dispatcher(
     aggregateSelectedNodes({
       ...aggregationNode,
@@ -364,6 +398,10 @@ export function aggregateSelectedNodesAction({ parent, source }) {
     }),
   );
   this.clearSelection();
+  publish("nodeInspectionNode", {
+    nodeId: aggregationNode.id,
+    required: true,
+  });
 
   if (failed.length > 0) {
     notifyWarning({
@@ -392,14 +430,18 @@ export function focusNode({ nodeId }) {
   const { x: screenX, y: screenY } = this.projectPoint(node.x, node.y);
   const tx = width / 2 - screenX * scale;
   const ty = height / 2 - screenY * scale;
+  const transitionTime = this.getTransitionDuration();
+  const transform = d3.zoomIdentity.translate(tx, ty).scale(scale);
+
+  if (transitionTime === 0) {
+    this.svg.call(this.zoomBehaviour.transform, transform);
+    return;
+  }
 
   this.svg
     .transition()
-    .duration(transitionDuration)
-    .call(
-      this.zoomBehaviour.transform,
-      d3.zoomIdentity.translate(tx, ty).scale(scale),
-    )
+    .duration(transitionTime)
+    .call(this.zoomBehaviour.transform, transform)
     .on("end", () => {
       const nodeG = this.svg
         .selectAll(".circleG")

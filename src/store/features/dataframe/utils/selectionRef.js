@@ -1,9 +1,9 @@
-import { ORDER_VARIABLE } from "@/utils/constants";
+import { ORDER_VARIABLE } from "../../../../utils/constants.js";
 import {
   compareOrderValues,
   normalizeOrderValues,
   uniqueColumns,
-} from "@/utils/viewRecords";
+} from "../../../../utils/viewRecords.js";
 
 const DEFAULT_MODE = "all";
 const VALID_MODES = new Set(["all", "include", "exclude"]);
@@ -110,51 +110,6 @@ export function projectSelectionRows({
   }
 
   return rows;
-}
-
-export function selectionHasEmptyValues({
-  dataframe,
-  selectionRef,
-  visibleColumns = [],
-}) {
-  if (!Array.isArray(dataframe) || dataframe.length === 0) return false;
-
-  const universeOrderValues = getDataframeOrderValues(dataframe);
-  const selectedOrderValues = resolveSelectionOrderValues(
-    selectionRef,
-    universeOrderValues,
-  );
-  if (selectedOrderValues.length === 0) return false;
-
-  const columnsToCheck = uniqueColumns(visibleColumns);
-  if (columnsToCheck.length === 0) return false;
-
-  const rowsByOrder = buildRowsByOrderMap(dataframe);
-  for (
-    let orderIndex = 0;
-    orderIndex < selectedOrderValues.length;
-    orderIndex += 1
-  ) {
-    const row = rowsByOrder.get(selectedOrderValues[orderIndex]);
-    if (!row) continue;
-
-    for (
-      let columnIndex = 0;
-      columnIndex < columnsToCheck.length;
-      columnIndex += 1
-    ) {
-      const value = row?.[columnsToCheck[columnIndex]];
-      if (
-        value === null ||
-        value === undefined ||
-        (typeof value === "number" && Number.isNaN(value))
-      ) {
-        return true;
-      }
-    }
-  }
-
-  return false;
 }
 
 function buildSelectionRefFromOrderValues(orderValues, universeOrderValues) {

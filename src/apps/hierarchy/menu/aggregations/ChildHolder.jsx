@@ -11,7 +11,7 @@ import styles from "./DropArea.module.css";
 
 const { Text } = Typography;
 
-const ChildHolder = ({ allNodes, nodes, moveNode, removeNodeField }) => {
+const ChildHolder = ({ allNodes, nodes, moveNode }) => {
   const [active, setActive] = useState(false);
   const [searchText] = useState("");
 
@@ -51,14 +51,13 @@ const ChildHolder = ({ allNodes, nodes, moveNode, removeNodeField }) => {
     let transfered = allNodes.find((n) => n.id === nodeId);
     if (transfered == null) return;
 
-    let unusedNodes = nodes.filter((n) => !n.used && n.id !== nodeId);
+    let unusedNodes = nodes.filter((n) => n.id !== nodeId);
 
     transfered = { ...transfered, used: false };
     const position =
       before === "-1"
         ? -1
         : unusedNodes.findIndex((el) => el.id === parseInt(before));
-    removeNodeField(transfered);
     moveNode(transfered, false, position);
   };
 

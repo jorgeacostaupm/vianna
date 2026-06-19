@@ -1,14 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 
 import MainAppView from "./MainAppView";
-import useMainAppController from "./useMainAppController";
 
 export default function MainApp() {
-  const mainViewModel = useMainAppController();
+  const [isDataManagementOpen, setIsDataManagementOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   return (
-    <>
-      <MainAppView {...mainViewModel} />
-    </>
+    <MainAppView
+      isDataManagementOpen={isDataManagementOpen}
+      isSettingsOpen={isSettingsOpen}
+      onDataManagementOpenChange={setIsDataManagementOpen}
+      onSettingsOpenChange={setIsSettingsOpen}
+    />
   );
 }

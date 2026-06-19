@@ -3,14 +3,14 @@ import { useSelector } from "react-redux";
 
 import { getPCAData } from "@/utils/functions";
 import { notifyError } from "@/components/notifications";
+import { selectCorrelationAnalysisContext } from "@/store/features/main";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import { uniqueColumns } from "@/utils/viewRecords";
 import useSelectionRows from "@/hooks/useSelectionRows";
 
 export default function usePCAData(isSync = true, params, setInfo) {
   const [data, setData] = useState([]);
-  const groupVar = useSelector((s) => s.correlation.groupVar);
-  const idVar = useSelector((s) => s.main.idVar);
+  const { groupVar, idVar } = useSelector(selectCorrelationAnalysisContext);
   const selectionColumns = useMemo(
     () =>
       uniqueColumns([

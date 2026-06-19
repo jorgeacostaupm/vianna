@@ -5,6 +5,7 @@ import { Select, Slider, Switch, Typography } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import { AppButton } from "@/components/buttons/core";
+import CorrelationVariableSettings from "../VariableSettings";
 
 const { Text } = Typography;
 
@@ -60,34 +61,6 @@ export default function Settings({
   return (
     <div className={panelStyles.panel}>
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Variables</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Included variables</Text>
-          <Select
-            size="small"
-            mode="multiple"
-            value={params.variables}
-            onChange={onVariablesChange}
-            placeholder="Select variables"
-            options={variableOptions}
-            disabled={!config.isSync}
-          />
-          <div className={panelStyles.inline}>
-            <AppButton
-              size="small"
-              onClick={onAddVisibleVariables}
-              disabled={!config.isSync}
-            >
-              Add all visible
-            </AppButton>
-          </div>
-          <Text className={panelStyles.helper}>
-            Variables in red cannot be used in PCA with the current selection.
-          </Text>
-        </div>
-      </div>
-
-      <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Points</div>
         <SliderControl
           label="Size"
@@ -139,6 +112,39 @@ export default function Settings({
             {isLassoEnabled
               ? `Lasso mode active on column: ${lassoTargetColumn || "-"}. Use right click to draw lasso, left click + drag to pan, and save the partition as a categorical variable.`
               : "Enable Lasso mode to manually define PCA groups with free-form right-click lasso while keeping mouse pan/zoom navigation."}
+          </Text>
+        </div>
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Variables</div>
+        <CorrelationVariableSettings />
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>PCA Variables</div>
+        <div className={panelStyles.rowStack}>
+          <Text className={panelStyles.label}>Included variables</Text>
+          <Select
+            size="small"
+            mode="multiple"
+            value={params.variables}
+            onChange={onVariablesChange}
+            placeholder="Select variables"
+            options={variableOptions}
+            disabled={!config.isSync}
+          />
+          <div className={panelStyles.inline}>
+            <AppButton
+              size="small"
+              onClick={onAddVisibleVariables}
+              disabled={!config.isSync}
+            >
+              Add all visible
+            </AppButton>
+          </div>
+          <Text className={panelStyles.helper}>
+            Variables in red cannot be used in PCA with the current selection.
           </Text>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { deepCopy, moveTooltip } from "@/utils/functions";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import { paintLayersInOrder } from "@/utils/gridInteractions";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
+import { appendLegendRoot, createLegendLayout } from "@/utils/chartLegend";
 import {
   catMargins,
   renderLegend,
@@ -11,14 +12,13 @@ import {
 
 export default function useStackedBarChart({
   chartRef,
-  legendRef,
   data,
   config,
 }) {
   const dimensions = useResizeObserver(chartRef);
 
   useLayoutEffect(() => {
-    if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
+    if (!dimensions || !data || !chartRef.current) return;
 
     const { width, height } = dimensions;
     const { chartData, categories, categoriesWithValues, groupVar } = data;
@@ -32,10 +32,15 @@ export default function useStackedBarChart({
     const isProportionMode = stackedMode === "proportion";
 
     d3.select(chartRef.current).selectAll("*").remove();
-    d3.select(legendRef.current).selectAll("*").remove();
-
-    const chartWidth = width - catMargins.left - catMargins.right;
-    const chartHeight = height - catMargins.top - catMargins.bottom;
+    const legendLayout = createLegendLayout({
+      width,
+      height,
+      margin: catMargins,
+      showLegend: showLegend !== false,
+      legendMaxWidth: 192,
+      minChartWidth: 240,
+    });
+    const { chartWidth, chartHeight } = legendLayout;
 
     let tooltip = d3.select("body").select("div.tooltip");
     if (tooltip.empty()) {
@@ -43,7 +48,7 @@ export default function useStackedBarChart({
     }
 
     const svg = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = appendLegendRoot(svg, legendLayout);
 
     const chart = svg
       .append("g")
@@ -159,10 +164,12 @@ export default function useStackedBarChart({
         return d.key === activeCategory ? 1 : inactiveOpacity;
       });
 
-      legend.selectAll(".legend-item").attr("opacity", (d) => {
-        if (!hasActiveCategory) return 1;
-        return d === activeCategory ? 1 : inactiveOpacity;
-      });
+      if (legend) {
+        legend.selectAll(".legend-item").attr("opacity", (d) => {
+          if (!hasActiveCategory) return 1;
+          return d === activeCategory ? 1 : inactiveOpacity;
+        });
+      }
     };
 
     const layer = chart
@@ -221,10 +228,11 @@ export default function useStackedBarChart({
       });
     }
 
-    if (showLegend !== false) {
+    if (showLegend !== false && legend) {
       renderLegend(legend, orderedCategories, color, {
         onItemMouseOver: setCategoryHighlight,
         onItemMouseOut: () => setCategoryHighlight(null),
+        maxWidth: Math.max(0, legendLayout.legendInnerWidth - 43),
       });
     }
   }, [data, config, dimensions]);

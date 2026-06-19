@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { notifyError } from "@/components/notifications";
-import { selectVars } from "@/store/features/main";
+import { selectCompareAnalysisContext, selectVars } from "@/store/features/main";
 import useSelectionRows from "@/hooks/useSelectionRows";
 import { uniqueColumns } from "@/utils/viewRecords";
 
@@ -13,7 +13,7 @@ export default function useDistributionData(
   { groupVar = null, timeVar = null } = {}
 ) {
   const [data, setData] = useState([]);
-  const idVar = useSelector((s) => s.main.idVar);
+  const { idVar } = useSelector(selectCompareAnalysisContext);
   const variables = useSelector(selectVars);
   const selectionColumns = useMemo(
     () => uniqueColumns([groupVar, variable, timeVar, idVar]),

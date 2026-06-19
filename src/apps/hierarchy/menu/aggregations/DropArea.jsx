@@ -21,10 +21,8 @@ const DropArea = ({
   aggOp,
   nodes,
   moveNode,
+  updateNodeWeight,
   modeAllNodes,
-  insertNodeField,
-  pushNodeField,
-  moveNodeField,
   save,
 }) => {
   const [active, setActive] = useState(false);
@@ -70,25 +68,13 @@ const DropArea = ({
     let transfered = allNodes.find((n) => n.id === nodeId);
     if (transfered == null) return;
 
-    let usedNodes = nodes.filter((n) => n.used && n.id !== nodeId);
+    let usedNodes = nodes.filter((n) => n.id !== nodeId);
 
     transfered = { ...transfered, used: true };
     const position =
       before === "-1"
         ? -1
         : usedNodes.findIndex((el) => el.id === parseInt(before));
-    if (nodes.filter((n) => n.id === nodeId).length > 0) {
-      const current = nodes.findIndex((n) => n.id === nodeId);
-      if (current !== -1) {
-        moveNodeField(current, position);
-      }
-    } else {
-      if (position === -1) {
-        pushNodeField(transfered);
-      } else {
-        insertNodeField(position, transfered);
-      }
-    }
 
     moveNode(transfered, true, position);
   };
@@ -124,6 +110,7 @@ const DropArea = ({
                 idx={i}
                 node={n}
                 onDragStart={handleDragStart}
+                onWeightChange={updateNodeWeight}
                 isHidden={!n.name.toLowerCase().includes(searchText)}
               ></InputAttribute>
             );
@@ -139,10 +126,12 @@ const DropArea = ({
           color: "red",
         }}
       >
-        {errors?.info?.formula}
+        {errors?.aggregationConfig?.formula}
       </div>
 
       <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
+        {save}
+
         <Tooltip title={"Add all variables"}>
           <AppButton
             variant={APP_BUTTON_VARIANTS.ACTION}
@@ -152,8 +141,6 @@ const DropArea = ({
             icon={<CopyOutlined />}
           />
         </Tooltip>
-
-        {save}
 
         <Tooltip title={"Delete all variables"}>
           <AppButton

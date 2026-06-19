@@ -6,7 +6,6 @@ import {
   CheckOutlined,
   CloseOutlined,
   UploadOutlined,
-  PlusOutlined,
 } from "@ant-design/icons";
 
 import { FileProcessorFactory } from "./drag";
@@ -118,7 +117,7 @@ export default function DragDropData() {
     reader.readAsText(file);
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleFileDrop,
     maxFiles: 1,
     accept: ACCEPTED_FORMATS,
@@ -133,28 +132,33 @@ export default function DragDropData() {
 
   return (
     <>
-      <div {...getRootProps({ className: styles.dropzone })}>
+      <div
+        {...getRootProps({
+          className: `${styles.dropzone} ${styles.dataDropzone}`,
+          "aria-label": "Upload data file",
+        })}
+      >
         <input {...getInputProps()} />
-        {!isDragActive && (
-          <div className={styles.dropContent}>
-            {!filename && <PlusOutlined />}
-            <span className={styles.text}>
-              {isReadingFile ? "Reading file..." : filename || "Click or drop a file"}
-            </span>
-            {!filename && (
-              <span className={styles.subtitle}>
-                Accepted: .csv, .tsv, .txt, .json
-              </span>
-            )}
-          </div>
+        <UploadOutlined />
+        <span className={styles.dataDropLabel}>
+          Choose a file or drag it here
+        </span>
+      </div>
+      <div className={styles.dataDropHint}>
+        <span className={styles.subtitle}>Accepted: .csv, .tsv, .txt, .json</span>
+        {(isReadingFile || filename) && (
+          <span className={styles.text}>
+            {isReadingFile ? "Reading file..." : filename}
+          </span>
         )}
       </div>
 
-      <div className={styles.controls}>
+      <div className={`${styles.controls} ${styles.dataImportControls}`}>
         <div className={styles.switchRow}>
           <Text>Reset Hierarchy</Text>
           <Tooltip title="Start a new hierarchy">
-            <Switch size="small"
+            <Switch
+              size="small"
               checked={generateHierarchy}
               onChange={setGenerateHierarchy}
               disabled={isUploading}
@@ -172,7 +176,7 @@ export default function DragDropData() {
           icon={<UploadOutlined />}
           shape="default"
         >
-          Upload Data
+          Import
         </AppButton>
       </div>
     </>

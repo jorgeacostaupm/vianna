@@ -4,9 +4,6 @@ import { getVariableTypes } from "@/utils/functions";
 import {
   loadDemoData,
   nullsToQuarantine,
-  setGroupVar,
-  setIdVar,
-  setTimeVar,
 } from "./thunks";
 import {
   applyGeneratedColumns,
@@ -16,28 +13,19 @@ import {
   convertColumnType,
   generateColumn,
   generateColumnBatch,
+  removeBatch,
   updateData,
 } from "../dataframe/thunks";
 import { MAIN_CONFIG_DEFAULTS } from "./configDefaults";
 
 const initialState = {
-  selectedIds: [],
-  scenarioRunResults: [],
-
-  notApi: null,
-
   init: false,
   initQuarantine: false,
-
-  hasEmptyValues: false,
 
   quarantineData: [],
   quarantineSelection: null,
   quarantineNavioUiState: null,
   quarantineVersion: 0,
-  filteredData: null,
-
-  pop_metadata: null,
 
   descriptions: {},
 
@@ -47,6 +35,7 @@ const initialState = {
 
   varTypes: {},
   demoLoadStatus: "idle",
+  openApps: [],
 
   config: {
     ...MAIN_CONFIG_DEFAULTS,
@@ -59,9 +48,6 @@ const mainSlice = createSlice({
   reducers: {
     setInit: (state, action) => {
       state.init = action.payload;
-    },
-    setFilteredData: (state, action) => {
-      state.filteredData = action.payload;
     },
     setInitQuarantine: (state, action) => {
       state.initQuarantine = action.payload;
@@ -78,35 +64,33 @@ const mainSlice = createSlice({
     setQuarantineNavioUiState: (state, action) => {
       state.quarantineNavioUiState = action.payload || null;
     },
-    setAttrWidth: (state, action) => {
-      state.config.attrWidth = action.payload;
-    },
-    setScenarioRunResults: (state, action) => {
-      state.scenarioRunResults = action.payload;
-    },
-    setSelectedIds: (state, action) => {
-      state.selectedIds = action.payload;
-    },
     setVarTypes: (state, action) => {
       state.varTypes = action.payload || {};
+    },
+    setTimeVar: (state, action) => {
+      state.timeVar = action.payload;
+    },
+    setGroupVar: (state, action) => {
+      state.groupVar = action.payload;
+    },
+    setIdVar: (state, action) => {
+      state.idVar = action.payload;
     },
     updateConfig: (state, action) => {
       const { field, value } = action.payload;
       state.config = { ...state.config, [field]: value };
     },
+    registerOpenApp: (state, action) => {
+      const appId = action.payload;
+      if (!appId || state.openApps.includes(appId)) return;
+      state.openApps.push(appId);
+    },
+    unregisterOpenApp: (state, action) => {
+      const appId = action.payload;
+      state.openApps = state.openApps.filter((id) => id !== appId);
+    },
   },
   extraReducers: (builder) => {
-    builder
-      .addCase(setTimeVar.fulfilled, (state, action) => {
-        state.timeVar = action.payload.timeVar;
-      })
-      .addCase(setGroupVar.fulfilled, (state, action) => {
-        state.groupVar = action.payload.groupVar;
-      })
-      .addCase(setIdVar.fulfilled, (state, action) => {
-        state.idVar = action.payload.idVar;
-      });
-
     builder.addCase(nullsToQuarantine.fulfilled, (state, action) => {
       const quarantineData = Array.isArray(action.payload?.quarantineData)
         ? action.payload.quarantineData
@@ -122,8 +106,9 @@ const mainSlice = createSlice({
       .addCase(loadDemoData.pending, (state) => {
         state.demoLoadStatus = "loading";
       })
-      .addCase(loadDemoData.fulfilled, (state) => {
+      .addCase(loadDemoData.fulfilled, (state, action) => {
         state.demoLoadStatus = "succeeded";
+        state.idVar = action.payload?.idVar ?? state.idVar;
       })
       .addCase(loadDemoData.rejected, (state) => {
         state.demoLoadStatus = "failed";
@@ -137,7 +122,8 @@ const mainSlice = createSlice({
 
     builder
       .addCase(generateColumn.fulfilled, applyGeneratedColumns)
-      .addCase(generateColumnBatch.fulfilled, applyGeneratedColumns);
+      .addCase(generateColumnBatch.fulfilled, applyGeneratedColumns)
+      .addCase(removeBatch.fulfilled, applyGeneratedColumns);
 
     builder.addCase(convertColumnType.fulfilled, (state, action) => {
       state.varTypes = getVariableTypes(action.payload);
@@ -149,24 +135,22 @@ export default mainSlice.reducer;
 
 export const {
   setInit,
-  setFilteredData,
-  setAttrWidth,
-  setScenarioRunResults,
-  setSelectedIds,
   setInitQuarantine,
   setQuarantineData,
   setQuarantineSelection,
   setQuarantineNavioUiState,
   setVarTypes,
+  setTimeVar,
+  setGroupVar,
+  setIdVar,
   updateConfig,
+  registerOpenApp,
+  unregisterOpenApp,
 } = mainSlice.actions;
 
 export {
   loadDemoData,
   nullsToQuarantine,
-  setGroupVar,
-  setIdVar,
-  setTimeVar,
 } from "./thunks";
 
 export {
@@ -175,9 +159,11 @@ export {
   selectHasMainData,
   selectIsDemoLoading,
   selectMainConfig,
-  selectMainDataframe,
+  selectDefaultAnalysisContext,
+  selectCompareAnalysisContext,
+  selectEvolutionAnalysisContext,
+  selectCorrelationAnalysisContext,
   selectCategoricalVars,
-  selectNavioColumns,
   selectNavioVars,
   selectNumericVars,
   selectShowInformativeTooltips,

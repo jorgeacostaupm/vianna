@@ -36,6 +36,12 @@ export function normalizeViewContainerProps(props = {}) {
       toolbar.testsSettings,
       pick(view.testsSettings, props.testsSettings),
     ),
+    testsTitle: pick(toolbar.testsTitle, pick(view.testsTitle, props.testsTitle)),
+    lmmSettings: pick(
+      toolbar.lmmSettings,
+      pick(view.lmmSettings, props.lmmSettings),
+    ),
+    results: pick(toolbar.results, pick(view.results, props.results)),
     remove: pick(view.remove, props.remove),
     recordsExport: pick(
       toolbar.recordsExport,

@@ -1,7 +1,12 @@
 import {
   createSelectionRefForAllRows,
-  selectionHasEmptyValues,
 } from "./selectionRef";
+import {
+  buildMissingByAttribute,
+  getAddedColumns,
+  getRemovedColumns,
+  selectionHasMissingInAttributes,
+} from "./missingValues";
 
 export const areColumnsEqual = (previousColumns = [], nextColumns = []) => {
   if (previousColumns === nextColumns) return true;
@@ -19,10 +24,52 @@ export const areColumnsEqual = (previousColumns = [], nextColumns = []) => {
 export const syncSelectionFromDataframe = (state, dataframe) => {
   state.dataframe = dataframe;
   state.selectionRef = createSelectionRefForAllRows(dataframe);
-  state.selection = null;
-  state.hasEmptyValues = selectionHasEmptyValues({
+  state.missingByAttribute = buildMissingByAttribute(dataframe);
+  state.hasEmptyValues = selectionHasMissingInAttributes({
     dataframe: state.dataframe,
     selectionRef: state.selectionRef,
-    visibleColumns: state.navioColumns,
+    missingByAttribute: state.missingByAttribute,
+    attributeIds: state.navioColumns,
   });
+};
+
+export const syncMissingStateForSelection = (state) => {
+  state.hasEmptyValues = selectionHasMissingInAttributes({
+    dataframe: state.dataframe,
+    selectionRef: state.selectionRef,
+    missingByAttribute: state.missingByAttribute,
+    attributeIds: state.navioColumns,
+  });
+};
+
+export const syncMissingStateForColumns = (state, nextColumns) => {
+  const previousColumns = Array.isArray(state.navioColumns)
+    ? state.navioColumns
+    : [];
+  const normalizedNextColumns = Array.isArray(nextColumns) ? nextColumns : [];
+
+  if (areColumnsEqual(previousColumns, normalizedNextColumns)) return;
+
+  const addedColumns = getAddedColumns(previousColumns, normalizedNextColumns);
+  const removedColumns = getRemovedColumns(previousColumns, normalizedNextColumns);
+  state.navioColumns = normalizedNextColumns;
+
+  if (addedColumns.length > 0 && removedColumns.length === 0) {
+    if (state.hasEmptyValues) return;
+    state.hasEmptyValues = selectionHasMissingInAttributes({
+      dataframe: state.dataframe,
+      selectionRef: state.selectionRef,
+      missingByAttribute: state.missingByAttribute,
+      attributeIds: addedColumns,
+    });
+    return;
+  }
+
+  if (removedColumns.length > 0 && addedColumns.length === 0) {
+    if (!state.hasEmptyValues) return;
+    syncMissingStateForSelection(state);
+    return;
+  }
+
+  syncMissingStateForSelection(state);
 };

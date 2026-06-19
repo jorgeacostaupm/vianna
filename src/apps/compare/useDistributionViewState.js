@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { ORDER_VARIABLE } from "@/utils/constants";
+import { selectCompareAnalysisContext } from "@/store/features/main";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
 import useSelectionRows from "@/hooks/useSelectionRows";
 import { extractOrderValues, uniqueColumns } from "@/utils/viewRecords";
@@ -14,7 +15,7 @@ export default function useDistributionViewState({
   getData,
   isRowValid,
 }) {
-  const groupVar = useSelector((s) => s.compare.groupVar);
+  const { groupVar, timeVar } = useSelector(selectCompareAnalysisContext);
   const attributes = useSelector((s) => s.metadata.attributes);
 
   const requiredVariables = useMemo(
@@ -23,7 +24,10 @@ export default function useDistributionViewState({
   );
 
   const selection = useSelectionRows(requiredVariables);
-  const [data] = useDistributionData(getData, variable, isSync, { groupVar });
+  const [data] = useDistributionData(getData, variable, isSync, {
+    groupVar,
+    timeVar,
+  });
 
   const liveOrderValues = useMemo(
     () =>
@@ -46,7 +50,7 @@ export default function useDistributionViewState({
   const variableDescription = useMemo(() => {
     const description = attributes?.find(
       (attr) => attr?.name === variable,
-    )?.desc;
+    )?.description;
     return typeof description === "string" ? description.trim() : "";
   }, [attributes, variable]);
 

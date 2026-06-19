@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Card, Typography } from "antd";
 import {
-  DatabaseOutlined,
   DownloadOutlined,
   PlayCircleOutlined,
+  SaveOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 
 import styles from "./InitialDataChoice.module.css";
@@ -13,10 +14,20 @@ const { Text } = Typography;
 
 export default function InitialDataChoice({
   isLoadingDemo,
+  autosavedWorkspaceSummary,
+  onRestoreAutosave,
+  onLoadWorkspace,
   onLoadDemo,
-  onLoadMyData,
   onContinueWithoutData,
 }) {
+  const workspaceInputRef = useRef(null);
+
+  const handleWorkspaceInputChange = (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    onLoadWorkspace?.(file);
+  };
+
   return (
     <div className={styles.mainLoadDemoData}>
       <Card>
@@ -34,12 +45,35 @@ export default function InitialDataChoice({
             Welcome to VIANNA
           </Text>
           <Text type="secondary" className={styles.initialChoiceText}>
-            Load demo files to explore the app, or upload your own data.
+            Restore previous work, load a workspace, or start from data files.
           </Text>
 
           <div className={styles.initialChoiceButtonsRow}>
+            {autosavedWorkspaceSummary ? (
+              <AppButton
+                type="primary"
+                icon={<SaveOutlined />}
+                onClick={onRestoreAutosave}
+              >
+                Restore Session
+              </AppButton>
+            ) : null}
+            <input
+              ref={workspaceInputRef}
+              type="file"
+              accept=".json,application/json"
+              className={styles.hiddenInput}
+              onChange={handleWorkspaceInputChange}
+            />
             <AppButton
-              type="primary"
+              type={autosavedWorkspaceSummary ? "default" : "primary"}
+              icon={<UploadOutlined />}
+              onClick={() => workspaceInputRef.current?.click()}
+            >
+              Load Workspace
+            </AppButton>
+            <AppButton
+              type="default"
               icon={<DownloadOutlined />}
               onClick={onLoadDemo}
               loading={isLoadingDemo}
@@ -48,17 +82,10 @@ export default function InitialDataChoice({
             </AppButton>
             <AppButton
               type="default"
-              icon={<DatabaseOutlined />}
-              onClick={onLoadMyData}
-            >
-              Load My Data
-            </AppButton>
-            <AppButton
-              type="default"
               icon={<PlayCircleOutlined />}
               onClick={onContinueWithoutData}
             >
-              Continue without data
+              Continue
             </AppButton>
           </div>
         </div>

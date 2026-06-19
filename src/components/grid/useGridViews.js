@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useEffect } from "react";
+import { useReducer, useCallback, useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { selectSelectionOrderValues } from "@/store/features/dataframe";
 
@@ -13,6 +13,13 @@ const initialState = Object.freeze({
   views: [],
   layout: [],
 });
+
+function normalizeWorkspace(workspace) {
+  return {
+    views: Array.isArray(workspace?.views) ? workspace.views : [],
+    layout: Array.isArray(workspace?.layout) ? workspace.layout : [],
+  };
+}
 
 function gridViewsReducer(state, action) {
   switch (action.type) {
@@ -41,8 +48,21 @@ function gridViewsReducer(state, action) {
         layout: action.payload.layout,
       };
 
+    case "UPDATE_VIEW":
+      return {
+        ...state,
+        views: state.views.map((view) =>
+          view.id === action.payload.id
+            ? { ...view, ...action.payload.patch }
+            : view,
+        ),
+      };
+
     case "RESET":
       return initialState;
+
+    case "HYDRATE":
+      return normalizeWorkspace(action.payload);
 
     default:
       return state;
@@ -81,8 +101,16 @@ export default function useGridViews(defaultW = 3, defaultH = 4, options = {}) {
     leftOffsetCols = 0,
     totalCols = 12,
     getLayoutPreset,
+    workspace,
+    onWorkspaceChange,
   } = options;
-  const [state, dispatch] = useReducer(gridViewsReducer, initialState);
+  const isHydratingRef = useRef(false);
+  const hasMountedRef = useRef(false);
+  const [state, dispatch] = useReducer(
+    gridViewsReducer,
+    workspace,
+    normalizeWorkspace,
+  );
   const dfFilename = useSelector((s) => s.dataframe.filename);
   const hierFilename = useSelector((s) => s.metadata.filename);
   const selectionOrderValues = useSelector(selectSelectionOrderValues);
@@ -134,13 +162,39 @@ export default function useGridViews(defaultW = 3, defaultH = 4, options = {}) {
     dispatch({ type: "REMOVE_VIEW", payload: { id } });
   }, []);
 
+  const updateView = useCallback((id, patch) => {
+    dispatch({ type: "UPDATE_VIEW", payload: { id, patch } });
+  }, []);
+
   const setLayout = useCallback((layout) => {
     dispatch({ type: "SET_LAYOUT", payload: { layout } });
   }, []);
 
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
     dispatch({ type: "RESET" });
   }, [dfFilename, hierFilename]);
+
+  useEffect(() => {
+    isHydratingRef.current = true;
+    dispatch({ type: "HYDRATE", payload: workspace });
+  }, [workspace?.revision]);
+
+  useEffect(() => {
+    if (isHydratingRef.current) {
+      isHydratingRef.current = false;
+      return;
+    }
+
+    onWorkspaceChange?.({
+      views: state.views,
+      layout: state.layout,
+    });
+  }, [onWorkspaceChange, state.layout, state.views]);
 
   return {
     views: state.views,
@@ -148,5 +202,6 @@ export default function useGridViews(defaultW = 3, defaultH = 4, options = {}) {
     setLayout,
     addView,
     removeView,
+    updateView,
   };
 }

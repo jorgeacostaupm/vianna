@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 
 import ViewContainer from "@/components/charts/ViewContainer";
 import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
@@ -7,6 +7,7 @@ import { isFiniteNumericValue } from "@/utils/viewRecords";
 import useTestViewState from "./useTestViewState";
 import useStatTestData from "./useStatTestData";
 import { TEST_VIEW_STRATEGIES } from "./testViewStrategies";
+import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
 const isNumericRowValid = ({ row, groupVar, variable }) => {
   const groupValue = row?.[groupVar];
@@ -21,6 +22,8 @@ export default function StatTestView({
   test,
   remove,
   sourceOrderValues = [],
+  config: persistedConfig,
+  updateView,
 }) {
   const strategy = TEST_VIEW_STRATEGIES[mode];
 
@@ -28,7 +31,15 @@ export default function StatTestView({
     return null;
   }
 
-  const [config, setConfig] = useState(() => ({ ...strategy.defaultConfig }));
+  const handleConfigChange = useCallback(
+    (nextConfig) => updateView?.({ config: nextConfig }),
+    [updateView],
+  );
+  const [config, setConfig] = useWorkspaceBackedState({
+    defaultValue: strategy.defaultConfig,
+    persistedValue: persistedConfig,
+    onChange: handleConfigChange,
+  });
   const SettingsComponent = strategy.SettingsComponent;
 
   const {

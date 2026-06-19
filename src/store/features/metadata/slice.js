@@ -3,15 +3,19 @@ import {
   buildMetaFromVariableTypes,
   addAttribute,
   removeAttribute,
+  removeAttributeBatch,
   updateAttribute,
   createToMeta,
   updateHierarchy,
-  toggleAttribute,
-  changeRelationship,
-  changeRelationshipBatch,
   applyOperation,
   updateDescriptions,
 } from "./thunks";
+import {
+  createEmptyAggregationConfig,
+  sanitizeAggregationConfig,
+  sanitizeHierarchyNode,
+} from "./utils/thunkUtils";
+import { applyAttributeRemovals } from "./utils/removeAttributes";
 
 const MAX_ASSIGNMENT_HISTORY = 100;
 
@@ -26,11 +30,15 @@ const findParentIndexByChildId = (attributes, childId) =>
 
 const removeFromAggregationUsedAttributes = (node, childId) => {
   if (node?.type !== "aggregation") return;
-  if (!Array.isArray(node?.info?.usedAttributes)) return;
-  node.info.usedAttributes = node.info.usedAttributes.filter(
-    (used) => used.id !== childId,
+  if (!Array.isArray(node?.aggregationConfig?.usedAttributes)) return;
+  node.aggregationConfig.usedAttributes =
+    node.aggregationConfig.usedAttributes.filter(
+    (usedId) => usedId !== childId,
   );
 };
+
+const isUsedByAggregationParent = (node, childId) =>
+  Boolean(node?.aggregationConfig?.usedAttributes?.includes(childId));
 
 const applyAssignmentChange = (state, sourceIDs, targetParentID) => {
   if (!Array.isArray(sourceIDs) || sourceIDs.length === 0) return [];
@@ -73,7 +81,6 @@ const applyAssignmentChange = (state, sourceIDs, targetParentID) => {
     ...targetRelated,
     ...moves.map((move) => move.sourceID),
   ];
-  targetNode.isShown = true;
 
   const targetIndexById = new Map();
   targetNode.related.forEach((id, index) => {
@@ -155,7 +162,6 @@ const applyAssignmentHistoryEntry = (state, entry, mode) => {
 
     related.splice(clampedIndex, 0, childID);
     parentNode.related = related;
-    parentNode.isShown = true;
     parentIdByChildId.set(childID, parentID);
     return true;
   };
@@ -226,7 +232,9 @@ const metaSlice = createSlice({
 
     setFullMeta: create.reducer((state, action) => {
       const { hierarchy, filename } = action.payload;
-      state.attributes = hierarchy;
+      state.attributes = Array.isArray(hierarchy)
+        ? hierarchy.map((node) => sanitizeHierarchyNode(node))
+        : [];
       state.filename = filename;
       state.loadingHierarchy = false;
       clearAssignmentHistory(state);
@@ -263,11 +271,106 @@ const metaSlice = createSlice({
       const descriptions = action.payload;
       state.attributes = state.attributes.map((attr) => {
         const name = attr.name;
-        let desc = descriptions.find((item) => item.name === name)?.description;
-        attr.desc = desc ? desc : "";
+        let description = descriptions.find(
+          (item) => item.name === name,
+        )?.description;
+        attr.description = description ? description : "";
         return attr;
       });
       state.hierarchyRevision = 0;
+    }),
+
+    toggleAttribute: create.reducer((state, action) => {
+      const { attributeID, fromFocus } = action.payload || {};
+      const attributeIdx = findNodeIndexById(state.attributes, attributeID);
+      if (attributeIdx === -1) return;
+
+      state.attributes[attributeIdx].isExpanded =
+        !state.attributes[attributeIdx].isExpanded;
+
+      if (fromFocus) state.hierarchyRevision += 1;
+    }),
+
+    changeRelationship: create.reducer((state, action) => {
+      const { sourceID, targetID, recover } = action.payload || {};
+      const sourceIdx = findParentIndexByChildId(state.attributes, sourceID);
+      const targetIdx = findNodeIndexById(state.attributes, targetID);
+
+      if (sourceIdx === -1 || targetIdx === -1) return;
+
+      const sourceParent = state.attributes[sourceIdx];
+      const targetParent = state.attributes[targetIdx];
+      if (isUsedByAggregationParent(sourceParent, sourceID)) return;
+
+      if (recover == null || recover) {
+        state.recoverableOperations.push({
+          change: "relationshipNode",
+          associatedId: sourceID,
+          associatedParent: sourceParent.id,
+          associatedData: {
+            originalPos: toRelatedList(sourceParent).findIndex(
+              (n) => n === sourceID,
+            ),
+          },
+        });
+      }
+
+      const moves = applyAssignmentChange(state, [sourceID], targetParent.id);
+      if (moves.length === 0) return;
+
+      pushAssignmentHistoryEntry(state, moves);
+      state.hierarchyRevision += 0.5;
+    }),
+
+    changeRelationshipBatch: create.reducer((state, action) => {
+      const { sourceIDs, targetID, recover } = action.payload || {};
+      if (!Array.isArray(sourceIDs) || sourceIDs.length === 0) return;
+
+      const targetIdx = findNodeIndexById(state.attributes, targetID);
+      if (targetIdx === -1) return;
+
+      const targetParent = state.attributes[targetIdx];
+      const moveCandidates = [];
+
+      [...new Set(sourceIDs)].forEach((sourceID) => {
+        const sourceIdx = findParentIndexByChildId(state.attributes, sourceID);
+        if (sourceIdx === -1) return;
+
+        const sourceParent = state.attributes[sourceIdx];
+        if (isUsedByAggregationParent(sourceParent, sourceID)) return;
+
+        moveCandidates.push({ sourceID, sourceIdx });
+      });
+
+      if (moveCandidates.length === 0) return;
+
+      if (recover == null || recover) {
+        moveCandidates.forEach(({ sourceID, sourceIdx }) => {
+          const sourceParent = state.attributes[sourceIdx];
+          if (!sourceParent) return;
+
+          state.recoverableOperations.push({
+            change: "relationshipNode",
+            associatedId: sourceID,
+            associatedParent: sourceParent.id,
+            associatedData: {
+              originalPos: toRelatedList(sourceParent).findIndex(
+                (n) => n === sourceID,
+              ),
+            },
+          });
+        });
+      }
+
+      const moves = applyAssignmentChange(
+        state,
+        moveCandidates.map((move) => move.sourceID),
+        targetParent.id,
+      );
+      if (moves.length === 0) return;
+
+      pushAssignmentHistoryEntry(state, moves);
+      state.hierarchyRevision += 0.5;
     }),
 
     setNodeOverviewAccess: create.reducer((state, action) => {
@@ -337,28 +440,37 @@ const metaSlice = createSlice({
     }),
 
     aggregateSelectedNodes: create.reducer((state, action) => {
-      const { id, name, type, recover, info, childIDs, parentID, sourceID } =
+      const {
+        id,
+        name,
+        type,
+        recover,
+        aggregationConfig,
+        childIDs,
+        parentID,
+        sourceID,
+      } =
         action.payload;
       const parentNode = state.attributes.find((n) => n.id === parentID);
       if (!parentNode) return;
 
-      const newInfo =
-        info ??
+      const newAggregationConfig =
+        aggregationConfig ??
         (type === "aggregation"
-          ? { operation: "concat", exec: "", formula: "", usedAttributes: [] }
-          : {});
+          ? createEmptyAggregationConfig()
+          : createEmptyAggregationConfig());
 
-      const newNode = {
+      const newNode = sanitizeHierarchyNode({
         id,
         name,
         related: [],
         type,
-        info: newInfo,
-        isShown: true,
+        aggregationConfig: newAggregationConfig,
+        isExpanded: true,
         isActive: true,
-        desc: "",
+        description: "",
         dtype: "determine",
-      };
+      });
 
       state.attributes.unshift(newNode);
       const insertPos = parentNode.related.findIndex((n) => n === sourceID);
@@ -396,10 +508,12 @@ const metaSlice = createSlice({
 
         if (
           sourceNode.type === "aggregation" &&
-          sourceNode.info?.usedAttributes
+          sourceNode.aggregationConfig?.usedAttributes
         ) {
-          sourceNode.info.usedAttributes =
-            sourceNode.info.usedAttributes.filter((n) => n.id !== source);
+          sourceNode.aggregationConfig.usedAttributes =
+            sourceNode.aggregationConfig.usedAttributes.filter(
+              (usedId) => usedId !== source,
+            );
         }
       });
 
@@ -408,97 +522,14 @@ const metaSlice = createSlice({
   }),
   extraReducers: (builder) => {
     builder
-      .addCase(changeRelationship.fulfilled, (state, action) => {
-        const { sourceID, recover, sourceIdx, targetIdx } = action.payload;
-        const sourceParent = state.attributes[sourceIdx];
-        const targetParent = state.attributes[targetIdx];
-        if (!sourceParent || !targetParent) return;
-
-        if (recover == null || recover) {
-          state.recoverableOperations.push({
-            change: "relationshipNode",
-            associatedId: sourceID,
-            associatedParent: sourceParent.id,
-            associatedData: {
-              originalPos: toRelatedList(sourceParent).findIndex(
-                (n) => n === sourceID,
-              ),
-            },
-          });
-        }
-
-        const moves = applyAssignmentChange(state, [sourceID], targetParent.id);
-        if (moves.length === 0) return;
-
-        pushAssignmentHistoryEntry(state, moves);
-        state.hierarchyRevision += 0.5;
-      })
-      .addCase(changeRelationship.rejected, (state, action) => {
-        const isSilent = Boolean(action.meta?.arg?.silent);
-        if (isSilent) return;
-        state.hierarchyRevision += 0.5;
-      });
-
-    builder
-      .addCase(changeRelationshipBatch.fulfilled, (state, action) => {
-        const { recover, targetIdx, moveCandidates } = action.payload;
-        if (!Array.isArray(moveCandidates) || moveCandidates.length === 0)
-          return;
-
-        const movedIds = moveCandidates.map((move) => move.sourceID);
-        const targetParent = state.attributes[targetIdx];
-        if (!targetParent) return;
-
-        if (recover == null || recover) {
-          moveCandidates.forEach(({ sourceID, sourceIdx }) => {
-            const sourceParent = state.attributes[sourceIdx];
-            if (!sourceParent) return;
-
-            state.recoverableOperations.push({
-              change: "relationshipNode",
-              associatedId: sourceID,
-              associatedParent: sourceParent.id,
-              associatedData: {
-                originalPos: toRelatedList(sourceParent).findIndex(
-                  (n) => n === sourceID,
-                ),
-              },
-            });
-          });
-        }
-
-        const moves = applyAssignmentChange(state, movedIds, targetParent.id);
-        if (moves.length === 0) return;
-
-        pushAssignmentHistoryEntry(state, moves);
-        state.hierarchyRevision += 0.5;
-      })
-      .addCase(changeRelationshipBatch.rejected, (state, action) => {
-        const isSilent = Boolean(action.meta?.arg?.silent);
-        if (isSilent) return;
-        state.hierarchyRevision += 0.5;
-      });
-
-    builder
-      .addCase(toggleAttribute.fulfilled, (state, action) => {
-        const { attributeIdx, fromFocus } = action.payload;
-        state.attributes[attributeIdx].isShown =
-          !state.attributes[attributeIdx].isShown;
-
-        if (fromFocus) state.hierarchyRevision += 1;
-      })
-      .addCase(toggleAttribute.rejected, (state, action) => {
-        console.error(action.payload || "Unknown error toggling attribute.");
-        state.error = action.payload;
-      });
-
-    builder
       .addCase(updateHierarchy.pending, (state) => {
         state.loadingHierarchy = true;
       })
       .addCase(updateHierarchy.fulfilled, (state, action) => {
         const { hierarchy, filename } = action.payload;
-        state.attributes = hierarchy;
+        state.attributes = Array.isArray(hierarchy)
+          ? hierarchy.map((node) => sanitizeHierarchyNode(node))
+          : [];
         state.filename = filename;
         state.loadingHierarchy = false;
         clearAssignmentHistory(state);
@@ -515,7 +546,9 @@ const metaSlice = createSlice({
       })
       .addCase(updateDescriptions.fulfilled, (state, action) => {
         const { attributes, filename } = action.payload;
-        state.attributes = attributes;
+        state.attributes = Array.isArray(attributes)
+          ? attributes.map((node) => sanitizeHierarchyNode(node))
+          : [];
         state.descriptionsFilename = filename;
         state.loadingDescriptions = false;
         state.hierarchyRevision = state.hierarchyRevision === 0 ? 1 : 0;
@@ -526,19 +559,31 @@ const metaSlice = createSlice({
       });
 
     builder.addCase(buildMetaFromVariableTypes.fulfilled, (state, action) => {
-      state.attributes = action.payload;
+      state.attributes = Array.isArray(action.payload)
+        ? action.payload.map((node) => sanitizeHierarchyNode(node))
+        : [];
       clearAssignmentHistory(state);
       state.hierarchyRevision = state.hierarchyRevision === 0 ? 1 : 0;
     });
 
     builder.addCase(createToMeta.fulfilled, (state, action) => {
-      state.attributes = action.payload;
+      state.attributes = Array.isArray(action.payload)
+        ? action.payload.map((node) => sanitizeHierarchyNode(node))
+        : [];
       clearAssignmentHistory(state);
       state.hierarchyRevision = Math.min(state.hierarchyRevision - 1, 0);
     });
 
     builder.addCase(addAttribute.fulfilled, (state, action) => {
-      const { id, name, parentID, type, recover, info, dtype } = action.payload;
+      const {
+        id,
+        name,
+        parentID,
+        type,
+        recover,
+        aggregationConfig,
+        dtype,
+      } = action.payload;
       const parentPosition = state.attributes.findIndex(
         (n) => n.id === parentID,
       );
@@ -553,83 +598,43 @@ const metaSlice = createSlice({
         });
       }
 
-      let newInfo;
-      if (info == null) {
-        newInfo = {
-          operation: "concat",
-          exec: "",
-          formula: "",
-          usedAttributes: [],
-        };
+      let newAggregationConfig;
+      if (aggregationConfig == null) {
+        newAggregationConfig = createEmptyAggregationConfig();
       } else {
-        newInfo = info;
+        newAggregationConfig = sanitizeAggregationConfig(aggregationConfig);
       }
 
-      state.attributes.push({
+      state.attributes.push(sanitizeHierarchyNode({
         id: id,
         name: name,
         related: [],
         type: type,
-        info: newInfo,
-        isShown: true,
+        aggregationConfig: newAggregationConfig,
+        isExpanded: true,
         isActive: true,
-        desc: "",
+        description: "",
         dtype: dtype ? dtype : type === "aggregation" ? "determine" : "number",
-      });
+      }));
 
-      state.attributes[parentPosition].isShown = true;
+      state.attributes[parentPosition].isExpanded = true;
 
       state.attributes[parentPosition].related.push(id);
-      state.hierarchyRevision += info ? 0 : 1;
+      state.hierarchyRevision += aggregationConfig ? 0 : 1;
     });
 
     builder.addCase(removeAttribute.fulfilled, (state, action) => {
       const { attributeID, recover } = action.payload;
-      if (attributeID === 0) return; // avoid removing the root node.
+      applyAttributeRemovals(state, [attributeID], recover);
+    });
 
-      const parentIdx = state.attributes.findIndex((n) =>
-        n.related.includes(attributeID),
+    builder.addCase(removeAttributeBatch.fulfilled, (state, action) => {
+      const { removed = [], recover } = action.payload || {};
+      applyAttributeRemovals(
+        state,
+        removed.map((node) => node.attributeID),
+        recover,
       );
-
-      if (recover == null || recover) {
-        const attrRelatedPos = state.attributes[parentIdx].related.findIndex(
-          (n) => n == attributeID,
-        );
-        const attribute = state.attributes.find((n) => n.id === attributeID);
-        if (attribute == null) return;
-        if (attribute.type === "attribute") {
-          state.recoverableOperations = [];
-        } else {
-          state.recoverableOperations.push({
-            change: "removeNode",
-            associatedId: attributeID,
-            associatedNodePosition: attrRelatedPos,
-            associatedParent: state.attributes[parentIdx].id,
-            associatedData: { ...attribute },
-          });
-        }
-      }
-
-      state.attributes[parentIdx].related = state.attributes[
-        parentIdx
-      ].related.filter((d) => d !== attributeID);
-
-      const node = state.attributes.find((n) => n.id === attributeID);
-      state.attributes[parentIdx].related = [
-        ...state.attributes[parentIdx].related,
-        ...node.related,
-      ];
-
-      if (state.attributes[parentIdx].info) {
-        state.attributes[parentIdx].info.usedAttributes = state.attributes[
-          parentIdx
-        ].info.usedAttributes.filter((n) => n.id !== attributeID);
-      }
-      state.attributes = state.attributes.filter(
-        (att) => att.id !== attributeID,
-      );
-
-      state.hierarchyRevision += recover ? 0.5 : -0.5;
     });
 
     builder.addCase(updateAttribute.fulfilled, (state, action) => {
@@ -649,7 +654,8 @@ const metaSlice = createSlice({
 
       state.attributes[idx] = {
         ...state.attributes[idx],
-        ...node,
+        ...sanitizeHierarchyNode(node),
+        aggregationConfig: sanitizeAggregationConfig(node.aggregationConfig),
       };
       state.hierarchyRevision += recover != null || recover ? 0.5 : -0.5;
     });
@@ -672,6 +678,9 @@ export const {
   setInit,
   setFullMeta,
   setDescriptions,
+  toggleAttribute,
+  changeRelationship,
+  changeRelationshipBatch,
   setNodeOverviewAccess,
   setNodesOverviewAccess,
   undoAssignmentChange,

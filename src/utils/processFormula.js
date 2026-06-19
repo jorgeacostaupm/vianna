@@ -1,5 +1,5 @@
 import * as aq from "arquero";
-import { PROCESSORS } from "@/apps/hierarchy/menu/logic/formulaConstants";
+import { PROCESSORS } from "../apps/hierarchy/menu/logic/formulaConstants.js";
 
 const string = (value) =>
   value == null ? "" : aq?.op?.string ? aq.op.string(value) : String(value);

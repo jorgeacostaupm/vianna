@@ -1,34 +1,11 @@
 import { DataType } from "@/utils/constants";
+import { hasValidAggregationFormula } from "@/store/features/metadata/utils/thunkUtils";
 
 const dtypeColors = {
   [DataType.NUMERICAL.dtype]: DataType.NUMERICAL.color,
   [DataType.TEXT.dtype]: DataType.TEXT.color,
   [DataType.UNKNOWN.dtype]: DataType.UNKNOWN.color,
   root: "white",
-};
-
-export const hasValidAggregationFormula = (nodeData) => {
-  if (nodeData?.type !== "aggregation") return false;
-
-  const formulaCandidates = [
-    nodeData?.info?.formula,
-    nodeData?.formula,
-    nodeData?.info?.exec,
-    nodeData?.exec,
-  ];
-
-  return formulaCandidates.some((value) => {
-    if (typeof value === "string") {
-      return value.trim().length > 0;
-    }
-    return Boolean(value);
-  });
-};
-
-export const canNodeAcceptChildren = (nodeData) => {
-  if (!nodeData) return false;
-  if (nodeData.type !== "aggregation") return true;
-  return !hasValidAggregationFormula(nodeData);
 };
 
 export function colorNode(node) {
@@ -101,13 +78,7 @@ export const computeNavioColumnsFromHierarchy = (attrs = []) => {
 
   const canIncludeNode = (node) => {
     if (node.type !== "aggregation") return true;
-
-    const hasExec =
-      typeof node.info?.exec === "string"
-        ? node.info.exec.trim().length > 0
-        : Boolean(node.info?.exec);
-
-    return hasExec && hasValidAggregationFormula(node);
+    return hasValidAggregationFormula(node);
   };
 
   const visitNode = (node) => {
@@ -117,7 +88,7 @@ export const computeNavioColumnsFromHierarchy = (attrs = []) => {
       .map((childId) => attrsById.get(childId))
       .filter((child) => child && child.isActive !== false);
 
-    const isCollapsed = node.isShown === false;
+    const isCollapsed = node.isExpanded === false;
     const hasVisibleChildren = activeChildren.length > 0;
     const isRootNode = node.id === 0 || node.type === "root";
 

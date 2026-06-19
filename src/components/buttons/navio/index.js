@@ -7,5 +7,3 @@ export { default as EditColumnButton } from "./EditColumnButton";
 export { default as ExportDataButton } from "./ExportDataButton";
 export { default as RestoreDataButton } from "./RestoreDataButton";
 export { default as EditQuarantineColumnButton } from "./EditQuarantineColumnButton";
-export { default as ResetButton } from "./ResetButton";
-export { default as UndoRedoButtons } from "./UndoRedoButtons";

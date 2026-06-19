@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { selectCategoricalVars } from "@/store/features/main";
+import {
+  selectCategoricalVars,
+  selectCompareAnalysisContext,
+} from "@/store/features/main";
 import { computeRankingData } from "@/utils/functions";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import useViewRecordSnapshot from "@/hooks/useViewRecordSnapshot";
@@ -16,7 +19,7 @@ export default function useRankingViewState({
   numericVars,
 }) {
   const skippedSignatureRef = useRef("");
-  const groupVar = useSelector((state) => state.compare.groupVar);
+  const { groupVar } = useSelector(selectCompareAnalysisContext);
   const categoricVars = useSelector(selectCategoricalVars);
   const hierarchy = useSelector((state) => state.metadata.attributes);
 

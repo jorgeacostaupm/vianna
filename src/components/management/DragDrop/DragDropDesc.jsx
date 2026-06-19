@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useDropzone } from "react-dropzone";
-import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined } from "@ant-design/icons";
 
 import styles from "../Data.module.css";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
@@ -10,6 +10,7 @@ import { notifyError, notifyWarning } from "@/components/notifications";
 
 const ACCEPTED_FORMATS = {
   "text/csv": [".csv"],
+  "application/json": [".json"],
 };
 
 export default function DragDropDesc() {
@@ -35,7 +36,8 @@ export default function DragDropDesc() {
       notifyError({
         message: "Could not upload descriptions",
         error,
-        fallback: "Descriptions upload failed. Verify CSV headers and values.",
+        fallback:
+          "Descriptions upload failed. Verify CSV headers or JSON values.",
       });
     }
   };
@@ -46,7 +48,7 @@ export default function DragDropDesc() {
     if (!file) {
       notifyWarning({
         message: "Invalid file",
-        description: "Select a CSV file to continue.",
+        description: "Select a CSV or JSON file to continue.",
       });
       return;
     }
@@ -71,38 +73,43 @@ export default function DragDropDesc() {
     reader.readAsText(file);
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleFileDrop,
     maxFiles: 1,
     accept: ACCEPTED_FORMATS,
+    multiple: false,
     onDropRejected: () => {
       notifyWarning({
         message: "Unsupported file",
-        description: "Accepted format: .csv",
+        description: "Accepted formats: .csv, .json",
       });
     },
   });
 
   return (
     <>
-      <div {...getRootProps({ className: styles.dropzone })}>
+      <div
+        {...getRootProps({
+          className: `${styles.dropzone} ${styles.dataDropzone}`,
+          "aria-label": "Upload descriptions file",
+        })}
+      >
         <input {...getInputProps()} />
-        {!isDragActive && (
-          <div className={styles.dropContent}>
-            {!filename && <PlusOutlined />}
-            <span className={styles.text}>
-              {isReadingFile
-                ? "Reading file..."
-                : filename || "Click or drop a CSV file"}
-            </span>
-            {!filename && (
-              <span className={styles.subtitle}>Accepted: .csv</span>
-            )}
-          </div>
+        <UploadOutlined />
+        <span className={styles.dataDropLabel}>
+          Choose a file or drag it here
+        </span>
+      </div>
+      <div className={styles.dataDropHint}>
+        <span className={styles.subtitle}>Accepted: .csv, .json</span>
+        {(isReadingFile || filename) && (
+          <span className={styles.text}>
+            {isReadingFile ? "Reading file..." : filename}
+          </span>
         )}
       </div>
 
-      <div className={styles.controls}>
+      <div className={`${styles.controls} ${styles.dataImportControls}`}>
         <AppButton
           preset={APP_BUTTON_PRESETS.ACTION}
           onClick={handleUpload}
@@ -111,7 +118,7 @@ export default function DragDropDesc() {
           icon={<UploadOutlined />}
           shape="default"
         >
-          Upload Descriptions
+          Import
         </AppButton>
       </div>
     </>

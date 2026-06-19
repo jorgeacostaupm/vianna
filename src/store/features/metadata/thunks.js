@@ -1,9 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import * as aq from "arquero";
 import {
-  generateEmpty,
   generateColumn,
-  removeColumn,
   removeBatch,
   generateColumnBatch,
 } from "../dataframe/thunks";
@@ -16,16 +14,19 @@ import {
 import { convertColumnType } from "../dataframe/thunks";
 import {
   buildHierarchyIndexes,
-  canNodeAcceptHierarchyChildren,
   createNodeInfo,
+  createEmptyAggregationConfig,
   formatErrorMessage,
   getAggregation,
+  getAggregationExecutableFormula,
   getNodeId,
   getNodeLabel,
   getNodeName,
   isPartOfAggregation,
   ROOT_NODE_NAME,
-  setHierarchyRootName,
+  sanitizeAggregationConfig,
+  sanitizeHierarchyNode,
+  validateHierarchy,
 } from "./utils/thunkUtils";
 
 export const applyOperation = createAsyncThunk(
@@ -67,16 +68,14 @@ export const applyOperation = createAsyncThunk(
 
       for (const candidate of candidates) {
         try {
-          // Se evita generateEmpty en este flujo para no sobrescribir luego el resultado de generateColumnBatch.
           await dispatch(
             addAttribute({
               id: candidate.createdNodeId,
               name: candidate.aggregation.name,
               type: "aggregation",
               parentID: candidate.nodeId,
-              info: candidate.aggregation.info,
+              aggregationConfig: candidate.aggregation.aggregationConfig,
               dtype: candidate.aggregation.dtype || "number",
-              skipGenerateEmpty: true,
             }),
           ).unwrap();
           createdMetadata.push(candidate);
@@ -95,7 +94,7 @@ export const applyOperation = createAsyncThunk(
             generateColumnBatch({
               cols: createdMetadata.map((candidate) => ({
                 name: candidate.aggregation.name,
-                info: candidate.aggregation.info,
+                aggregationConfig: candidate.aggregation.aggregationConfig,
                 dtype: candidate.aggregation.dtype || "number",
               })),
               silentSuccess: true,
@@ -191,15 +190,16 @@ export const buildMetaFromVariableTypes = createAsyncThunk(
       const root = {
         id: 0,
         name: ROOT_NODE_NAME,
-        desc: "Just the root of the hierarchy",
+        description: "Just the root of the hierarchy",
         type: "root",
         dtype: "root",
-        isShown: true,
+        isExpanded: true,
         isActive: true,
         related: nodeInfo.map((n) => n.id),
+        aggregationConfig: createEmptyAggregationConfig(),
       };
 
-      return [root, ...nodeInfo];
+      return [sanitizeHierarchyNode(root), ...nodeInfo];
     } catch (err) {
       return rejectWithValue(
         err.message || "Error building meta from variable types."
@@ -208,36 +208,25 @@ export const buildMetaFromVariableTypes = createAsyncThunk(
   }
 );
 
-export const toggleAttribute = createAsyncThunk(
-  "metadata/toggleAttribute",
-  async ({ attributeID, fromFocus }, { getState, rejectWithValue }) => {
-    try {
-      const state = getState().metadata;
-      const attributes = state.attributes;
+const isDuplicateNameIssue = (issue) =>
+  issue?.path === "name" &&
+  typeof issue?.message === "string" &&
+  issue.message.startsWith("Duplicate node name");
 
-      const attributeIdx = attributes.findIndex((n) => n.id === attributeID);
-      if (attributeIdx === -1) {
-        return rejectWithValue(`The node ${attributeID} does not exist.`);
-      }
-      return { attributeIdx, fromFocus };
-    } catch (err) {
-      return rejectWithValue(err.message || "Error toggling attribute.");
-    }
-  }
-);
+const getBlockingNodeUpdateIssue = (issues, nodeId) =>
+  issues.find((issue) => {
+    if (issue?.nodeId === nodeId) return true;
+    return !isDuplicateNameIssue(issue);
+  });
 
 export const addAttribute = createAsyncThunk(
   "metadata/addAttribute",
-  async (payload, { dispatch, rejectWithValue }) => {
+  async (payload, { rejectWithValue }) => {
     try {
-      const { name, type, skipGenerateEmpty = false } = payload;
+      const { name, type } = payload;
 
       if (!name || !type) {
         return rejectWithValue("Attribute name or type is missing.");
-      }
-
-      if (type === "aggregation" && !skipGenerateEmpty) {
-        await dispatch(generateEmpty({ colName: name })).unwrap();
       }
 
       return payload;
@@ -249,37 +238,90 @@ export const addAttribute = createAsyncThunk(
 
 export const updateAttribute = createAsyncThunk(
   "metadata/updateAttribute",
-  async (payload, { dispatch, rejectWithValue }) => {
+  async (payload, { dispatch, getState, rejectWithValue }) => {
     try {
-      const { name, type, info, recover, dtype } = payload;
+      const normalizedAggregationConfig = sanitizeAggregationConfig(
+        payload?.aggregationConfig,
+      );
+      const executableFormula = getAggregationExecutableFormula(
+        normalizedAggregationConfig,
+      );
+      const { name, type, recover, dtype } = payload;
       const shouldEnforceNumberOnAggregation =
-        type === "aggregation" && Boolean(info?.exec) && dtype === "number";
+        type === "aggregation" &&
+        Boolean(executableFormula) &&
+        dtype === "number";
+      const shouldMaterializeAggregation =
+        type === "aggregation" && Boolean(executableFormula);
 
-      if (type === "aggregation") {
-        if (!info?.exec) {
-          await dispatch(generateEmpty({ colName: name, silentSuccess: true })).unwrap();
-        } else {
-          await dispatch(
-            generateColumn({
-              colName: name,
-              formula: info.exec,
-              enforceNumber: shouldEnforceNumberOnAggregation,
-              silentSuccess: true,
-            })
-          ).unwrap();
+      const attributes = getState().metadata.attributes || [];
+      const existingNode = attributes.find((node) => node?.id === payload?.id);
+      const previousAggregationName =
+        existingNode?.type === "aggregation" ? existingNode.name : null;
+      const previousAggregationFormula = getAggregationExecutableFormula(
+        existingNode?.aggregationConfig,
+      );
+      const candidateNode = sanitizeHierarchyNode({
+        ...payload,
+        aggregationConfig: normalizedAggregationConfig,
+      });
+      const candidateHierarchy = attributes.map((node) =>
+        node?.id === candidateNode.id ? candidateNode : node,
+      );
+      const validation = validateHierarchy(candidateHierarchy);
+      if (!validation.valid) {
+        const blockingIssue = getBlockingNodeUpdateIssue(
+          validation.issues,
+          candidateNode.id,
+        );
+        if (blockingIssue) {
+          throw new Error(blockingIssue.message || "Invalid node.");
         }
       }
 
-      if (dtype !== "determine" && !shouldEnforceNumberOnAggregation) {
+      if (shouldMaterializeAggregation) {
+        await dispatch(
+          generateColumn({
+            colName: name,
+            formula: executableFormula,
+            enforceNumber: shouldEnforceNumberOnAggregation,
+            silentSuccess: true,
+          })
+        ).unwrap();
+
+        if (previousAggregationName && previousAggregationName !== name) {
+          await dispatch(
+            removeBatch({ cols: [previousAggregationName], silentSuccess: true }),
+          ).unwrap();
+        }
+      } else if (type === "aggregation" && previousAggregationFormula) {
+        await dispatch(
+          removeBatch({
+            cols: [previousAggregationName || name],
+            silentSuccess: true,
+          }),
+        ).unwrap();
+      }
+
+      const shouldConvertColumnType =
+        dtype !== "determine" &&
+        !shouldEnforceNumberOnAggregation &&
+        (type !== "aggregation" || shouldMaterializeAggregation);
+
+      if (shouldConvertColumnType) {
         await dispatch(convertColumnType({ column: name, dtype })).unwrap();
       }
 
       if (recover == null || recover) {
-        return { node: { ...payload }, recover: null };
+        return {
+          node: candidateNode,
+          recover: null,
+        };
       } else {
-        const newNode = { ...payload };
-        delete newNode.recover;
-        return { node: { ...newNode }, recover: false };
+        return {
+          node: candidateNode,
+          recover: false,
+        };
       }
     } catch (error) {
       const message = formatErrorMessage(error, "Error updating attribute.");
@@ -309,7 +351,7 @@ export const removeAttribute = createAsyncThunk(
         return rejectWithValue("Node is part of an existing aggregation");
 
       if (node.type === "aggregation") {
-        await dispatch(removeColumn({ colName: node.name })).unwrap();
+        await dispatch(removeBatch({ cols: [node.name] })).unwrap();
       }
 
       return payload;
@@ -319,133 +361,142 @@ export const removeAttribute = createAsyncThunk(
   }
 );
 
-export const changeRelationship = createAsyncThunk(
-  "attributes/changeRelationship",
-  async ({ sourceID, targetID, recover }, { getState, rejectWithValue }) => {
-    const attributes = getState().metadata.attributes;
+const getNodeDepth = (nodeId, parentIndexByChildId, attributes) => {
+  let depth = 0;
+  let cursorId = nodeId;
+  const visited = new Set();
 
-    const sourceIdx = attributes.findIndex((n) => n.related.includes(sourceID));
-    const targetIdx = attributes.findIndex((n) => n.id === targetID);
+  while (!visited.has(cursorId)) {
+    visited.add(cursorId);
+    const parentIdx = parentIndexByChildId.get(cursorId);
+    if (parentIdx == null) return depth;
 
-    if (sourceIdx === -1 || targetIdx === -1) {
-      return rejectWithValue("Source or target not found");
-    }
+    const parentNode = attributes[parentIdx];
+    if (!parentNode) return depth;
 
-    const targetNode = attributes[targetIdx];
-    if (!canNodeAcceptHierarchyChildren(targetNode)) {
-      return rejectWithValue(
-        "Target measure node has a valid formula and cannot receive child nodes"
-      );
-    }
-
-    const isUsed = isPartOfAggregation(sourceID, attributes);
-    if (isUsed)
-      return rejectWithValue("Node is part of an existing aggregation");
-
-    return {
-      sourceID,
-      recover,
-      sourceIdx,
-      targetIdx,
-    };
+    depth += 1;
+    cursorId = parentNode.id;
   }
-);
 
-export const changeRelationshipBatch = createAsyncThunk(
-  "attributes/changeRelationshipBatch",
-  async ({ sourceIDs, targetID, recover }, { getState, rejectWithValue }) => {
-    const attributes = getState().metadata.attributes;
+  return depth;
+};
 
-    if (!Array.isArray(sourceIDs) || sourceIDs.length === 0) {
-      return rejectWithValue("No source nodes provided");
-    }
+export const removeAttributeBatch = createAsyncThunk(
+  "metadata/removeAttributeBatch",
+  async (payload, { dispatch, getState, rejectWithValue }) => {
+    try {
+      const { attributeIDs, recover } = payload || {};
+      const attributes = getState().metadata.attributes;
 
-    const { idToIndex, parentIndexByChildId } = buildHierarchyIndexes(attributes);
-    const targetIdx = idToIndex.get(targetID);
-
-    if (targetIdx == null) {
-      return rejectWithValue("Target not found");
-    }
-
-    const targetNode = attributes[targetIdx];
-    if (!canNodeAcceptHierarchyChildren(targetNode)) {
-      return rejectWithValue(
-        "Target measure node has a valid formula and cannot receive child nodes"
-      );
-    }
-
-    const uniqueSourceIDs = [...new Set(sourceIDs)];
-    const moveCandidates = [];
-    const failed = [];
-
-    uniqueSourceIDs.forEach((sourceID) => {
-      const sourceIdx = parentIndexByChildId.get(sourceID);
-      if (sourceIdx == null || idToIndex.get(sourceID) == null) {
-        failed.push({ sourceID, reason: "Source node not found" });
-        return;
+      if (!Array.isArray(attributes)) {
+        return rejectWithValue("Metadata attributes are not available.");
       }
 
-      const sourceParent = attributes[sourceIdx];
-      const isUsed = sourceParent?.info?.usedAttributes?.find(
-        (used) => used.id === sourceID
+      const requestedIds = Array.isArray(attributeIDs)
+        ? attributeIDs
+        : [attributeIDs];
+      const uniqueIds = [...new Set(requestedIds)].filter(Number.isInteger);
+
+      if (uniqueIds.length === 0) {
+        return rejectWithValue("No attributes provided.");
+      }
+
+      const { idToIndex, parentIndexByChildId } =
+        buildHierarchyIndexes(attributes);
+
+      const sortedIds = uniqueIds.sort(
+        (a, b) =>
+          getNodeDepth(b, parentIndexByChildId, attributes) -
+          getNodeDepth(a, parentIndexByChildId, attributes),
       );
 
-      if (isUsed) {
-        failed.push({
-          sourceID,
-          reason: "Node is part of an existing aggregation",
+      const removed = [];
+      const failed = [];
+
+      sortedIds.forEach((attributeID) => {
+        if (attributeID === 0) {
+          failed.push({ attributeID, reason: "The root node cannot be deleted" });
+          return;
+        }
+
+        const nodeIdx = idToIndex.get(attributeID);
+        if (nodeIdx == null) {
+          failed.push({ attributeID, reason: "Node no longer exists" });
+          return;
+        }
+
+        const parentIdx = parentIndexByChildId.get(attributeID);
+        if (parentIdx == null) {
+          failed.push({
+            attributeID,
+            reason: "Current parent not found in hierarchy",
+          });
+          return;
+        }
+
+        const parentNode = attributes[parentIdx];
+        const isUsed =
+          parentNode?.aggregationConfig?.usedAttributes?.includes(attributeID);
+
+        if (isUsed) {
+          failed.push({
+            attributeID,
+            reason: "Node is part of an existing aggregation",
+          });
+          return;
+        }
+
+        const node = attributes[nodeIdx];
+        removed.push({
+          attributeID,
+          name: node.name,
+          type: node.type,
         });
-        return;
+      });
+
+      const cols = removed
+        .filter((node) => node.type === "aggregation")
+        .map((node) => node.name);
+
+      if (cols.length > 0) {
+        await dispatch(removeBatch({ cols })).unwrap();
       }
 
-      moveCandidates.push({ sourceID, sourceIdx });
-    });
-
-    return {
-      recover,
-      targetIdx,
-      moveCandidates,
-      failed,
-    };
-  }
+      return {
+        recover,
+        removed,
+        failed,
+      };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
 );
 
 export const updateHierarchy = createAsyncThunk(
   "metadata/updateHierarchy",
   async ({ hierarchy, filename }, { dispatch, rejectWithValue }) => {
     try {
-      const normalizedInput = Array.isArray(hierarchy)
-        ? hierarchy
-        : Array.isArray(hierarchy?.hierarchy)
-          ? hierarchy.hierarchy
-          : hierarchy;
-
-      if (!Array.isArray(normalizedInput)) {
+      if (!Array.isArray(hierarchy)) {
         throw new Error(
           "Invalid hierarchy file. Expected a JSON array of hierarchy nodes."
         );
       }
 
-      if (normalizedInput.length === 0) {
+      if (hierarchy.length === 0) {
         throw new Error("Hierarchy file is empty.");
       }
 
-      const hasRoot = normalizedInput.some(
-        (node) => node?.id === 0 && node?.type === "root"
-      );
-      if (!hasRoot) {
-        throw new Error(
-          "Invalid hierarchy: missing root node (id: 0, type: root)."
-        );
+      const validation = validateHierarchy(hierarchy);
+      if (!validation.valid) {
+        throw new Error(validation.issues[0]?.message || "Invalid hierarchy.");
       }
 
-      const safeHierarchy = normalizedInput.map((node) => ({
-        ...node,
-        related: Array.isArray(node?.related) ? node.related : [],
-      }));
+      const normalizedHierarchy = hierarchy.map((node) =>
+        sanitizeHierarchyNode(node),
+      );
 
       const normalizedFilename = getFileName(filename);
-      const normalizedHierarchy = setHierarchyRootName(safeHierarchy);
       const tree = generateTree(normalizedHierarchy, 0);
       if (!tree) {
         throw new Error("Invalid hierarchy: root node could not be generated.");
@@ -467,28 +518,71 @@ export const updateHierarchy = createAsyncThunk(
   }
 );
 
+function parseDescriptionsPayload(descriptions) {
+  const rawDescriptions =
+    typeof descriptions === "string" ? descriptions.trim() : descriptions;
+
+  if (typeof rawDescriptions !== "string") {
+    throw new Error("Invalid descriptions file. Expected CSV or JSON text.");
+  }
+
+  if (!rawDescriptions) {
+    throw new Error("Descriptions file is empty.");
+  }
+
+  if (rawDescriptions.startsWith("{") || rawDescriptions.startsWith("[")) {
+    const parsed = JSON.parse(rawDescriptions);
+    if (
+      !parsed ||
+      Array.isArray(parsed) ||
+      typeof parsed !== "object"
+    ) {
+      throw new Error(
+        "Invalid descriptions JSON. Expected an object keyed by variable name."
+      );
+    }
+
+    return Object.entries(parsed).reduce((acc, [name, description]) => {
+      const key = typeof name === "string" ? name.trim() : "";
+      if (!key) return acc;
+
+      if (typeof description !== "string") {
+        throw new Error(
+          `Invalid description for "${key}". JSON values must be strings.`
+        );
+      }
+
+      acc[key] = {
+        description: description.trim(),
+      };
+
+      return acc;
+    }, {});
+  }
+
+  const table = aq.fromCSV(rawDescriptions);
+
+  return table.objects().reduce((acc, row) => {
+    const key = row.name?.trim();
+    if (!key) return acc;
+
+    acc[key] = {
+      description: row.description?.trim() ?? "",
+      decimalPlaces:
+        row["Decimal Places"] != null ? Number(row["Decimal Places"]) : null,
+      task: row.Task?.trim() ?? null,
+      variant: row.Variant?.trim() ?? null,
+    };
+
+    return acc;
+  }, {});
+}
+
 export const updateDescriptions = createAsyncThunk(
   "metadata/updateDescriptions",
   async ({ descriptions, filename }, { getState, rejectWithValue }) => {
     try {
-      const table = aq.fromCSV(descriptions);
-
-      const descMap = table.objects().reduce((acc, row) => {
-        const key = row.name?.trim();
-        if (!key) return acc;
-
-        acc[key] = {
-          description: row.description?.trim() ?? "",
-          decimalPlaces:
-            row["Decimal Places"] != null
-              ? Number(row["Decimal Places"])
-              : null,
-          task: row.Task?.trim() ?? null,
-          variant: row.Variant?.trim() ?? null,
-        };
-
-        return acc;
-      }, {});
+      const descMap = parseDescriptionsPayload(descriptions);
 
       const attributes = getState().metadata.attributes.map((attr) => {
         const entry = descMap[attr.name];
@@ -496,7 +590,7 @@ export const updateDescriptions = createAsyncThunk(
         return entry
           ? {
               ...attr,
-              desc: entry.description,
+              description: entry.description,
             }
           : attr;
       });

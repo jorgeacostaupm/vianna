@@ -5,7 +5,7 @@ import AnalysisPanelSection from "@/components/ui/AnalysisPanelSection";
 import VariableSelector from "./VariableSelector";
 import AssumptionsTags from "./AssumptionsTags";
 import TestSelector from "./TestSelector";
-import ContextSelector from "./ContextSelector";
+import GroupSettings from "../GroupSettings";
 import { COMP_DESC } from "@/utils/constants";
 
 export default function Panel({
@@ -15,16 +15,16 @@ export default function Panel({
 }) {
   return (
     <AnalysisSidebar description={COMP_DESC}>
-      <AnalysisPanelSection title="Analysis Context" variant="context">
-        <ContextSelector />
+      <AnalysisPanelSection title="Analysis Context">
+        <GroupSettings />
       </AnalysisPanelSection>
 
-      <AnalysisPanelSection title="Distribution">
+      <AnalysisPanelSection title="Create Distribution View">
         <VariableSelector generateDistribution={generateDistribution} />
         <AssumptionsTags />
       </AnalysisPanelSection>
 
-      <AnalysisPanelSection title="Statistical Tests">
+      <AnalysisPanelSection title="Run Statistical Tests">
         <TestSelector
           generateTest={generateTest}
           generateRanking={generateRanking}

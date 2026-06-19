@@ -2,6 +2,7 @@ import React from "react";
 import { Typography, Radio, Select, Switch } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
+import GroupSettings from "../GroupSettings";
 
 const { Text } = Typography;
 
@@ -85,6 +86,11 @@ export default function Settings({ config, setConfig }) {
             options={orderOptions}
           />
         </div>
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Groups</div>
+        <GroupSettings />
       </div>
     </div>
   );

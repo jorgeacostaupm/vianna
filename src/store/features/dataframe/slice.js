@@ -4,10 +4,7 @@ import * as aq from "arquero";
 import {
   generateColumn,
   generateColumnBatch,
-  generateEmpty,
   removeBatch,
-  removeColumn,
-  syncNavioColumns,
 } from "./thunks";
 
 import { updateHierarchy } from "../metadata/thunks";
@@ -16,27 +13,30 @@ import { generateTree, getVisibleNodes } from "@/utils/functions";
 
 import { replaceValuesWithNull, updateData } from "./thunks";
 import {
-  areColumnsEqual,
+  syncMissingStateForColumns,
+  syncMissingStateForSelection,
   syncSelectionFromDataframe,
 } from "./utils/sliceUtils";
 import {
   createSelectionRefForAllRows,
   resolveSelectionRefPayload,
-  selectionHasEmptyValues,
 } from "./utils/selectionRef";
+import {
+  buildMissingByAttribute,
+  EMPTY_MISSING_BY_ATTRIBUTE,
+  selectionHasMissingInAttributes,
+} from "./utils/missingValues";
 
 const initialState = {
   filename: null,
   loadingDataUpload: false,
 
   dataframe: null,
-  original: null,
 
-  selection: null,
   selectionRef: createSelectionRefForAllRows([]),
-  selectionIds: null,
 
   hasEmptyValues: false,
+  missingByAttribute: EMPTY_MISSING_BY_ATTRIBUTE,
 
   navioColumns: [],
   navioUiState: null,
@@ -63,19 +63,15 @@ const dataSlice = createSlice({
 
     setNavioColumns: (state, action) => {
       const nextColumns = Array.isArray(action.payload) ? action.payload : [];
-      if (!areColumnsEqual(state.navioColumns, nextColumns)) {
-        state.navioColumns = nextColumns;
-      }
+      syncMissingStateForColumns(state, nextColumns);
     },
 
     setSelection: (state, action) => {
-      state.selectionRef = resolveSelectionRefPayload(action.payload, state.dataframe);
-      state.selection = null;
-      state.hasEmptyValues = selectionHasEmptyValues({
-        dataframe: state.dataframe,
-        selectionRef: state.selectionRef,
-        visibleColumns: state.navioColumns,
-      });
+      state.selectionRef = resolveSelectionRefPayload(
+        action.payload,
+        state.dataframe,
+      );
+      syncMissingStateForSelection(state);
     },
 
     renameColumn: (state, action) => {
@@ -87,6 +83,8 @@ const dataSlice = createSlice({
 
       const navColIdx = state.navioColumns.findIndex((n) => n === prevName);
       state.navioColumns[navColIdx] = newName;
+      state.missingByAttribute = buildMissingByAttribute(state.dataframe);
+      syncMissingStateForSelection(state);
 
       state.version += 1;
     },
@@ -105,12 +103,7 @@ const dataSlice = createSlice({
       const tree = generateTree(hierarchy, 0);
       const filtered = getVisibleNodes(tree);
 
-      state.navioColumns = filtered;
-      state.hasEmptyValues = selectionHasEmptyValues({
-        dataframe: state.dataframe,
-        selectionRef: state.selectionRef,
-        visibleColumns: state.navioColumns,
-      });
+      syncMissingStateForColumns(state, filtered);
     });
 
     builder.addCase(updateData.pending, (state) => {
@@ -124,16 +117,16 @@ const dataSlice = createSlice({
 
       if (isNewColumns) {
         state.navioColumns = columnNames;
-        state.original = columnNames;
       }
 
       state.dataframe = items;
       state.selectionRef = createSelectionRefForAllRows(items);
-      state.selection = null;
-      state.hasEmptyValues = selectionHasEmptyValues({
+      state.missingByAttribute = buildMissingByAttribute(items);
+      state.hasEmptyValues = selectionHasMissingInAttributes({
         dataframe: state.dataframe,
         selectionRef: state.selectionRef,
-        visibleColumns: state.navioColumns,
+        missingByAttribute: state.missingByAttribute,
+        attributeIds: state.navioColumns,
       });
       state.navioUiState = null;
       state.version = 0;
@@ -145,17 +138,6 @@ const dataSlice = createSlice({
     });
 
     builder
-      .addCase(syncNavioColumns.fulfilled, (state, action) => {
-        const nextColumns = Array.isArray(action.payload?.columns)
-          ? action.payload.columns
-          : [];
-
-        if (!areColumnsEqual(state.navioColumns, nextColumns)) {
-          state.navioColumns = nextColumns;
-        }
-
-        state.hasEmptyValues = Boolean(action.payload?.hasEmptyValues);
-      })
       .addCase(generateColumn.fulfilled, (state, action) => {
         syncSelectionFromDataframe(state, action.payload.data);
         state.version += 1;
@@ -168,16 +150,8 @@ const dataSlice = createSlice({
     });
 
     builder
-      .addCase(generateEmpty.fulfilled, (state, action) => {
-        syncSelectionFromDataframe(state, action.payload);
-        state.version += 1;
-      })
-      .addCase(removeColumn.fulfilled, (state, action) => {
-        syncSelectionFromDataframe(state, action.payload);
-        state.version += 1;
-      })
       .addCase(removeBatch.fulfilled, (state, action) => {
-        syncSelectionFromDataframe(state, action.payload);
+        syncSelectionFromDataframe(state, action.payload.data);
         state.version += 1;
       });
 

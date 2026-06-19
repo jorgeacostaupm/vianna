@@ -22,12 +22,12 @@ const NodeAggregationConfig = ({ aggOp, nodes, vals, save }) => {
         }}
       >
         <Text strong>Operation type:</Text>
-        <Field name="info.operation">
+        <Field name="aggregationConfig.operation">
           {({ field, form }) => (
             <Select size="small"
-              id="info.operation"
+              id="aggregationConfig.operation"
               style={selectStyle}
-              value={vals?.info?.operation || "sum"}
+              value={vals?.aggregationConfig?.operation || "sum"}
               onChange={(value) => form.setFieldValue(field.name, value)}
             >
               <Option value="sum">Summatory</Option>
@@ -39,12 +39,16 @@ const NodeAggregationConfig = ({ aggOp, nodes, vals, save }) => {
         </Field>
       </div>
 
-      {vals.info == null || vals.info.operation !== "custom" ? (
+      {vals.aggregationConfig == null || vals.aggregationConfig.operation !== "custom" ? (
         <AggregateComponent nodes={nodes} aggOp={aggOp} save={save} />
       ) : null}
 
-      {vals.info != null && vals.info.operation === "custom" ? (
-        <CustomAggregate nodes={nodes} formula={vals.info.formula} save={save} />
+      {vals.aggregationConfig != null && vals.aggregationConfig.operation === "custom" ? (
+        <CustomAggregate
+          nodes={nodes}
+          formula={vals.aggregationConfig.formula}
+          save={save}
+        />
       ) : null}
     </>
   );

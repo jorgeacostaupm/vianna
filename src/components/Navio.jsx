@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import navio from "@/vendor/navio";
 
-import { selectNavioColumns } from "@/store/features/main";
+import { selectNavioColumns } from "@/store/features/dataframe";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
 

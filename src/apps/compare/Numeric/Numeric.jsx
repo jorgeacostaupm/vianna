@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 
 import { getDistributionData as getData } from "@/utils/functionsCompare";
 import ViewContainer from "@/components/charts/ViewContainer";
@@ -9,29 +9,8 @@ import Boxplot from "./charts/Boxplot/Boxplot";
 import Vilonplot from "./charts/Violinplot/Violinplot";
 import { isFiniteNumericValue } from "@/utils/viewRecords";
 import useDistributionViewState from "../useDistributionViewState";
-
-const defaultConfig = {
-  chartType: "box",
-  isSync: true,
-  showLegend: false,
-  showGrid: true,
-  useCustomRange: false,
-  range: [null, null],
-  nPoints: 30,
-  margin: 0.5,
-  xForce: 0.05,
-  yForce: 1.0,
-  collideForce: 0.8,
-  alpha: 0.8,
-  alphaDecay: 0.2,
-  timeout: 500,
-  pointSize: 3,
-  showPoints: false,
-  showGroupCountInLegend: true,
-  showGroupCountInAxis: true,
-  scaleDensityStrokeByGroupSize: true,
-  axisLabelFontSize: 16,
-};
+import numericDefaultConfig from "./numericDefaultConfig";
+import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
 const chartStrategies = {
   density: Density,
@@ -48,8 +27,23 @@ const isNumericRowValid = ({ row, groupVar, variable }) => {
 
 const info = "";
 
-export default function Numeric({ id, variable, remove, sourceOrderValues = [] }) {
-  const [config, setConfig] = useState(defaultConfig);
+export default function Numeric({
+  id,
+  variable,
+  remove,
+  sourceOrderValues = [],
+  config: persistedConfig,
+  updateView,
+}) {
+  const handleConfigChange = useCallback(
+    (nextConfig) => updateView?.({ config: nextConfig }),
+    [updateView],
+  );
+  const [config, setConfig] = useWorkspaceBackedState({
+    defaultValue: numericDefaultConfig,
+    persistedValue: persistedConfig,
+    onChange: handleConfigChange,
+  });
 
   const { data, requiredVariables, recordOrders, variableDescription } =
     useDistributionViewState({
@@ -73,7 +67,7 @@ export default function Numeric({ id, variable, remove, sourceOrderValues = [] }
     <ViewContainer
       title={`Distribution · ${variable}`}
       hoverTitle={variableDescription || undefined}
-      svgIDs={[id, `${id}-legend`]}
+      svgIDs={[id]}
       info={info}
       remove={remove}
       settings={<Settings config={config} setConfig={setConfig} />}

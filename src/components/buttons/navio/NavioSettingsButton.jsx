@@ -18,9 +18,11 @@ function SettingsContent({ config, updateConfig }) {
   return (
     <div className={panelStyles.panel}>
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Settings</div>
+        <div className={panelStyles.sectionTitle}>Navio Settings</div>
         <div className={panelStyles.sliderInlineRowOverview}>
-          <Text strong>Navio Height</Text>
+          <Text className={panelStyles.label} strong>
+            Height
+          </Text>
           <Text className={panelStyles.value}>{config.navioHeight}px</Text>
           <Slider
             className={panelStyles.sliderInlineControl}
@@ -33,20 +35,9 @@ function SettingsContent({ config, updateConfig }) {
         </div>
 
         <div className={panelStyles.sliderInlineRowOverview}>
-          <Text strong>Attribute Width</Text>
-          <Text className={panelStyles.value}>{config.attrWidth}px</Text>
-          <Slider
-            className={panelStyles.sliderInlineControl}
-            min={10}
-            max={100}
-            step={5}
-            defaultValue={config.attrWidth}
-            onChangeComplete={(v) => handleUpdateConfig("attrWidth", v)}
-          />
-        </div>
-
-        <div className={panelStyles.sliderInlineRowOverview}>
-          <Text strong>Label Height</Text>
+          <Text className={panelStyles.label} strong>
+            Top Margin
+          </Text>
           <Text className={panelStyles.value}>{config.navioLabelHeight}px</Text>
           <Slider
             className={panelStyles.sliderInlineControl}
@@ -55,6 +46,21 @@ function SettingsContent({ config, updateConfig }) {
             step={10}
             defaultValue={config.navioLabelHeight}
             onChangeComplete={(v) => handleUpdateConfig("navioLabelHeight", v)}
+          />
+        </div>
+
+        <div className={panelStyles.sliderInlineRowOverview}>
+          <Text className={panelStyles.label} strong>
+            Column Width
+          </Text>
+          <Text className={panelStyles.value}>{config.attrWidth}px</Text>
+          <Slider
+            className={panelStyles.sliderInlineControl}
+            min={10}
+            max={100}
+            step={5}
+            defaultValue={config.attrWidth}
+            onChangeComplete={(v) => handleUpdateConfig("attrWidth", v)}
           />
         </div>
       </div>

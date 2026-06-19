@@ -8,6 +8,7 @@ import { generateColumnBatch } from "@/store/features/dataframe";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import PopoverButton from "@/components/buttons/ui/PopoverButton";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
+import { extractFormulaDependencyNames } from "@/store/features/metadata/utils/thunkUtils";
 
 function EditColumn() {
   const dispatch = useDispatch();
@@ -23,6 +24,7 @@ function EditColumn() {
 
   const onEditSelection = () => {
     if (!data || !column) return;
+    const columnNodeId = attributes.find((attr) => attr?.name === column)?.id;
 
     const updatedData = data.map((item) =>
       ids?.includes(item[ORDER_VARIABLE])
@@ -35,7 +37,11 @@ function EditColumn() {
     const matchedAggregations = attributes.filter(
       (attr) =>
         attr.type === "aggregation" &&
-        attr.info?.usedAttributes?.some((d) => d.name === column),
+        (
+          (Number.isInteger(columnNodeId) &&
+            attr.aggregationConfig?.usedAttributes?.includes(columnNodeId)) ||
+          extractFormulaDependencyNames(attr.aggregationConfig?.formula).includes(column)
+        ),
     );
 
     if (matchedAggregations.length > 0) {

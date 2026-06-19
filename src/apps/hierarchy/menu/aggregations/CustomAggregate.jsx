@@ -4,14 +4,11 @@ import { Typography } from "antd";
 import { CopyOutlined } from "@ant-design/icons";
 
 import { copyClipboard } from "@/utils/functions";
-import { get_parser } from "../logic/parser";
-import buildAggregation from "../logic/formulaGenerator";
+import { compileAggregationFormula } from "@/store/features/metadata/utils/thunkUtils";
 import CustomFormulaHelpModalButton from "./CustomFormulaHelpModalButton";
 import styles from "./DropArea.module.css";
 
 const { Text } = Typography;
-
-let parser = get_parser();
 
 export const AttributePaste = ({ name }) => {
   const copyAttribute = async () => {
@@ -26,50 +23,45 @@ export const AttributePaste = ({ name }) => {
 };
 
 const CustomAggregate = ({ nodes, formula, save }) => {
-  const { errors, setFieldError, setFieldValue, setTouched } =
+  const { errors, setFieldError, setFieldValue } =
     useFormikContext();
   const textRef = useRef();
   const [formulaText, setFormula] = useState(formula);
 
   const validateFormula = (e) => {
-    let parsed;
-    try {
-      const input = e.target.value.trim() === "" ? '""' : e.target.value;
-      parsed = parser.parse(input);
-    } catch {
-      setFieldError("info.formula", "Invalid formula");
+    const input = e.target.value.trim() === "" ? '""' : e.target.value;
+    const compiled = compileAggregationFormula(input);
+
+    if (!compiled.valid) {
+      setFieldError(
+        "aggregationConfig.formula",
+        compiled.message || "Invalid formula",
+      );
       return;
     }
 
     try {
-      const executable_code = buildAggregation(parsed);
-      if (
-        !executable_code.nodes.every((n) => nodes.some((o) => o.name === n))
-      ) {
+      if (!compiled.nodes.every((n) => nodes.some((o) => o.name === n))) {
         throw {
           error: "Node not found",
           msg:
             "One of the nodes used does not correspond with the children of this aggregation." +
             " \n\nUsed Nodes: " +
-            executable_code.nodes.map((n) => '"' + n + `"`).join(", ") +
+            compiled.nodes.map((n) => '"' + n + `"`).join(", ") +
             "\n\nChild Nodes: " +
             nodes.map((n) => '"' + n.name + `"`).join(", "),
         };
       }
-      setFieldValue("info.exec", executable_code.formula, false);
-      setTouched("info.exec", false);
 
-      let used = executable_code.nodes.map((o) => {
-        const usedNode = { name: o, used: true, weight: 1 }; // corrected 'weigth' to 'weight'
-        usedNode.id = nodes.find((n) => n.name == o)?.id; // it is expected that the node exists so there will be no check
-        return usedNode;
-      });
-      setFieldValue("info.usedAttributes", used);
+      const used = compiled.nodes
+        .map((o) => nodes.find((n) => n.name == o)?.id)
+        .filter((id) => Number.isInteger(id));
+      setFieldValue("aggregationConfig.usedAttributes", used);
     } catch (error) {
-      setFieldError("info.formula", `${error.msg}`);
+      setFieldError("aggregationConfig.formula", `${error.msg}`);
       return;
     }
-    setFieldValue("info.formula", textRef.current.value, true);
+    setFieldValue("aggregationConfig.formula", textRef.current.value, true);
   };
 
   const handleInputChange = (event) => {
@@ -122,7 +114,7 @@ const CustomAggregate = ({ nodes, formula, save }) => {
           whiteSpace: "pre-wrap",
         }}
       >
-        {errors?.info?.formula}
+        {errors?.aggregationConfig?.formula}
       </div>
 
       <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>

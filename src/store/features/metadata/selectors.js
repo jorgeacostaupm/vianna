@@ -37,5 +37,16 @@ export const selectAggregationNodes = createSelector(
 
 export const selectDescribedNodes = createSelector(
   [selectHierarchy],
-  (hierarchy) => hierarchy.filter((n) => n.desc).map((n) => n.name),
+  (hierarchy) => hierarchy.filter((n) => n.description).map((n) => n.name),
+);
+
+export const selectAttributeDescriptionsByName = createSelector(
+  [selectHierarchy],
+  (hierarchy) =>
+    hierarchy.reduce((acc, node) => {
+      if (node?.type === "root" || !node?.name) return acc;
+      acc[node.name] =
+        typeof node.description === "string" ? node.description : "";
+      return acc;
+    }, {}),
 );

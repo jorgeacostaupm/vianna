@@ -3,19 +3,23 @@ import { useEffect, useMemo, useState } from "react";
 import { moveTooltip } from "@/utils/functions";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import { useSelector } from "react-redux";
+import { selectCorrelationAnalysisContext } from "@/store/features/main";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
 import renderLegend from "@/utils/renderLegend";
 import { CHART_HIGHLIGHT } from "@/utils/chartTheme";
 import { attachTickLabelGridHover } from "@/utils/gridInteractions";
+import { appendLegendRoot, createLegendLayout } from "@/utils/chartLegend";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
 
 const margin = { top: 60, right: 60, bottom: 60, left: 85 };
+const SCATTER_MATRIX_LEGEND_GAP = 40;
+const SCATTER_MATRIX_LEGEND_Y = 50;
 
 let brushCell = null;
 let brushInstance = null;
 
-export default function useScatter({ chartRef, legendRef, data, config }) {
-  const idVar = useSelector((s) => s.main.idVar);
+export default function useScatter({ chartRef, data, config }) {
+  const { idVar } = useSelector(selectCorrelationAnalysisContext);
   const dimensions = useResizeObserver(chartRef);
   const [hide, setHide] = useState([]);
   const [hoverHiddenGroups, setHoverHiddenGroups] = useState([]);
@@ -26,14 +30,14 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
     () =>
       Array.isArray(data) && groupVar
         ? Array.from(new Set(data.map((d) => d[groupVar]))).filter(
-            (value) => value != null
+            (value) => value != null,
           )
         : [],
-    [data, groupVar]
+    [data, groupVar],
   );
   const { colorDomain, orderedGroups: groups } = useGroupColorDomain(
     groupVar,
-    groupsInData
+    groupsInData,
   );
 
   useEffect(() => {
@@ -42,37 +46,28 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
       if (!chartRef.current) return;
       d3.select(chartRef.current).selectAll("*").remove();
     };
-    const clearLegend = () => {
-      if (!legendRef.current) return;
-      const legendSvg = d3.select(legendRef.current);
-      legendSvg.selectAll("*").remove();
-      legendSvg.attr("width", 0).attr("height", 0);
-      const parent = legendRef.current.parentNode;
-      if (parent) {
-        d3.select(parent).style("align-items", null).style("justify-content", null);
-      }
-    };
 
-    if (
-      !groupVar ||
-      !dimensions ||
-      !data ||
-      !chartRef.current ||
-      !legendRef.current
-    ) {
+    if (!groupVar || !dimensions || !data || !chartRef.current) {
       clearChart();
-      clearLegend();
       return;
     }
 
     clearChart();
-    clearLegend();
 
     const totalWidth = dimensions.width;
     const totalHeight = dimensions.height;
-    const chartAreaWidth = totalWidth;
-    const chartWidth = chartAreaWidth - margin.left - margin.right;
-    const chartHeight = totalHeight - margin.top - margin.bottom;
+    const legendLayout = createLegendLayout({
+      width: totalWidth,
+      height: totalHeight,
+      margin,
+      showLegend: showLegend !== false,
+      legendMaxWidth: 210,
+      legendGap: SCATTER_MATRIX_LEGEND_GAP,
+      legendY: SCATTER_MATRIX_LEGEND_Y,
+      minChartWidth: 260,
+    });
+    const chartWidth = legendLayout.chartWidth;
+    const chartHeight = legendLayout.chartHeight;
     const chartSize = Math.min(chartWidth, chartHeight);
 
     let tooltip = d3.select("body").select("div.tooltip");
@@ -81,7 +76,7 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
     }
 
     const svg = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = appendLegendRoot(svg, legendLayout);
 
     const chart = svg
       .append("g")
@@ -98,11 +93,23 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
       .domain(colorDomain)
       .range(GROUP_CATEGORICAL_PALETTE);
 
-    if (showLegend !== false) {
-      renderLegend(legend, groups, color, blur, setBlur, hide, setHide, null, null, {
-        transientHide: hoverHiddenGroups,
-        setTransientHide: setHoverHiddenGroups,
-      });
+    if (showLegend !== false && legend) {
+      renderLegend(
+        legend,
+        groups,
+        color,
+        blur,
+        setBlur,
+        hide,
+        setHide,
+        null,
+        null,
+        {
+          transientHide: hoverHiddenGroups,
+          setTransientHide: setHoverHiddenGroups,
+          maxWidth: Math.max(0, legendLayout.legendInnerWidth - 43),
+        },
+      );
     }
 
     if (variables.length < 2) return;
@@ -131,7 +138,7 @@ export default function useScatter({ chartRef, legendRef, data, config }) {
           "transform",
           `translate(${position(x) + position.bandwidth() / 2}, ${
             position(y) + position.bandwidth() / 2
-          })`
+          })`,
         )
         .append("text")
         .attr("class", "sc-label")

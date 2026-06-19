@@ -149,7 +149,7 @@ function Hierarchy({
   }, [dimensions]);
 
   return (
-    <>
+    <div className={styles.hierarchyWorkspace}>
       <div className={styles.chartContainer}>
         <svg ref={containerRef} className={styles.chartSvg} />
       </div>
@@ -158,7 +158,7 @@ function Hierarchy({
 
       <NodeMenu />
       <ViewMenu />
-    </>
+    </div>
   );
 }
 

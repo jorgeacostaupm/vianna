@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import Settings from "./Settings";
 import BasicChart from "@/components/charts/BasicChart";
@@ -14,22 +14,11 @@ import {
   isFiniteNumericValue,
   uniqueColumns,
 } from "@/utils/viewRecords";
-
-const defaultConfig = {
-  isSync: true,
-  range: [0, 1],
-  showLegend: true,
-  showLabels: true,
-  colorScale: "rdBu",
-  axisLabelFontSize: 16,
-};
-
-const defaultParams = {
-  groupVar: null,
-  variables: [],
-  nTop: 10,
-  method: "pearson",
-};
+import {
+  correlationMatrixDefaultConfig,
+  correlationMatrixDefaultParams,
+} from "./correlationMatrixDefaults";
+import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
 function Chart({ data, id, config, params }) {
   const chartRef = useRef(null);
@@ -41,9 +30,28 @@ export default function CorrelationMatrix({
   id,
   remove,
   sourceOrderValues = [],
+  config: persistedConfig,
+  params: persistedParams,
+  updateView,
 }) {
-  const [config, setConfig] = useState(defaultConfig);
-  const [params, setParams] = useState(defaultParams);
+  const handleConfigChange = useCallback(
+    (nextConfig) => updateView?.({ config: nextConfig }),
+    [updateView],
+  );
+  const handleParamsChange = useCallback(
+    (nextParams) => updateView?.({ params: nextParams }),
+    [updateView],
+  );
+  const [config, setConfig] = useWorkspaceBackedState({
+    defaultValue: correlationMatrixDefaultConfig,
+    persistedValue: persistedConfig,
+    onChange: handleConfigChange,
+  });
+  const [params, setParams] = useWorkspaceBackedState({
+    defaultValue: correlationMatrixDefaultParams,
+    persistedValue: persistedParams,
+    onChange: handleParamsChange,
+  });
   const [info, setInfo] = useState(null);
   const selectionColumns = useMemo(
     () => uniqueColumns([...(params.variables || []), ORDER_VARIABLE]),
@@ -82,7 +90,7 @@ export default function CorrelationMatrix({
 
   const viewModel = createCorrelationViewModel({
     title: "Correlation Matrix",
-    svgIDs: [id, `${id}-legend`],
+    svgIDs: [id],
     remove,
     settings: (
       <Settings

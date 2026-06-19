@@ -1,14 +1,17 @@
 import { motion } from "framer-motion";
 import { HorizontalDropIndicator as DropIndicator } from "./DropIndicator";
 import { InputNumber, Tooltip } from "antd";
-import { useFormikContext } from "formik";
 import styles from "./DropArea.module.css";
 
-const InputAttribute = ({ idx, node, onDragStart, isHidden = false }) => {
-  const { setFieldValue } = useFormikContext();
-
+const InputAttribute = ({
+  idx,
+  node,
+  onDragStart,
+  onWeightChange,
+  isHidden = false,
+}) => {
   const handleChange = (value) => {
-    setFieldValue(`info.usedAttributes.${idx}.weight`, value);
+    onWeightChange?.(node.id, value);
   };
 
   return (
@@ -22,14 +25,13 @@ const InputAttribute = ({ idx, node, onDragStart, isHidden = false }) => {
         className={styles.inputAttributeItem}
         layout
         layoutId={node.id}
-        id={`info.usedAttributes.${idx}`}
+        id={`aggregationConfig.usedAttributes.${idx}`}
         draggable={true}
         onDragStart={(e) => onDragStart(e, { id: node.id, name: node.name })}
       >
         <Tooltip title={node.name}>
           <div
-            id={`info.usedAttributes.${idx}.name`}
-            name={`info.usedAttributes.${idx}.name`}
+            id={`used-attribute-${idx}-name`}
             className={styles.inputAttributeName}
           >
             {node.name}
@@ -39,8 +41,7 @@ const InputAttribute = ({ idx, node, onDragStart, isHidden = false }) => {
         <div className={styles.inputAttributeRow}>
           <span className={styles.inputAttributeLabel}>W:</span>
           <InputNumber
-            id={`info.usedAttributes.${idx}.weight`}
-            name={`info.usedAttributes.${idx}.weight`}
+            id={`used-attribute-${idx}-weight`}
             className={styles.inputAttributeWeightInput}
             min={-Infinity}
             max={Infinity}

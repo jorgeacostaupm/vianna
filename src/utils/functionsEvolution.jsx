@@ -1,6 +1,7 @@
 import * as aq from "arquero";
 import { jStat } from "jstat";
 import { sortTimeValues } from "@/utils/evolutionTimeOrder";
+import { selectSubjectIdsByCompleteness } from "@/utils/evolutionCompleteness";
 
 export function getCompleteSubjects(participantData, times) {
   const timeKeys = (times || []).map((t) => String(t));
@@ -287,6 +288,7 @@ export function getLineChartData(
   idVar,
   showComplete,
   showIncomplete = false,
+  incompleteRequiredTimes = [],
   tests = [],
   timeRange = null,
   timeOrderConfig = null,
@@ -376,27 +378,18 @@ export function getLineChartData(
   const includeComplete = Boolean(showComplete);
   const includeIncomplete = Boolean(showIncomplete);
   const beforeCount = participantData.length;
+  const { selectedIds } = selectSubjectIdsByCompleteness(raw, allTimes, {
+    idVar,
+    timeVar,
+    valueVar,
+    showComplete: includeComplete,
+    showIncomplete: includeIncomplete,
+    incompleteRequiredTimes,
+  });
 
-  const completeParticipants = participantData.filter((p) =>
-    allTimes.every((t) =>
-      p.values.some(
-        (v) => v.timestamp === t && v.value !== null && !Number.isNaN(+v.value),
-      ),
-    ),
+  participantData = participantData.filter((participant) =>
+    selectedIds.has(participant.id),
   );
-  const completeIds = new Set(completeParticipants.map((p) => p.id));
-
-  if (!includeComplete && !includeIncomplete) {
-    participantData = [];
-  } else if (includeComplete && includeIncomplete) {
-    // Keep all participants.
-  } else if (includeComplete) {
-    participantData = completeParticipants;
-  } else {
-    participantData = participantData.filter((p) => !completeIds.has(p.id));
-  }
-
-  const selectedIds = new Set(participantData.map((p) => p.id));
   const filteredRows = raw.filter((r) => selectedIds.has(r[idVar]));
   table = aq.from(filteredRows);
 
@@ -496,7 +489,7 @@ export function getLineChartData(
 
         try {
           const result = test.run({
-            rawRows: raw,
+            rawRows: filteredRows,
             participantData,
             times: allTimes,
             groupVar,

@@ -10,6 +10,7 @@ import {
   defaultViewConfig,
   nodeCornerRadius,
   nodeHalfSize,
+  resolveTransitionDuration,
   triangleBottomFactor,
   triangleTopFactor,
 } from "./d3HierarchyEditor/constants";
@@ -311,7 +312,18 @@ export default class D3HierarchyEditor {
         typeof viewConfig.showLabels === "boolean"
           ? viewConfig.showLabels
           : defaultViewConfig.showLabels,
+      animateTransitions:
+        typeof viewConfig.animateTransitions === "boolean"
+          ? viewConfig.animateTransitions
+          : defaultViewConfig.animateTransitions,
     };
+  }
+
+  getTransitionDuration(instant = false) {
+    return resolveTransitionDuration({
+      instant,
+      animateTransitions: this.viewConfig.animateTransitions,
+    });
   }
 
   getNodeHalfSize() {
@@ -459,7 +471,7 @@ export default class D3HierarchyEditor {
         d.children = null;
       }
 
-      if (d.data.isShown) {
+      if (d.data.isExpanded) {
         d._children = null;
       } else {
         d._children = d.children;

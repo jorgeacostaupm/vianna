@@ -3,6 +3,7 @@ import { Typography, Switch } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
+import GroupSettings from "../../GroupSettings";
 import { IntervalSettings, MarkerSettings, SliderControl } from "./common";
 
 const { Text } = Typography;
@@ -78,6 +79,11 @@ export default function PairwiseSettings({ config, setConfig }) {
           setConfig={setConfig}
           disabled={disabled}
         />
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Groups</div>
+        <GroupSettings />
       </div>
     </div>
   );

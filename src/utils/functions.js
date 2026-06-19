@@ -197,7 +197,7 @@ export function computeRankingData({
         value: metricValue,
         p_value: pValue,
         ...res,
-        desc: hierarchyItem?.desc,
+        description: hierarchyItem?.description,
       });
     } catch (error) {
       skippedVariables.push({
@@ -338,25 +338,18 @@ export function generateTree(attributes, nodeID) {
     id: node.id,
     name: node.name,
     children: children,
-    isShown: node.isShown,
+    isExpanded: node.isExpanded,
     isActive: node.isActive !== false,
     type: node.type,
     dtype: node.dtype,
-    formula: node?.info?.formula,
-    exec: node?.info?.exec,
-    desc: node.desc,
+    formula: node?.aggregationConfig?.formula,
+    description: node.description,
   };
 }
 
 export function getVisibleNodes(tree) {
   const hasFormula = (node) => {
-    const values = [node?.formula, node?.exec];
-    return values.some((value) => {
-      if (typeof value === "string") {
-        return value.trim().length > 0;
-      }
-      return Boolean(value);
-    });
+    return typeof node?.formula === "string" && node.formula.trim().length > 0;
   };
 
   const filteredNodes = [];
@@ -367,7 +360,7 @@ export function getVisibleNodes(tree) {
     if (!node || node.isActive === false) continue;
 
     if (
-      node.isShown === false ||
+      node.isExpanded === false ||
       !node.children ||
       node.children.length === 0
     ) {

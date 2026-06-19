@@ -11,6 +11,7 @@ import {
 import tests from "@/utils/tests";
 import { VariableTypes } from "@/utils/constants";
 import { setSelectedTest } from "@/store/features/compare";
+import { selectCompareAnalysisContext } from "@/store/features/main";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 import panelStyles from "@/styles/modules/analysisPanels.module.css";
 import styles from "./TestSelector.module.css";
@@ -31,7 +32,7 @@ export default function TestSelector({ generateTest, generateRanking }) {
   const selectedTest = useSelector((s) => s.compare.selectedTest);
 
   const varTypes = useSelector((s) => s.main.varTypes);
-  const groupVar = useSelector((s) => s.compare.groupVar);
+  const { groupVar } = useSelector(selectCompareAnalysisContext);
   const selectionColumns = useMemo(
     () => (groupVar ? [groupVar] : []),
     [groupVar],
@@ -222,7 +223,9 @@ export default function TestSelector({ generateTest, generateRanking }) {
             icon={<ExperimentOutlined />}
             onClick={triggerTest}
             disabled={!selectedVar || !selectedTest || !groupVar}
-          />
+          >
+            Run test
+          </AppButton>
         </div>
 
         <div className={panelStyles.compareTestActionCell}>
@@ -237,7 +240,9 @@ export default function TestSelector({ generateTest, generateRanking }) {
             icon={<BarChartOutlined />}
             onClick={() => selectedTest && generateRanking(selectedTest)}
             disabled={!selectedTest || !groupVar}
-          />
+          >
+            Rank variables
+          </AppButton>
         </div>
       </div>
     </>

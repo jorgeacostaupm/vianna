@@ -1,4 +1,4 @@
-import { ORDER_VARIABLE } from "@/utils/constants";
+import { ORDER_VARIABLE } from "./constants.js";
 
 export function normalizeOrderValues(values) {
   if (!Array.isArray(values)) return [];

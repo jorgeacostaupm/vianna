@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DropArea from "./DropArea";
 import ChildHolder from "./ChildHolder";
-import { FieldArray, useFormikContext } from "formik";
+import { useFormikContext } from "formik";
 import { generateFormulaSimplified } from "../logic/simplifiedFormulas";
 
 const AggregateComponent = ({ nodes, aggOp, save }) => {
@@ -14,39 +14,26 @@ const AggregateComponent = ({ nodes, aggOp, save }) => {
         gap: "0.5rem",
       }}
     >
-      <FieldArray name="info.usedAttributes">
-        {({ insert, remove, push, move }) => (
-          <DropWrapper
-            nodes={nodes}
-            aggOp={aggOp}
-            insert={insert}
-            remove={remove}
-            push={push}
-            move={move}
-            save={save}
-          />
-        )}
-      </FieldArray>
+      <DropWrapper nodes={nodes} aggOp={aggOp} save={save} />
     </div>
   );
 };
 
-const DropWrapper = ({
-  nodes,
-  aggOp,
-  insert,
-  remove,
-  push,
-  move,
-  save,
-}) => {
+const DropWrapper = ({ nodes, aggOp, save }) => {
   const {
     setFieldValue,
-    values: { info },
+    values: { aggregationConfig },
   } = useFormikContext();
   const form = useFormikContext();
   const [usedNodes, setUsedNodes] = useState([]);
   const [unusedNodes, setUnusedNodes] = useState([]);
+  const nodesKey = useMemo(
+    () =>
+      nodes
+        .map((node) => `${node.id}:${node.name}:${node.weight}:${node.used}`)
+        .join("|"),
+    [nodes],
+  );
 
   useEffect(() => {
     const initialUsed = nodes.filter((n) => n.used === true);
@@ -54,24 +41,21 @@ const DropWrapper = ({
 
     setUsedNodes(initialUsed);
     setUnusedNodes(initialUnused);
-    setFieldValue("info.usedAttributes", initialUsed); // Actualiza inicialmente
-  }, [nodes]);
+  }, [nodesKey]);
 
   useEffect(() => {
+    const persistedIds = usedNodes.map((node) => node.id);
+    setFieldValue("aggregationConfig.usedAttributes", persistedIds);
+
     const formula = generateFormulaSimplified(
-      info.operation,
-      info.usedAttributes
+      aggregationConfig.operation,
+      usedNodes,
     );
-    setFieldValue("info.formula", formula.formula);
-    setFieldValue("info.exec", formula.exec);
+    setFieldValue("aggregationConfig.formula", formula.formula || "");
     setTimeout(() => {
       form.validateForm();
     }, 0);
-  }, [info.operation, JSON.stringify(info.usedAttributes)]);
-
-  useEffect(() => {
-    setFieldValue("info.usedAttributes", usedNodes);
-  }, [usedNodes]);
+  }, [aggregationConfig.operation, JSON.stringify(usedNodes)]);
 
   const removeNode = (nodeId, wasUsed) => {
     if (wasUsed) {
@@ -109,17 +93,21 @@ const DropWrapper = ({
     }
   };
 
+  const updateNodeWeight = (nodeId, weight) => {
+    setUsedNodes((prev) =>
+      prev.map((node) => (node.id === nodeId ? { ...node, weight } : node)),
+    );
+  };
+
   const modeAllNodes = (willBeUsed) => {
     if (willBeUsed) {
       const allUnusedAsUsed = unusedNodes.map((n) => ({ ...n, used: true }));
       setUsedNodes((prev) => [...prev, ...allUnusedAsUsed]);
       setUnusedNodes([]);
-      setFieldValue("info.usedAttributes", [...usedNodes, ...allUnusedAsUsed]);
     } else {
       const allUsedAsUnused = usedNodes.map((n) => ({ ...n, used: false }));
       setUnusedNodes((prev) => [...prev, ...allUsedAsUnused]);
       setUsedNodes([]);
-      setFieldValue("info.usedAttributes", []);
     }
   };
 
@@ -130,10 +118,8 @@ const DropWrapper = ({
         aggOp={aggOp}
         nodes={usedNodes}
         moveNode={moveNode}
+        updateNodeWeight={updateNodeWeight}
         modeAllNodes={modeAllNodes}
-        insertNodeField={insert}
-        pushNodeField={push}
-        moveNodeField={move}
         save={save}
       />
 
@@ -141,11 +127,6 @@ const DropWrapper = ({
         allNodes={nodes}
         nodes={unusedNodes}
         moveNode={moveNode}
-        removeNodeField={(node) => {
-          const idx = usedNodes.findIndex((n) => n.id === node.id);
-          if (idx === -1) return;
-          remove(idx);
-        }}
       />
     </>
   );

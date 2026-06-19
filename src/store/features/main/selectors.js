@@ -1,15 +1,10 @@
 import { createSelector } from "@reduxjs/toolkit";
 
-import { HIDDEN_VARIABLES, VariableTypes } from "@/utils/constants";
-import { MAIN_CONFIG_DEFAULTS } from "./configDefaults";
+import { HIDDEN_VARIABLES, VariableTypes } from "../../../utils/constants.js";
+import { MAIN_CONFIG_DEFAULTS } from "./configDefaults.js";
 
 const selectMainState = (state) => state.main;
 const selectDataframeState = (state) => state.dataframe;
-
-export const selectMainDataframe = createSelector(
-  [selectDataframeState],
-  (dataframeState) => dataframeState.dataframe,
-);
 
 export const selectDemoLoadStatus = createSelector(
   [selectMainState],
@@ -17,8 +12,16 @@ export const selectDemoLoadStatus = createSelector(
 );
 
 export const selectHasMainData = createSelector(
-  [selectMainDataframe],
-  (dataframe) => Array.isArray(dataframe) && dataframe.length > 0,
+  [selectDataframeState],
+  (dataframeState) => {
+    const dataframe = dataframeState.dataframe;
+    const filename = dataframeState.filename;
+
+    return (
+      (Array.isArray(dataframe) && dataframe.length > 0) ||
+      (typeof filename === "string" && filename.trim().length > 0)
+    );
+  },
 );
 
 export const selectIsDemoLoading = createSelector(
@@ -45,7 +48,7 @@ export const selectAppOpenMode = createSelector([selectMainConfig], (config) =>
   config.appOpenMode === "tab" ? "tab" : "window",
 );
 
-export const selectNavioColumns = createSelector(
+const selectNavioColumns = createSelector(
   [selectDataframeState],
   (dataframeState) => dataframeState.navioColumns,
 );
@@ -94,4 +97,49 @@ export const selectNavioVars = createSelector(
     Object.keys(varTypes).filter((key) =>
       isSelectableColumn(key, navioColumns),
     ),
+);
+
+export const selectDefaultAnalysisContext = createSelector(
+  [selectMainState],
+  (mainState) => ({
+    idVar: mainState.idVar,
+    groupVar: mainState.groupVar,
+    timeVar: mainState.timeVar,
+  }),
+);
+
+export const selectCompareAnalysisContext = createSelector(
+  [(state) => state.compare, selectMainState],
+  (compareState, mainState) => ({
+    idVar: compareState.idVar ?? mainState.idVar,
+    groupVar: compareState.groupVar ?? mainState.groupVar,
+    timeVar: compareState.timeVar ?? mainState.timeVar,
+    localIdVar: compareState.idVar,
+    localGroupVar: compareState.groupVar,
+    localTimeVar: compareState.timeVar,
+  }),
+);
+
+export const selectEvolutionAnalysisContext = createSelector(
+  [(state) => state.evolution, selectMainState],
+  (evolutionState, mainState) => ({
+    idVar: evolutionState.idVar ?? mainState.idVar,
+    groupVar: evolutionState.groupVar ?? mainState.groupVar,
+    timeVar: evolutionState.timeVar ?? mainState.timeVar,
+    localIdVar: evolutionState.idVar,
+    localGroupVar: evolutionState.groupVar,
+    localTimeVar: evolutionState.timeVar,
+  }),
+);
+
+export const selectCorrelationAnalysisContext = createSelector(
+  [(state) => state.correlation, selectMainState],
+  (correlationState, mainState) => ({
+    idVar: correlationState.idVar ?? mainState.idVar,
+    groupVar: correlationState.groupVar ?? mainState.groupVar,
+    timeVar: correlationState.timeVar ?? mainState.timeVar,
+    localIdVar: correlationState.idVar,
+    localGroupVar: correlationState.groupVar,
+    localTimeVar: correlationState.timeVar,
+  }),
 );

@@ -2,12 +2,15 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useFormikContext } from "formik";
 import { SaveOutlined, EyeOutlined } from "@ant-design/icons";
-import * as aq from "arquero";
 
-import processFormula from "@/utils/processFormula";
+import { deriveAggregationColumnsForRows } from "@/utils/aggregationEngine";
 import { notifyError } from "@/components/notifications";
 import AutoCloseTooltip from "@/components/ui/AutoCloseTooltip";
 import { AppButton, APP_BUTTON_VARIANTS } from "@/components/buttons/core";
+import {
+  compileAggregationFormula,
+  extractFormulaDependencyNames,
+} from "@/store/features/metadata/utils/thunkUtils";
 
 import {
   PREVIEW_LIMIT,
@@ -38,27 +41,36 @@ const resolveColumnName = ({ values, initialValues, dataframe, quarantineData })
   );
 };
 
-const buildAggregationPreview = ({ dataframe, values }) => {
+const buildAggregationPreview = ({ dataframe, values, attributes }) => {
   const sample = Array.isArray(dataframe) ? dataframe.slice(0, PREVIEW_LIMIT) : [];
 
   if (sample.length === 0) {
     throw new Error("No rows available in the dataset.");
   }
 
-  if (!values?.info?.exec) {
+  const compiled = compileAggregationFormula(values?.aggregationConfig?.formula);
+  if (!compiled.valid || !compiled.exec) {
     throw new Error("Aggregation formula is not ready yet.");
   }
 
-  const table = aq.from(sample);
-  const derivedFn = processFormula(table, values.info.exec);
-  const derivedRows = table
-    .derive({ [PREVIEW_RESULT_COLUMN]: derivedFn }, { drop: false })
-    .objects();
+  const derivedRows = deriveAggregationColumnsForRows(sample, [
+    {
+      name: PREVIEW_RESULT_COLUMN,
+      formula: compiled.exec,
+    },
+  ]);
 
+  const attributeNameById = new Map(
+    (attributes || []).map((attribute) => [attribute?.id, attribute?.name]),
+  );
   const sourceColumns = [
     ...new Set(
-      (values?.info?.usedAttributes || [])
-        .map((attribute) => attribute?.name)
+      [
+        ...extractFormulaDependencyNames(values?.aggregationConfig?.formula),
+        ...((values?.aggregationConfig?.usedAttributes || [])
+          .map((attributeId) => attributeNameById.get(attributeId))
+          .filter(Boolean)),
+      ]
         .filter(Boolean),
     ),
   ];
@@ -90,6 +102,7 @@ export default function SaveButton() {
     submitForm,
   } = useFormikContext();
   const dataframe = useSelector((state) => state.dataframe.dataframe);
+  const attributes = useSelector((state) => state.metadata.attributes);
   const quarantineData = useSelector(
     (state) => state.main.quarantineData,
   );
@@ -102,7 +115,10 @@ export default function SaveButton() {
 
   const isAggregation = values?.type === "aggregation";
   const canPreview = Boolean(
-    isAggregation && isValid && values?.info?.exec && values?.name,
+    isAggregation &&
+      isValid &&
+      values?.aggregationConfig?.formula?.trim() &&
+      values?.name,
   );
   const isSaveInProgress = isSaving || isSubmitting;
 
@@ -165,7 +181,11 @@ export default function SaveButton() {
     setPreviewError("");
 
     try {
-      const { columns, rows } = buildAggregationPreview({ dataframe, values });
+      const { columns, rows } = buildAggregationPreview({
+        dataframe,
+        values,
+        attributes,
+      });
       setPreviewColumns(columns);
       setPreviewRows(rows);
       setPreviewOpen(true);
@@ -181,6 +201,18 @@ export default function SaveButton() {
 
   return (
     <>
+      <AutoCloseTooltip title="Save">
+        <AppButton
+          variant={APP_BUTTON_VARIANTS.ACTION}
+          shape="circle"
+          size="large"
+          onClick={handleSave}
+          disabled={isSaveInProgress}
+          loading={isSaveInProgress}
+          icon={<SaveOutlined />}
+        />
+      </AutoCloseTooltip>
+
       {isAggregation ? (
         <AutoCloseTooltip title={`Preview ${PREVIEW_LIMIT} rows`}>
           <AppButton
@@ -194,18 +226,6 @@ export default function SaveButton() {
           />
         </AutoCloseTooltip>
       ) : null}
-
-      <AutoCloseTooltip title="Save">
-        <AppButton
-          variant={APP_BUTTON_VARIANTS.ACTION}
-          shape="circle"
-          size="large"
-          onClick={handleSave}
-          disabled={isSaveInProgress}
-          loading={isSaveInProgress}
-          icon={<SaveOutlined />}
-        />
-      </AutoCloseTooltip>
 
       <AggregationPreviewModal
         open={previewOpen}

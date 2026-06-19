@@ -578,35 +578,70 @@ function buildPreparedRows({
   };
 }
 
-function resolveReferenceGroup(groupLevels, referenceGroup, referenceMode) {
-  if (!groupLevels.length) return null;
-  if (referenceMode === "all") return groupLevels[0];
+function resolveGroupCoding(groupLevels, referenceGroup, referenceMode) {
+  if (!groupLevels.length) {
+    return {
+      codingMode: "treatment",
+      baselineGroup: null,
+      omittedGroup: null,
+      referenceLabel: null,
+    };
+  }
+
+  if (referenceMode === "all") {
+    return {
+      codingMode: "effect",
+      baselineGroup: null,
+      omittedGroup: groupLevels[groupLevels.length - 1] ?? null,
+      referenceLabel: UNKNOWN_GROUP,
+    };
+  }
 
   const requested = normalizeString(referenceGroup);
-  if (requested && groupLevels.includes(requested)) return requested;
-  return groupLevels[0];
+  const baselineGroup =
+    requested && groupLevels.includes(requested) ? requested : groupLevels[0];
+
+  return {
+    codingMode: "treatment",
+    baselineGroup,
+    omittedGroup: null,
+    referenceLabel: baselineGroup,
+  };
 }
 
 function buildDesignMetadata({
   includeGroupEffect,
   includeInteraction,
   groupLevels,
-  referenceGroup,
+  groupCoding,
   covariateDefinitions,
 }) {
   const fixedEffectNames = ["Intercept", "Time"];
+  const codingMode = groupCoding?.codingMode || "treatment";
+  const baselineGroup = groupCoding?.baselineGroup || null;
+  const omittedGroup = groupCoding?.omittedGroup || null;
   const dummyLevels =
     includeGroupEffect && groupLevels.length > 1
-      ? groupLevels.filter((level) => level !== referenceGroup)
+      ? codingMode === "effect"
+        ? groupLevels.filter((level) => level !== omittedGroup)
+        : groupLevels.filter((level) => level !== baselineGroup)
       : [];
 
   dummyLevels.forEach((level) => {
-    fixedEffectNames.push(`Group: ${level} vs ${referenceGroup}`);
+    fixedEffectNames.push(
+      codingMode === "effect"
+        ? `Group deviation: ${level} vs ${UNKNOWN_GROUP}`
+        : `Group: ${level} vs ${baselineGroup}`,
+    );
   });
 
   if (includeInteraction) {
     dummyLevels.forEach((level) => {
-      fixedEffectNames.push(`Time × Group: ${level} vs ${referenceGroup}`);
+      fixedEffectNames.push(
+        codingMode === "effect"
+          ? `Time × Group deviation: ${level} vs ${UNKNOWN_GROUP}`
+          : `Time × Group: ${level} vs ${baselineGroup}`,
+      );
     });
   }
 
@@ -651,17 +686,46 @@ function getDesignRow({
   group,
   covariates,
   dummyLevels,
+  groupCoding,
   includeInteraction,
   covariateColumns,
 }) {
   const row = [1, timeScore];
+  const codingMode = groupCoding?.codingMode || "treatment";
+  const omittedGroup = groupCoding?.omittedGroup || null;
 
   dummyLevels.forEach((level) => {
+    if (codingMode === "effect") {
+      if (group == null) {
+        row.push(0);
+      } else if (group === level) {
+        row.push(1);
+      } else if (group === omittedGroup) {
+        row.push(-1);
+      } else {
+        row.push(0);
+      }
+      return;
+    }
+
     row.push(group === level ? 1 : 0);
   });
 
   if (includeInteraction) {
     dummyLevels.forEach((level) => {
+      if (codingMode === "effect") {
+        if (group == null) {
+          row.push(0);
+        } else if (group === level) {
+          row.push(timeScore);
+        } else if (group === omittedGroup) {
+          row.push(-timeScore);
+        } else {
+          row.push(0);
+        }
+        return;
+      }
+
       row.push(group === level ? timeScore : 0);
     });
   }
@@ -680,6 +744,7 @@ function getDesignRow({
 function buildSubjectsForModel({
   preparedSubjects,
   dummyLevels,
+  groupCoding,
   includeInteraction,
   covariateColumns,
 }) {
@@ -692,6 +757,7 @@ function buildSubjectsForModel({
           group: row.group,
           covariates: row.covariates,
           dummyLevels,
+          groupCoding,
           includeInteraction,
           covariateColumns,
         }),
@@ -711,8 +777,8 @@ function buildSubjectsForModel({
 function buildPredictions({
   times,
   groupLevels,
-  groupSubjectCounts,
   dummyLevels,
+  groupCoding,
   includeInteraction,
   covariateColumns,
   covariateDefaults,
@@ -753,6 +819,7 @@ function buildPredictions({
         group,
         covariates: covariateDefaults,
         dummyLevels,
+        groupCoding,
         includeInteraction,
         covariateColumns,
       });
@@ -778,45 +845,38 @@ function buildPredictions({
 
   if (referenceMode !== "all" || !groupLevels.length) return byGroup;
 
-  const totalSubjects =
-    groupLevels.reduce(
-      (acc, group) => acc + (groupSubjectCounts.get(group) || 0),
-      0,
-    ) || 1;
-
   const allValues = timeLabels.map((timeLabel) => {
-    const entries = byGroup
-      .map((groupEntry) => {
-        const value = groupEntry.values.find((entry) => entry.time === timeLabel);
-        const weight = groupSubjectCounts.get(groupEntry.group) || 0;
-        return { value, weight };
-      })
-      .filter((entry) => Number.isFinite(entry?.value?.fit) && entry.weight > 0);
-
-    if (!entries.length) {
+    const timeScore = resolveTimeScore(timeLabel);
+    if (!Number.isFinite(timeScore)) {
       return {
         time: timeLabel,
-        timeScore: resolveTimeScore(timeLabel),
+        timeScore,
         fit: NaN,
         ci95: { lower: NaN, upper: NaN },
       };
     }
 
-    const fit =
-      entries.reduce((acc, entry) => acc + entry.value.fit * entry.weight, 0) /
-      totalSubjects;
-    const lower =
-      entries.reduce((acc, entry) => acc + entry.value.ci95.lower * entry.weight, 0) /
-      totalSubjects;
-    const upper =
-      entries.reduce((acc, entry) => acc + entry.value.ci95.upper * entry.weight, 0) /
-      totalSubjects;
+    const x = getDesignRow({
+      timeScore,
+      group: null,
+      covariates: covariateDefaults,
+      dummyLevels,
+      groupCoding,
+      includeInteraction,
+      covariateColumns,
+    });
+    const fit = dot(x, beta);
+    const varFit = Math.max(quadraticForm(x, covBeta), 0);
+    const se = Math.sqrt(varFit);
 
     return {
       time: timeLabel,
-      timeScore: resolveTimeScore(timeLabel),
+      timeScore,
       fit,
-      ci95: { lower, upper },
+      ci95: {
+        lower: fit - zCrit * se,
+        upper: fit + zCrit * se,
+      },
     };
   });
 
@@ -858,7 +918,8 @@ function buildInterpretation({ timeEffect, fixedEffects, hasGroupEffect, hasInte
 
   if (hasGroupEffect) {
     const groupTerms = (fixedEffects || []).filter(
-      (effect) => effect.name.startsWith("Group:") && !effect.name.startsWith("Time ×"),
+      (effect) =>
+        effect.name.startsWith("Group") && !effect.name.startsWith("Time ×"),
     );
     const significantGroup = groupTerms.some((effect) => Number(effect.pValue) < 0.05);
     lines.push(
@@ -870,7 +931,7 @@ function buildInterpretation({ timeEffect, fixedEffects, hasGroupEffect, hasInte
 
   if (hasInteraction) {
     const interactionTerms = (fixedEffects || []).filter((effect) =>
-      effect.name.startsWith("Time × Group:"),
+      effect.name.startsWith("Time × Group"),
     );
     const significantInteraction = interactionTerms.some(
       (effect) => Number(effect.pValue) < 0.05,
@@ -932,21 +993,27 @@ function fitRandomInterceptLmmInternal({
   const includeGroup = Boolean(includeGroupEffect && groupLevels.length > 1);
   const includeInteraction = Boolean(includeTimeGroupInteraction && includeGroup);
 
-  const resolvedReferenceGroup = includeGroup
-    ? resolveReferenceGroup(groupLevels, referenceGroup, referenceMode)
-    : null;
+  const groupCoding = includeGroup
+    ? resolveGroupCoding(groupLevels, referenceGroup, referenceMode)
+    : {
+        codingMode: "treatment",
+        baselineGroup: null,
+        omittedGroup: null,
+        referenceLabel: null,
+      };
 
   const { fixedEffectNames, dummyLevels, covariateColumns } = buildDesignMetadata({
     includeGroupEffect: includeGroup,
     includeInteraction,
     groupLevels,
-    referenceGroup: resolvedReferenceGroup,
+    groupCoding,
     covariateDefinitions,
   });
 
   const modelSubjects = buildSubjectsForModel({
     preparedSubjects: subjects,
     dummyLevels,
+    groupCoding,
     includeInteraction,
     covariateColumns,
   });
@@ -989,11 +1056,6 @@ function fitRandomInterceptLmmInternal({
   });
 
   const timeEffect = fixedEffects.find((effect) => effect.name === "Time") || null;
-  const groupSubjectCounts = new Map();
-  modelSubjects.forEach((subject) => {
-    const group = subject.group ?? UNKNOWN_GROUP;
-    groupSubjectCounts.set(group, (groupSubjectCounts.get(group) || 0) + 1);
-  });
 
   const covariateDefaults = {};
   covariateDefinitions.forEach((cov) => {
@@ -1007,8 +1069,8 @@ function fitRandomInterceptLmmInternal({
   const predictions = buildPredictions({
     times,
     groupLevels,
-    groupSubjectCounts,
     dummyLevels,
+    groupCoding,
     includeInteraction,
     covariateColumns,
     covariateDefaults,
@@ -1050,15 +1112,11 @@ function fitRandomInterceptLmmInternal({
     includeInteraction,
     requestedInteraction: Boolean(includeTimeGroupInteraction),
     referenceMode,
-    referenceGroup: includeGroup ? resolvedReferenceGroup : null,
-    baselineGroup: includeGroup ? resolvedReferenceGroup : null,
+    groupCoding: includeGroup ? groupCoding.codingMode : "none",
+    referenceGroup: includeGroup ? groupCoding.referenceLabel : null,
+    baselineGroup: includeGroup ? groupCoding.baselineGroup : null,
     groupLevels,
-    selectedGroup:
-      referenceMode === "all"
-        ? UNKNOWN_GROUP
-        : includeGroup
-          ? resolvedReferenceGroup
-          : UNKNOWN_GROUP,
+    selectedGroup: includeGroup ? groupCoding.referenceLabel : UNKNOWN_GROUP,
     converged: optimization.converged,
     convergence: {
       iterations: optimization.iterations,
@@ -1073,8 +1131,9 @@ function fitRandomInterceptLmmInternal({
       timeCoding: timeEncoding.mode,
       converged: optimization.converged,
       groupReference: includeGroup
-        ? (referenceMode === "all" ? "All" : resolvedReferenceGroup)
+        ? groupCoding.referenceLabel
         : "Not used",
+      groupCoding: includeGroup ? groupCoding.codingMode : "none",
       rowsBeforeFiltering,
       rowsAfterCompleteCase,
       rowsAfterSubjectFilter,

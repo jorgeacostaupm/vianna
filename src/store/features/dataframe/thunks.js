@@ -4,50 +4,16 @@ import { getFileName, getVariableTypes } from "@/utils/functions";
 import { setQuarantineData } from "../main/slice";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { buildMetaFromVariableTypes } from "../metadata/thunks";
+import { getAggregationExecutableFormula } from "../metadata/utils/thunkUtils";
 import { setDataframe } from "./slice";
 import {
-  areColumnsEqual,
-} from "./utils/sliceUtils";
-import {
-  selectionHasEmptyValues,
-} from "./utils/selectionRef";
-import {
   computeAggregationRows,
-  getAggregationDependencies,
+  getAffectedAggregationNodes,
   normalizeNumericColumn,
   normalizeStringColumn,
   recomputeAggregationColumns,
-  sortAggregationsByDependency,
 } from "./utils/thunkUtils";
-
-export const syncNavioColumns = createAsyncThunk(
-  "dataframe/syncNavioColumns",
-  async (columns, { getState, rejectWithValue }) => {
-    try {
-      const dataframeState = getState().dataframe;
-      const nextColumns = Array.isArray(columns) ? columns : [];
-      const currentColumns = Array.isArray(dataframeState.navioColumns)
-        ? dataframeState.navioColumns
-        : [];
-      const effectiveColumns = areColumnsEqual(currentColumns, nextColumns)
-        ? currentColumns
-        : nextColumns;
-
-      const hasEmptyValues = selectionHasEmptyValues({
-        dataframe: dataframeState.dataframe,
-        selectionRef: dataframeState.selectionRef,
-        visibleColumns: effectiveColumns,
-      });
-
-      return {
-        columns: effectiveColumns,
-        hasEmptyValues,
-      };
-    } catch (err) {
-      return rejectWithValue(err?.message || "Error syncing navio columns.");
-    }
-  },
-);
+import { removeColumnsFromRows } from "./utils/rowColumns";
 
 export const generateColumn = createAsyncThunk(
   "dataframe/agg-generate",
@@ -88,12 +54,12 @@ export const generateColumnBatch = createAsyncThunk(
 
       const columns = Array.isArray(cols) ? cols : [];
       const normalizedColumns = columns
-        .filter((column) => column?.name && column?.info?.exec)
         .map((column) => ({
-          name: column.name,
-          formula: column.info.exec,
+          name: column?.name,
+          formula: getAggregationExecutableFormula(column?.aggregationConfig),
           enforceNumber: Boolean(column?.dtype === "number"),
-        }));
+        }))
+        .filter((column) => column.name && column.formula);
 
       if (normalizedColumns.length === 0) {
         return {
@@ -115,43 +81,15 @@ export const generateColumnBatch = createAsyncThunk(
   },
 );
 
-export const generateEmpty = createAsyncThunk(
-  "dataframe/agg-empty",
-  async ({ colName }, { getState, rejectWithValue }) => {
-    try {
-      const state = getState().dataframe;
-      const result = aq
-        .from(state.dataframe)
-        .derive({ [colName]: () => null }, { drop: false })
-        .objects();
-      return result;
-    } catch {
-      return rejectWithValue("Empty aggregation failed");
-    }
-  },
-);
-
-export const removeColumn = createAsyncThunk(
-  "dataframe/remove-col",
-  async ({ colName }, { getState, rejectWithValue }) => {
-    try {
-      const state = getState().dataframe;
-      const removed = [colName];
-      const result = aq.from(state.dataframe).select(aq.not(removed)).objects();
-      return result;
-    } catch {
-      return rejectWithValue("Failed to remove attribute");
-    }
-  },
-);
-
 export const removeBatch = createAsyncThunk(
   "dataframe/remove-batch",
   async ({ cols }, { getState, rejectWithValue }) => {
     try {
-      const state = getState().dataframe;
-      const result = aq.from(state.dataframe).select(aq.not(cols)).objects();
-      return result;
+      const state = getState();
+      return {
+        data: removeColumnsFromRows(state.dataframe.dataframe, cols),
+        quarantineData: removeColumnsFromRows(state.main.quarantineData, cols),
+      };
     } catch {
       return rejectWithValue("Failed to batch remove");
     }
@@ -262,53 +200,10 @@ export const replaceValuesWithNull = createAsyncThunk(
       quarantineData = nullifyRows(quarantineData);
 
       if (changedColumns.size > 0 && hierarchy.length > 0) {
-        const aggregationNodes = hierarchy.filter(
-          (node) => node?.type === "aggregation" && node?.name,
-        );
-        const nodeById = new Map(hierarchy.map((node) => [node.id, node]));
-        const dependenciesByAggregation = new Map();
-        const dependentsBySource = new Map();
-
-        aggregationNodes.forEach((agg) => {
-          const deps = getAggregationDependencies(agg, nodeById);
-          dependenciesByAggregation.set(agg.name, deps);
-          deps.forEach((depName) => {
-            if (!dependentsBySource.has(depName)) {
-              dependentsBySource.set(depName, new Set());
-            }
-            dependentsBySource.get(depName).add(agg.name);
-          });
-        });
-
-        const affectedAggregationNames = new Set();
-        const queue = [...changedColumns];
-
-        while (queue.length > 0) {
-          const sourceName = queue.shift();
-          const dependents = dependentsBySource.get(sourceName);
-          if (!dependents) continue;
-          dependents.forEach((dependentName) => {
-            if (affectedAggregationNames.has(dependentName)) return;
-            affectedAggregationNames.add(dependentName);
-            queue.push(dependentName);
-          });
-        }
-
-        if (affectedAggregationNames.size > 0) {
-          const affectedNodes = aggregationNodes.filter((node) =>
-            affectedAggregationNames.has(node.name),
-          );
-          const orderedNames = sortAggregationsByDependency(
-            affectedNodes,
-            dependenciesByAggregation,
-          );
-          const nodeByName = new Map(
-            affectedNodes.map((node) => [node.name, node]),
-          );
-          const orderedNodes = orderedNames
-            .map((name) => nodeByName.get(name))
-            .filter(Boolean);
-
+        const orderedNodes = getAffectedAggregationNodes(hierarchy, [
+          ...changedColumns,
+        ]);
+        if (orderedNodes.length > 0) {
           dataframe = recomputeAggregationColumns(dataframe, orderedNodes);
           quarantineData = recomputeAggregationColumns(
             quarantineData,
@@ -341,7 +236,7 @@ export const updateData = createAsyncThunk(
       const meta = getVariableTypes(data);
       dt = dt.derive({ [ORDER_VARIABLE]: aq.op.row_number() });
       if (isGenerateHierarchy) {
-        dispatch(buildMetaFromVariableTypes(meta));
+        await dispatch(buildMetaFromVariableTypes(meta)).unwrap();
       }
       return {
         filename: getFileName(filename),

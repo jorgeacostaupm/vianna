@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { selectCompareAnalysisContext } from "@/store/features/main";
 
 import { moveTooltip } from "@/utils/functions";
 import {
@@ -17,13 +18,14 @@ import {
   attachTickLabelGridHover,
   paintLayersInOrder,
 } from "@/utils/gridInteractions";
+import { appendLegendRoot, createLegendLayout } from "@/utils/chartLegend";
 
 const DEFAULT_HISTOGRAM_OPACITY = 0.5;
 const FOCUSED_HISTOGRAM_OPACITY = 1;
 
-export default function useHistogram({ chartRef, legendRef, data, config }) {
+export default function useHistogram({ chartRef, data, config }) {
   const dimensions = useResizeObserver(chartRef);
-  const groupVar = useSelector((s) => s.compare.groupVar);
+  const { groupVar } = useSelector(selectCompareAnalysisContext);
   const groups = Array.from(new Set((data || []).map((d) => d.type))).filter(
     (value) => value != null
   );
@@ -43,7 +45,7 @@ export default function useHistogram({ chartRef, legendRef, data, config }) {
   }, [groupsKey]);
 
   useEffect(() => {
-    if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
+    if (!dimensions || !data || !chartRef.current) return;
 
     const { width, height } = dimensions;
     const {
@@ -59,10 +61,15 @@ export default function useHistogram({ chartRef, legendRef, data, config }) {
     const yMax = getYMax(densities);
 
     d3.select(chartRef.current).selectAll("*").remove();
-    d3.select(legendRef.current).selectAll("*").remove();
-
-    const chartWidth = width - numMargin.left - numMargin.right;
-    const chartHeight = height - numMargin.top - numMargin.bottom;
+    const legendLayout = createLegendLayout({
+      width,
+      height,
+      margin: numMargin,
+      showLegend: showLegend !== false,
+      legendMaxWidth: 204,
+      minChartWidth: 240,
+    });
+    const { chartWidth, chartHeight } = legendLayout;
 
     let tooltip = d3.select("body").select("div.tooltip");
     if (tooltip.empty()) {
@@ -70,7 +77,7 @@ export default function useHistogram({ chartRef, legendRef, data, config }) {
     }
 
     const svg = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = appendLegendRoot(svg, legendLayout);
 
     const chart = svg
       .append("g")
@@ -172,7 +179,7 @@ export default function useHistogram({ chartRef, legendRef, data, config }) {
       }
     };
 
-    if (showLegend !== false) {
+    if (showLegend !== false && legend) {
       renderLegend(legend, selectionGroups, color, {
         hide,
         setHide,
@@ -191,6 +198,7 @@ export default function useHistogram({ chartRef, legendRef, data, config }) {
           setHoverGroup(null);
           focusGroupInFront(group);
         },
+        maxWidth: Math.max(0, legendLayout.legendInnerWidth - 43),
       });
     }
 
@@ -203,10 +211,10 @@ export default function useHistogram({ chartRef, legendRef, data, config }) {
   }, [data, config, dimensions, groupsKey, colorDomain]);
 
   useEffect(() => {
-    if (!chartRef.current || !legendRef.current) return;
+    if (!chartRef.current) return;
 
     const chart = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = chart.select(".chart-legend-root");
 
     chart
       .selectAll(".density")
@@ -241,7 +249,7 @@ export default function useHistogram({ chartRef, legendRef, data, config }) {
           .raise();
       });
     }
-  }, [hide, hoverGroup, selectedGroups, chartRef, legendRef]);
+  }, [hide, hoverGroup, selectedGroups, chartRef]);
 }
 
 function getHistogramOpacity(group, selectedGroups, hoverGroup) {

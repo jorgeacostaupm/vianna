@@ -1,8 +1,7 @@
 import * as d3 from "d3";
 import { CHART_OUTLINE, CHART_OUTLINE_MUTED } from "@/utils/chartTheme";
 
-import { transitionDuration } from "./constants";
-import { canNodeAcceptChildren, colorNode } from "./helpers";
+import { colorNode } from "./helpers";
 
 const getNodeShapeKind = (node) => {
   const { type } = node?.data || {};
@@ -42,7 +41,6 @@ const ensureNodeShape = (group, node) => {
 
 const canReceiveDrop = (graph, targetNode) => {
   if (!targetNode || graph.nodesDragged.length === 0) return false;
-  if (!canNodeAcceptChildren(targetNode?.data)) return false;
 
   return graph.nodesDragged.every((draggedNode) => {
     if (!draggedNode) return false;
@@ -95,7 +93,7 @@ export function drawHierarchy(source, instant = false) {
 export function drawNodes(source, instant = false) {
   const { root, main } = this;
   const graph = this;
-  const transitionTime = instant ? 0 : transitionDuration;
+  const transitionTime = this.getTransitionDuration(instant);
 
   const nodes = root.descendants();
 
@@ -258,6 +256,7 @@ export function drawNodes(source, instant = false) {
 export function drawLinks(source, instant = false) {
   const { root, main } = this;
   const links = root.links();
+  const transitionTime = this.getTransitionDuration(instant);
 
   const glink = main
     .select("#links")
@@ -270,7 +269,7 @@ export function drawLinks(source, instant = false) {
     .attr("class", "link")
     .attr("stroke", CHART_OUTLINE_MUTED)
     .attr("stroke-opacity", 1)
-    .attr("stroke-width", this.viewConfig.linkWidth)
+    .style("stroke-width", `${this.viewConfig.linkWidth}px`)
     .attr("d", () => {
       const o = { x: source.x0 ?? source.x, y: source.y0 ?? source.y };
       return this.getLinkPath({ source: o, target: o });
@@ -278,15 +277,15 @@ export function drawLinks(source, instant = false) {
 
   glink
     .merge(enterLinks)
-    .attr("stroke-width", this.viewConfig.linkWidth)
+    .style("stroke-width", `${this.viewConfig.linkWidth}px`)
     .transition()
-    .duration(instant ? 0 : transitionDuration)
+    .duration(transitionTime)
     .attr("d", (d) => this.getLinkPath(d));
 
   glink
     .exit()
     .transition()
-    .duration(instant ? 0 : transitionDuration)
+    .duration(transitionTime)
     .attr("d", () => {
       const o = { x: source.x, y: source.y };
       return this.getLinkPath({ source: o, target: o });

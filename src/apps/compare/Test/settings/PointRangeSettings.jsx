@@ -3,6 +3,7 @@ import { Typography, Switch, Select } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
+import GroupSettings from "../../GroupSettings";
 import { IntervalSettings, MarkerSettings } from "./common";
 
 const { Text } = Typography;
@@ -69,6 +70,11 @@ export default function PointRangeSettings({ config, setConfig }) {
           setConfig={setConfig}
           disabled={disabled}
         />
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Groups</div>
+        <GroupSettings />
       </div>
     </div>
   );

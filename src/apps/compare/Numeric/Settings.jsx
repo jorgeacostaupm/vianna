@@ -2,6 +2,7 @@ import React from "react";
 import { Typography, Radio, Slider, InputNumber, Switch } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
+import GroupSettings from "../GroupSettings";
 
 const { Text } = Typography;
 
@@ -75,38 +76,6 @@ export default function Settings({ config, setConfig }) {
           />
         </div>
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
-      </div>
-
-      <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Group size</div>
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Count in legend</Text>
-          <Switch
-            size="small"
-            checked={showGroupCountInLegend}
-            onChange={(v) => update("showGroupCountInLegend", v)}
-          />
-        </div>
-        {supportsAxisLabels && (
-          <div className={panelStyles.row}>
-            <Text className={panelStyles.label}>Count in group labels</Text>
-            <Switch
-              size="small"
-              checked={showGroupCountInAxis}
-              onChange={(v) => update("showGroupCountInAxis", v)}
-            />
-          </div>
-        )}
-        {chartType === "density" && (
-          <div className={panelStyles.row}>
-            <Text className={panelStyles.label}>Density stroke by size</Text>
-            <Switch
-              size="small"
-              checked={scaleDensityStrokeByGroupSize}
-              onChange={(v) => update("scaleDensityStrokeByGroupSize", v)}
-            />
-          </div>
-        )}
       </div>
 
       {chartType === "box" && (
@@ -193,6 +162,39 @@ export default function Settings({ config, setConfig }) {
           </div>
         </div>
       )}
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Groups</div>
+        <div className={panelStyles.row}>
+          <Text className={panelStyles.label}>Count in legend</Text>
+          <Switch
+            size="small"
+            checked={showGroupCountInLegend}
+            onChange={(v) => update("showGroupCountInLegend", v)}
+          />
+        </div>
+        {supportsAxisLabels && (
+          <div className={panelStyles.row}>
+            <Text className={panelStyles.label}>Count in group labels</Text>
+            <Switch
+              size="small"
+              checked={showGroupCountInAxis}
+              onChange={(v) => update("showGroupCountInAxis", v)}
+            />
+          </div>
+        )}
+        {chartType === "density" && (
+          <div className={panelStyles.row}>
+            <Text className={panelStyles.label}>Density stroke by size</Text>
+            <Switch
+              size="small"
+              checked={scaleDensityStrokeByGroupSize}
+              onChange={(v) => update("scaleDensityStrokeByGroupSize", v)}
+            />
+          </div>
+        )}
+        <GroupSettings />
+      </div>
     </div>
   );
 }

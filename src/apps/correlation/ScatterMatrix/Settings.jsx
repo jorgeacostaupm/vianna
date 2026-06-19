@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { Select, Slider, Switch, Typography } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
+import CorrelationVariableSettings from "../VariableSettings";
 
 const { Text } = Typography;
 
@@ -27,24 +28,6 @@ export default function Settings({ config, setConfig }) {
 
   return (
     <div className={panelStyles.panel}>
-      <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Variables</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Included variables</Text>
-          <Select size="small"
-            mode="multiple"
-            value={config.variables}
-            onChange={onVariablesChange}
-            placeholder="Select variables"
-            options={navioColumns.map((key) => ({
-              value: key,
-              label: key,
-            }))}
-            disabled={!config.isSync}
-          />
-        </div>
-      </div>
-
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Points</div>
         <SliderControl
@@ -86,6 +69,30 @@ export default function Settings({ config, setConfig }) {
           />
         </div>
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Variables</div>
+        <CorrelationVariableSettings />
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Scatter Variables</div>
+        <div className={panelStyles.rowStack}>
+          <Text className={panelStyles.label}>Included variables</Text>
+          <Select
+            size="small"
+            mode="multiple"
+            value={config.variables}
+            onChange={onVariablesChange}
+            placeholder="Select variables"
+            options={navioColumns.map((key) => ({
+              value: key,
+              label: key,
+            }))}
+            disabled={!config.isSync}
+          />
+        </div>
       </div>
     </div>
   );

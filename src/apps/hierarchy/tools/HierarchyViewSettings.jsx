@@ -24,6 +24,7 @@ export const DEFAULT_HIERARCHY_VIEW_CONFIG = {
   labelMaxLength: 20,
   linkWidth: 1,
   showLabels: true,
+  animateTransitions: true,
 };
 
 const sliderFormatter = (value, suffix = "") => `${value}${suffix}`;
@@ -63,6 +64,15 @@ export default function HierarchyViewSettings({
             value={linkStyle}
             onChange={(value) => onLinkStyleChange?.(value)}
             options={LINK_STYLE_OPTIONS}
+          />
+        </div>
+
+        <div className={panelStyles.row}>
+          <Text className={panelStyles.label}>Animations</Text>
+          <Switch
+            size="small"
+            checked={viewConfig.animateTransitions !== false}
+            onChange={(value) => update("animateTransitions", value)}
           />
         </div>
       </div>
@@ -112,7 +122,6 @@ export default function HierarchyViewSettings({
           step={1}
           value={viewConfig.labelFontSize}
           onChange={(value) => update("labelFontSize", value)}
-          disabled={!viewConfig.showLabels}
         />
 
         <SliderControl
@@ -123,7 +132,6 @@ export default function HierarchyViewSettings({
           step={1}
           value={viewConfig.labelMaxLength}
           onChange={(value) => update("labelMaxLength", value)}
-          disabled={!viewConfig.showLabels}
         />
 
         <SliderControl
@@ -136,14 +144,6 @@ export default function HierarchyViewSettings({
           onChange={(value) => update("linkWidth", value)}
         />
 
-        <div className={panelStyles.row}>
-          <Text className={panelStyles.label}>Show labels</Text>
-          <Switch
-            size="small"
-            checked={viewConfig.showLabels}
-            onChange={(value) => update("showLabels", value)}
-          />
-        </div>
       </div>
 
       <AppButton

@@ -2,13 +2,14 @@ import { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 
 import { notifyError } from "@/components/notifications";
+import { selectCorrelationAnalysisContext } from "@/store/features/main";
 import useSelectionRows from "@/hooks/useSelectionRows";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import { uniqueColumns } from "@/utils/viewRecords";
 
 export default function useScatterData(isSync = true, params) {
   const [data, setData] = useState([]);
-  const idVar = useSelector((s) => s.main.idVar);
+  const { idVar } = useSelector(selectCorrelationAnalysisContext);
   const selectionColumns = useMemo(
     () =>
       uniqueColumns([

@@ -1,20 +1,12 @@
 import { useRef } from "react";
 
 import useHistogram from "./useHistogram";
-import ChartWithLegend from "@/components/charts/ChartWithLegend";
+import BasicChart from "@/components/charts/BasicChart";
 
 export default function Histogram({ data, config, id }) {
   const chartRef = useRef(null);
-  const legendRef = useRef(null);
 
-  useHistogram({ chartRef, legendRef, data, config });
+  useHistogram({ chartRef, data, config });
 
-  return (
-    <ChartWithLegend
-      id={id}
-      chartRef={chartRef}
-      legendRef={legendRef}
-      showLegend={config.showLegend}
-    />
-  );
+  return <BasicChart id={id} chartRef={chartRef} />;
 }

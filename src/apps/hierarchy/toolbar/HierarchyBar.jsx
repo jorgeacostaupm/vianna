@@ -2,29 +2,21 @@ import React from "react";
 import { useSelector } from "react-redux";
 import {
   CheckSquareOutlined,
-  DownloadOutlined,
   DragOutlined,
   SettingOutlined,
 } from "@ant-design/icons";
 
 import LegendButton from "./LegendButton";
 import { Bar } from "@/components/charts/ChartBar";
-import { hierarchySelector } from "@/store/features/metadata";
-import { AppButton, APP_BUTTON_PRESETS, APP_BUTTON_VARIANTS } from "@/components/buttons/core";
+import {
+  AppButton,
+  APP_BUTTON_PRESETS,
+  APP_BUTTON_VARIANTS,
+} from "@/components/buttons/core";
 import PopoverButton from "@/components/buttons/ui/PopoverButton";
 import HierarchyViewSettings from "../tools/HierarchyViewSettings";
 import styles from "@/styles/ChartBar.module.css";
 import UndoRedoButtons from "@/components/buttons/navio/UndoRedoButtons";
-
-function downloadHierarchy(hierarchy) {
-  const meta = JSON.stringify(hierarchy, null, 2);
-  const blob = new Blob([meta], { type: "application/json" });
-  const href = URL.createObjectURL(blob);
-  const downloadLink = document.createElement("a");
-  downloadLink.href = href;
-  downloadLink.download = "hierarchy.json";
-  downloadLink.click();
-}
 
 export default function HierarchyBar({
   orientation,
@@ -37,7 +29,6 @@ export default function HierarchyBar({
   onSelectionModeChange,
   hasNodes = false,
 }) {
-  const hierarchy = useSelector(hierarchySelector);
   const hierarchyFilename = useSelector((state) => state.metadata.filename);
   const hierarchyTitle = hierarchyFilename
     ? `Hierarchy Editor · ${hierarchyFilename}`
@@ -83,13 +74,6 @@ export default function HierarchyBar({
         <div className={styles.separator} />
 
         <LegendButton />
-
-        <AppButton
-          preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
-          tooltip={"Download hierarchy"}
-          onClick={() => downloadHierarchy(hierarchy)}
-          icon={<DownloadOutlined />}
-        />
 
         {/* <BarButton
           title={

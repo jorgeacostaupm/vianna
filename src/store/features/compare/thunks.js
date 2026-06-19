@@ -4,6 +4,7 @@ import * as aq from "arquero";
 import tests from "@/utils/tests";
 import { runLevene, runShapiroWilk } from "@/utils/stats";
 import { selectSelection } from "../dataframe/selectors";
+import { selectCompareAnalysisContext } from "../main";
 
 export const runAllComparisonTests = createAsyncThunk(
   "compare/runAllComparisonTests",
@@ -47,7 +48,7 @@ export const runComparisonTest = createAsyncThunk(
       const state = getState();
       const variable = state.compare.selectedVar;
       const selectedTest = state.compare.selectedTest;
-      const groupVar = state.compare.groupVar;
+      const { groupVar } = selectCompareAnalysisContext(state);
       if (!groupVar) {
         throw new Error("Group variable is not set for comparison.");
       }
@@ -79,7 +80,8 @@ export const checkAssumptions = createAsyncThunk(
     try {
       const state = getState();
       const selection = selectSelection(state);
-      const { groupVar, selectedVar } = state.compare;
+      const { groupVar } = selectCompareAnalysisContext(state);
+      const { selectedVar } = state.compare;
       if (!groupVar) {
         throw new Error("Group variable is not set for assumptions.");
       }

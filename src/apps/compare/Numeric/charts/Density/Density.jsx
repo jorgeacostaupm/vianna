@@ -1,20 +1,12 @@
 import { useRef } from "react";
 
 import useDensity from "./useDensity";
-import ChartWithLegend from "@/components/charts/ChartWithLegend";
+import BasicChart from "@/components/charts/BasicChart";
 
 export default function Density({ data, config, id }) {
   const chartRef = useRef(null);
-  const legendRef = useRef(null);
 
-  useDensity({ chartRef, legendRef, data, config });
+  useDensity({ chartRef, data, config });
 
-  return (
-    <ChartWithLegend
-      id={id}
-      chartRef={chartRef}
-      legendRef={legendRef}
-      showLegend={config.showLegend}
-    />
-  );
+  return <BasicChart id={id} chartRef={chartRef} />;
 }

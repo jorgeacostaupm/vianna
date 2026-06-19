@@ -27,10 +27,8 @@ const SearchNodeBar = () => {
     const parent = findParentNode(nodeId);
     if (!parent) return;
 
-    if (!parent.isShown) {
-      await dispatch(
-        toggleAttribute({ attributeID: parent.id, fromFocus: true }),
-      ).unwrap();
+    if (!parent.isExpanded) {
+      dispatch(toggleAttribute({ attributeID: parent.id, fromFocus: true }));
     }
 
     await openParentsRecursively(parent.id, visited);

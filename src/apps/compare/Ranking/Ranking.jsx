@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 
 import { useSelector } from "react-redux";
 import { selectNumericVars } from "@/store/features/main";
@@ -7,16 +7,9 @@ import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
 import useRankingViewState from "./useRankingViewState";
 import Settings from "./Settings";
 import { RankingBarChart } from "./charts";
-
-const defaultConfig = {
-  isSync: true,
-  filterList: [],
-  nBars: 10,
-  pValue: 0.05,
-  desc: true,
-  showGrid: true,
-  axisLabelFontSize: 16,
-};
+import { createRankingInitialConfig } from "./rankingDefaultConfig";
+import { getRankingMagnitude } from "./rankingFilters";
+import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
 export default function Ranking({
   test,
@@ -24,11 +17,22 @@ export default function Ranking({
   id,
   onVariableClick,
   sourceOrderValues = [],
+  config: persistedConfig,
+  updateView,
 }) {
   const numericVars = useSelector(selectNumericVars);
-  const [config, setConfig] = useState({
-    ...defaultConfig,
-    nBars: Math.min(numericVars.length, defaultConfig.nBars),
+  const defaultConfig = useMemo(
+    () => createRankingInitialConfig(numericVars.length),
+    [numericVars.length],
+  );
+  const handleConfigChange = useCallback(
+    (nextConfig) => updateView?.({ config: nextConfig }),
+    [updateView],
+  );
+  const [config, setConfig] = useWorkspaceBackedState({
+    defaultValue: defaultConfig,
+    persistedValue: persistedConfig,
+    onChange: handleConfigChange,
   });
 
   const { data, recordOrders, requiredVariables } = useRankingViewState({
@@ -37,6 +41,14 @@ export default function Ranking({
     sourceOrderValues,
     numericVars,
   });
+  const maxEffectSize = useMemo(
+    () =>
+      (data?.data || []).reduce(
+        (max, item) => Math.max(max, getRankingMagnitude(item)),
+        0,
+      ),
+    [data],
+  );
 
   const chart = useMemo(() => {
     if (!data?.data?.length) {
@@ -61,7 +73,13 @@ export default function Ranking({
       remove={remove}
       config={config}
       setConfig={setConfig}
-      settings={<Settings config={config} setConfig={setConfig} />}
+      settings={
+        <Settings
+          config={config}
+          setConfig={setConfig}
+          maxEffectSize={maxEffectSize}
+        />
+      }
       recordsExport={{
         filename: `ranking_${test || "view"}`,
         recordOrders,

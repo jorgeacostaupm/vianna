@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  ApiOutlined,
   SettingOutlined,
   ExperimentOutlined,
   InfoCircleFilled,
@@ -9,16 +10,22 @@ import {
 
 import DownloadButton from "@/components/buttons/ui/DownloadButton";
 import ViewRecordsDownloadButton from "@/components/buttons/ui/ViewRecordsDownloadButton";
-import { AppButton, APP_BUTTON_PRESETS, APP_BUTTON_VARIANTS } from "@/components/buttons/core";
+import {
+  AppButton,
+  APP_BUTTON_PRESETS,
+  APP_BUTTON_VARIANTS,
+} from "@/components/buttons/core";
 import PopoverButton from "@/components/buttons/ui/PopoverButton";
 
 const DEFAULT_CHART_BAR_ACTION_ORDER = Object.freeze([
   "sync",
   "records-export",
   "download",
+  "results",
+  "tests",
+  "lmm",
   "info",
   "settings",
-  "tests",
   "close",
 ]);
 
@@ -78,14 +85,38 @@ function buildSettingsAction({ settings }) {
   ) : null;
 }
 
-function buildTestsAction({ testsSettings }) {
+function buildTestsAction({ testsSettings, testsTitle }) {
   return testsSettings ? (
     <PopoverButton
       key="tests"
       content={testsSettings}
       icon={<ExperimentOutlined />}
-      title="Tests"
+      title={testsTitle || "Tests"}
       panelWidth={400}
+    />
+  ) : null;
+}
+
+function buildLmmAction({ lmmSettings }) {
+  return lmmSettings ? (
+    <PopoverButton
+      key="lmm"
+      content={lmmSettings}
+      icon={<ApiOutlined />}
+      title="LMM"
+      panelWidth={400}
+    />
+  ) : null;
+}
+
+function buildResultsAction({ results }) {
+  return results ? (
+    <PopoverButton
+      key="results"
+      content={results}
+      icon={<InfoCircleFilled />}
+      title="Results"
+      panelWidth={420}
     />
   ) : null;
 }
@@ -107,8 +138,10 @@ const DEFAULT_ACTION_BUILDERS = Object.freeze({
   "records-export": buildRecordsExportAction,
   download: buildDownloadAction,
   info: buildInfoAction,
+  results: buildResultsAction,
   settings: buildSettingsAction,
   tests: buildTestsAction,
+  lmm: buildLmmAction,
   close: buildCloseAction,
 });
 
@@ -126,6 +159,9 @@ function resolveConfiguredActions({ actions, context }) {
 }
 
 function materializeAction(action, context, index) {
+  if (typeof action === "string") {
+    return DEFAULT_ACTION_BUILDERS[action]?.(context);
+  }
   if (typeof action === "function") {
     return action(context, index);
   }

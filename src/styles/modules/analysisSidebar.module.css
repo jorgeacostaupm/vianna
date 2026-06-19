@@ -11,7 +11,8 @@
   justify-content: flex-start;
   gap: var(--space-3);
   height: 100%;
-  overflow: auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .analysisSidebarHeader {
@@ -43,7 +44,8 @@
 }
 
 .analysisSidebarContent {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -51,13 +53,29 @@
   align-items: stretch;
   align-content: stretch;
   gap: var(--space-3);
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .analysisSidebarContent > * {
   flex: 0 0 auto;
   min-width: 0;
   height: auto;
+}
+
+.analysisSidebarContent::-webkit-scrollbar {
+  width: 8px;
+}
+
+.analysisSidebarContent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.analysisSidebarContent::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
 }
 
 @media (max-width: 980px) {
@@ -74,5 +92,4 @@
     align-items: center;
     justify-content: center;
   }
-
 }

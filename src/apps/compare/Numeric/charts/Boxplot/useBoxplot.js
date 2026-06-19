@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
+import { selectCompareAnalysisContext } from "@/store/features/main";
 
 import { moveTooltip } from "@/utils/functions";
 import {
@@ -12,6 +13,7 @@ import {
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
 import { CHART_OUTLINE, CHART_OUTLINE_MUTED } from "@/utils/chartTheme";
+import { appendLegendRoot, createLegendLayout } from "@/utils/chartLegend";
 import {
   GROUP_CATEGORICAL_PALETTE,
   sortGroupsAlphanumerically,
@@ -59,9 +61,9 @@ function computeBoxStats(values) {
   };
 }
 
-export default function useBoxplot({ chartRef, legendRef, data, config }) {
+export default function useBoxplot({ chartRef, data, config }) {
   const dimensions = useResizeObserver(chartRef);
-  const groupVar = useSelector((s) => s.compare.groupVar);
+  const { groupVar } = useSelector(selectCompareAnalysisContext);
   const groups = Array.from(new Set((data || []).map((d) => d.type))).filter(
     (value) => value != null
   );
@@ -138,15 +140,20 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
   }, [data, xGroups, showPoints]);
 
   useEffect(() => {
-    if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
+    if (!dimensions || !data || !chartRef.current) return;
 
     const { width, height } = dimensions;
 
     d3.select(chartRef.current).selectAll("*").remove();
-    d3.select(legendRef.current).selectAll("*").remove();
-
-    const chartWidth = width - numMargin.left - numMargin.right;
-    const chartHeight = height - numMargin.top - numMargin.bottom;
+    const legendLayout = createLegendLayout({
+      width,
+      height,
+      margin: numMargin,
+      showLegend: showLegend !== false,
+      legendMaxWidth: 204,
+      minChartWidth: 240,
+    });
+    const { chartWidth, chartHeight } = legendLayout;
 
     let tooltip = d3.select("body").select("div.tooltip");
     if (tooltip.empty()) {
@@ -154,7 +161,7 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
     }
 
     const svg = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = appendLegendRoot(svg, legendLayout);
 
     const chart = svg
       .append("g")
@@ -376,11 +383,12 @@ export default function useBoxplot({ chartRef, legendRef, data, config }) {
       }
     });
 
-    if (showLegend !== false) {
+    if (showLegend !== false && legend) {
       renderLegend(legend, xGroups, color, {
         labelByGroup: showGroupCountInLegend
           ? (group) => formatGroupCountLabel(group, groupCounts)
           : undefined,
+        maxWidth: Math.max(0, legendLayout.legendInnerWidth - 43),
       });
     }
 

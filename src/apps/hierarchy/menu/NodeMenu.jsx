@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { pubsub } from "@/utils/pubsub";
 import { Formik, Form } from "formik";
@@ -8,7 +8,7 @@ import { updateAttribute } from "@/store/features/metadata";
 import { NodeBar } from "@/components/charts/ChartBar";
 import styles from "@/styles/Charts.module.css";
 
-import { NodeSchema } from "./NodeValidation";
+import { validateNodeValues } from "./NodeValidation";
 import NodeAggregationConfig from "./NodeAggregationConfig";
 import CustomMeasure from "./aggregations/CustomMeasure";
 import { VARIABLE_VALUES_LIMIT } from "./nodeMenuConstants";
@@ -20,43 +20,76 @@ import NodeDescriptionField from "./components/NodeDescriptionField";
 import NodeHeaderFields from "./components/NodeHeaderFields";
 import NodeVariablePreview from "./components/NodeVariablePreview";
 import SaveButton from "./components/SaveButton";
+import { extractMeanWeightsFromFormula } from "@/store/features/metadata/utils/thunkUtils";
 
 const { subscribe, unsubscribe } = pubsub;
 
 const NodeMenu = () => {
-  const [node, setNode] = useState(null);
   const [nodeId, setNodeId] = useState(null);
-  const [openMenu, toggleMenu] = useState(false);
-  const attributes = useSelector((state) => state.metadata.attributes);
+  const [openMenu, setOpenMenu] = useState(false);
+  const [allowPendingNode, setAllowPendingNode] = useState(false);
+  const attributes = useSelector((state) => state.metadata.attributes || []);
   const dataframe = useSelector((state) => state.dataframe.dataframe);
   const quarantineData = useSelector((state) => state.main.quarantineData);
-  const attributesRef = useRef(attributes);
 
   const dispatch = useDispatch();
 
   const formRef = useRef(null);
   const resizeRef = useRef();
 
-  useEffect(() => {
-    setNode(() => attributes.find((n) => n.id === nodeId));
-    attributesRef.current = attributes;
-  }, [attributes]);
+  const node = useMemo(() => {
+    if (nodeId == null) return null;
+    return attributes.find((n) => n.id === nodeId) || null;
+  }, [attributes, nodeId]);
+
+  const availableNodes = useMemo(() => {
+    if (!node) return [];
+
+    const usedAttributeIds = new Set(
+      Array.isArray(node.aggregationConfig?.usedAttributes)
+        ? node.aggregationConfig.usedAttributes
+        : [],
+    );
+    const meanWeights =
+      node.aggregationConfig?.operation === "mean"
+        ? extractMeanWeightsFromFormula(node.aggregationConfig?.formula)
+        : new Map();
+
+    return (Array.isArray(node.related) ? node.related : [])
+      .map((i) => {
+        const n = attributes.find((n) => n.id === i);
+        if (n == null) return null;
+        return {
+          id: n.id,
+          name: n.name,
+          weight: meanWeights.get(n.name) ?? 1,
+          used: usedAttributeIds.has(n.id),
+        };
+      })
+      .filter((n) => n != null);
+  }, [attributes, node]);
 
   useEffect(() => {
-    const handleNodeInspection = ({ nodeId }) => {
-      const attrs = attributesRef.current;
-      const foundNode = attrs.find((n) => n.id === nodeId);
-      setNode(foundNode);
+    const handleNodeInspection = ({ nodeId, required = false }) => {
+      if (nodeId == null) {
+        setNodeId(null);
+        setAllowPendingNode(false);
+        setOpenMenu(false);
+        return;
+      }
+
       setNodeId(nodeId);
-      toggleMenu(nodeId != null);
+      setAllowPendingNode(Boolean(required));
+      setOpenMenu(true);
     };
 
     const handleToggleInspect = () => {
-      toggleMenu((prev) => !prev);
+      setOpenMenu((prev) => !prev);
     };
 
     const handleUntoggle = () => {
-      toggleMenu(false);
+      setOpenMenu(false);
+      setAllowPendingNode(false);
     };
 
     subscribe("nodeInspectionNode", handleNodeInspection);
@@ -71,8 +104,24 @@ const NodeMenu = () => {
   }, []);
 
   useEffect(() => {
-    pubsub.publish("nodeMenuVisibilityChanged", { isOpen: openMenu });
-  }, [openMenu]);
+    if (!openMenu || nodeId == null) return;
+
+    if (node) {
+      if (allowPendingNode) setAllowPendingNode(false);
+      return;
+    }
+
+    if (!allowPendingNode) {
+      setNodeId(null);
+      setOpenMenu(false);
+    }
+  }, [allowPendingNode, node, nodeId, openMenu]);
+
+  useEffect(() => {
+    pubsub.publish("nodeMenuVisibilityChanged", {
+      isOpen: openMenu && Boolean(node),
+    });
+  }, [node, openMenu]);
 
   useEffect(() => {
     const handleUnload = () => {
@@ -94,17 +143,10 @@ const NodeMenu = () => {
     }
   };
 
-  const availableNodes = node.related
-    .map((i) => {
-      const n = attributes.find((n) => n.id === i);
-      if (n == null) return null;
-      const isUsed =
-        node.info && node.info.usedAttributes.some((u) => u.id === n.id);
-      return { id: n.id, name: n.name, weight: 1, used: isUsed };
-    })
-    .filter((n) => n != null);
-
-  const closeTab = () => toggleMenu((prev) => !prev);
+  const closeTab = () => {
+    setOpenMenu(false);
+    setAllowPendingNode(false);
+  };
 
   return (
     openMenu && (
@@ -114,7 +156,7 @@ const NodeMenu = () => {
           innerRef={formRef}
           initialValues={node}
           onSubmit={onSubmit}
-          validationSchema={NodeSchema}
+          validate={(values) => validateNodeValues(values, attributes)}
           validateOnMount={true}
           enableReinitialize={true}
         >
@@ -149,10 +191,10 @@ const NodeMenu = () => {
 
                 {values.type === "aggregation" ? (
                   availableNodes.length === 0 ? (
-                    <CustomMeasure formula={values.info.formula} />
+                    <CustomMeasure formula={values.aggregationConfig.formula} />
                   ) : (
                     <NodeAggregationConfig
-                      aggOp={values.info.operation || "sum"}
+                      aggOp={values.aggregationConfig.operation || "sum"}
                       nodes={availableNodes}
                       vals={values}
                       save={<SaveButton />}

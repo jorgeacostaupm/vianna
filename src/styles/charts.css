@@ -306,7 +306,6 @@ svg line.chart-grid-line,
 
 .link {
   stroke: var(--color-border-strong);
-  stroke-width: 1.5px;
   stroke-linecap: round;
   opacity: 0.9;
 }

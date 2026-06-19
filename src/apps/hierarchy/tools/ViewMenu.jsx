@@ -1,13 +1,9 @@
 import SearchNodeBar from "./SearchNodeBar";
+import styles from "@/styles/Charts.module.css";
+
 const ViewMenu = () => {
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: "calc(var(--view-bar-height) + var(--space-2))",
-        left: "var(--space-3)",
-      }}
-    >
+    <div className={styles.hierarchyViewMenu}>
       <SearchNodeBar />
     </div>
   );

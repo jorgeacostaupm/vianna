@@ -21,12 +21,18 @@ export default function Bar({ title, config, updateConfig }) {
         </div>
 
         <div className={styles.right}>
+          <SwitchButton />
           <WarningNullButton />
           <QuarantineButton />
-          <SwitchButton />
-          <NavioLegendButton />
+
+          <div className={styles.separator} />
+
           <EditColumnButton></EditColumnButton>
           <ExportDataButton></ExportDataButton>
+
+          <div className={styles.separator} />
+
+          <NavioLegendButton />
           <NavioSettingsButton
             config={config}
             updateConfig={updateConfig}

@@ -4,8 +4,12 @@ import { toggleAttribute } from "@/store/features/metadata";
 import { pubsub } from "@/utils/pubsub";
 import { fixTooltipToNode } from "@/utils/functions";
 
-import { dragClickThreshold, transitionDuration } from "./constants";
+import {
+  dragClickThreshold,
+  tooltipHoverDelayMs,
+} from "./constants";
 import { rangeUnordered } from "./helpers";
+import { getSiblingReorderIndex } from "./siblingReorder";
 
 const { publish } = pubsub;
 
@@ -20,16 +24,16 @@ export function addNodeEvents(nodes) {
         graph.svg.style("cursor", "grab");
       }
 
-      if (!node?.data?.desc || graph.onDrag) return;
+      if (!node?.data?.description || graph.onDrag) return;
 
       graph._tooltipNode = node;
       graph._tooltipTimer = setTimeout(() => {
         if (graph.onDrag || graph._tooltipNode !== node) return;
 
-        graph.tooltip.html(node.data.desc);
+        graph.tooltip.html(node.data.description);
 
         fixTooltipToNode(d3.select(this), graph.tooltip);
-      }, 700);
+      }, tooltipHoverDelayMs);
     })
     .on("mouseleave", () => {
       graph.svg.style(
@@ -185,24 +189,12 @@ export function getDragBehaviour() {
 
           const sortedSiblings = siblings.slice().sort((a, b) => a.x - b.x);
 
-          let leftSibling = null;
-          let rightSibling = null;
-          let newIndex = graph._dragOriginalIndex;
-
-          for (let i = 0; i < sortedSiblings.length; i++) {
-            if (node.x < sortedSiblings[i].x) {
-              rightSibling = sortedSiblings[i];
-              leftSibling = i > 0 ? sortedSiblings[i - 1] : null;
-              newIndex = i;
-              break;
-            }
-          }
-
-          if (rightSibling === null) {
-            leftSibling = sortedSiblings[sortedSiblings.length - 1];
-            rightSibling = null;
-            newIndex = sortedSiblings.length;
-          }
+          const newIndex = getSiblingReorderIndex({
+            draggedX: node.x,
+            originalIndex: graph._dragOriginalIndex,
+            sortedSiblings,
+            assignRadius: graph.getAssignRadius(),
+          });
 
           const range = rangeUnordered(newIndex, graph._dragOriginalIndex);
           parent.children.forEach((childNode, i) => {
@@ -268,6 +260,15 @@ export function getDragBehaviour() {
           });
 
           graph.newIndex = newIndex;
+
+          const leftSibling =
+            newIndex === graph._dragOriginalIndex
+              ? null
+              : sortedSiblings[newIndex - 1];
+          const rightSibling =
+            newIndex === graph._dragOriginalIndex
+              ? null
+              : sortedSiblings[newIndex];
 
           graph.main
             .selectAll(".circleG")
@@ -403,7 +404,7 @@ export function onNodeClick(node) {
   );
 
   this.drawHierarchy(node);
-  this.scheduleNavioSync(transitionDuration);
+  this.scheduleNavioSync(this.getTransitionDuration());
 }
 
 export function getBrush() {

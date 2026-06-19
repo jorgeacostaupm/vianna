@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useDropzone } from "react-dropzone";
-import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import { UploadOutlined } from "@ant-design/icons";
 
 import { FileProcessorFactory } from "./drag";
 import styles from "../Data.module.css";
@@ -99,10 +99,11 @@ export default function DragAndDropHierarchy() {
     reader.readAsText(file);
   }, []);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps } = useDropzone({
     onDrop: handleFileDrop,
     maxFiles: 1,
     accept: ACCEPTED_FORMATS,
+    multiple: false,
     onDropRejected: () => {
       notifyWarning({
         message: "Unsupported file",
@@ -113,21 +114,28 @@ export default function DragAndDropHierarchy() {
 
   return (
     <>
-      <div {...getRootProps({ className: styles.dropzone })}>
+      <div
+        {...getRootProps({
+          className: `${styles.dropzone} ${styles.dataDropzone}`,
+          "aria-label": "Upload hierarchy file",
+        })}
+      >
         <input {...getInputProps()} />
-        {!isDragActive && (
-          <div className={styles.dropContent}>
-            {!filename && <PlusOutlined />}
-            <span className={styles.text}>
-              {isReadingFile
-                ? "Reading file..."
-                : filename || "Click or drop a JSON file"}
-            </span>
-          </div>
+        <UploadOutlined />
+        <span className={styles.dataDropLabel}>
+          Choose a file or drag it here
+        </span>
+      </div>
+      <div className={styles.dataDropHint}>
+        <span className={styles.subtitle}>Accepted: .json</span>
+        {(isReadingFile || filename) && (
+          <span className={styles.text}>
+            {isReadingFile ? "Reading file..." : filename}
+          </span>
         )}
       </div>
 
-      <div className={styles.controls}>
+      <div className={`${styles.controls} ${styles.dataImportControls}`}>
         <AppButton
           preset={APP_BUTTON_PRESETS.ACTION}
           onClick={handleUpload}
@@ -136,7 +144,7 @@ export default function DragAndDropHierarchy() {
           icon={<UploadOutlined />}
           shape="default"
         >
-          Upload Hierarchy
+          Import
         </AppButton>
       </div>
     </>

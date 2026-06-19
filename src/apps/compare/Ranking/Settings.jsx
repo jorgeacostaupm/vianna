@@ -3,13 +3,25 @@ import { Typography, Radio, Slider, Switch } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
+import GroupSettings from "../GroupSettings";
 
 const { Text } = Typography;
 
-export default function Settings({ config, setConfig }) {
-  const { desc, nBars, pValue, showGrid } = config;
+export default function Settings({ config, setConfig, maxEffectSize = 0 }) {
+  const {
+    desc,
+    nBars = 10,
+    pValue = 0.05,
+    effectSize = 0,
+    showGrid,
+  } = config;
   const update = (field, value) =>
     setConfig((prev) => ({ ...prev, [field]: value }));
+  const effectSizeSliderMax = Math.max(
+    1,
+    effectSize,
+    Math.ceil(maxEffectSize * 100) / 100,
+  );
 
   return (
     <div className={panelStyles.panel}>
@@ -42,6 +54,15 @@ export default function Settings({ config, setConfig }) {
           onChange={(v) => update("pValue", v)}
         />
         <SliderControl
+          label="Effect size"
+          valueLabel={effectSize.toFixed(2)}
+          min={0}
+          max={effectSizeSliderMax}
+          step={0.01}
+          value={effectSize}
+          onChange={(v) => update("effectSize", v)}
+        />
+        <SliderControl
           label="Bars"
           valueLabel={`${nBars}`}
           min={1}
@@ -63,6 +84,11 @@ export default function Settings({ config, setConfig }) {
           />
         </div>
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Groups</div>
+        <GroupSettings />
       </div>
     </div>
   );

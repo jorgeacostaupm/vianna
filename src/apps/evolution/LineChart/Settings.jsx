@@ -10,8 +10,15 @@ import {
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import evolutionTests from "@/utils/evolution_tests";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
+import EvolutionVariableSettings from "../VariableSettings";
 
 const { Text } = Typography;
+
+const normalizeOptionalNumber = (value) => {
+  if (value == null || value === "") return null;
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
+};
 
 export default function Settings({
   mode = "series-appearance",
@@ -36,6 +43,7 @@ export default function Settings({
     showLmmCI,
     showComplete,
     showIncomplete,
+    incompleteRequiredTimes = [],
     lmmReferenceGroup,
     forceDiscreteAggregatedMode,
     ratioNodeScale,
@@ -58,6 +66,9 @@ export default function Settings({
     testIds = [],
     testTimeFrom,
     testTimeTo,
+    yAxisMode = "auto",
+    yAxisMin,
+    yAxisMax,
   } = config;
   const lmmSelected = testIds.includes("lmm-random-intercept");
   const update = (field, value) =>
@@ -126,7 +137,7 @@ export default function Settings({
     return (
       <div className={panelStyles.panel}>
         <div className={panelStyles.section}>
-          <div className={panelStyles.sectionTitle}>Tests</div>
+          <div className={panelStyles.sectionTitle}>GLOBAL</div>
           <Text className={panelStyles.helper}>
             Select one or more tests to compute for the evolution view.
           </Text>
@@ -185,6 +196,17 @@ export default function Settings({
           </div>
         )}
 
+        <div className={panelStyles.section}>
+          <div className={panelStyles.sectionTitle}>Variables</div>
+          <EvolutionVariableSettings />
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "lmm") {
+    return (
+      <div className={panelStyles.panel}>
         {!!lmmTests.length && (
           <div className={panelStyles.section}>
             <div className={panelStyles.sectionTitle}>Mixed Model (LMM)</div>
@@ -258,6 +280,11 @@ export default function Settings({
               </Text>
             )}
 
+            <Text className={panelStyles.helper}>
+              Selecting `All` uses a global intercept across groups instead of
+              taking one group as the model baseline.
+            </Text>
+
             {!lmmSelected && (
               <Text className={panelStyles.helper}>
                 Enable the LMM test to run mixed model analysis.
@@ -265,6 +292,11 @@ export default function Settings({
             )}
           </div>
         )}
+
+        <div className={panelStyles.section}>
+          <div className={panelStyles.sectionTitle}>Variables</div>
+          <EvolutionVariableSettings />
+        </div>
       </div>
     );
   }
@@ -359,6 +391,33 @@ export default function Settings({
             onChange={(v) => update("showIncomplete", v)}
           />
         </div>
+        {Boolean(showIncomplete) && (
+          <div className={panelStyles.rowStack}>
+            <Text className={panelStyles.label}>
+              Required timestamps in incomplete items
+            </Text>
+            <Text className={panelStyles.helper}>
+              Keep only incomplete participant records that contain at least
+              one selected timestamp. The others are excluded from drawing and
+              calculations.
+            </Text>
+            <Select
+              allowClear
+              mode="multiple"
+              size="small"
+              className={panelStyles.control}
+              options={timeOptions}
+              placeholder="Any available timestamp"
+              value={(Array.isArray(incompleteRequiredTimes)
+                ? incompleteRequiredTimes
+                : []
+              ).filter((time) => availableTimes.includes(String(time)))}
+              onChange={(value) =>
+                update("incompleteRequiredTimes", value ?? [])
+              }
+            />
+          </div>
+        )}
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
         {/*         <div className={panelStyles.row}>
           <span className={panelStyles.labelInline}>
@@ -456,6 +515,49 @@ export default function Settings({
       </div>
 
       <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Y Axis</div>
+        <div className={panelStyles.row}>
+          <Text className={panelStyles.label}>Manual range</Text>
+          <Switch
+            size="small"
+            checked={yAxisMode === "manual"}
+            onChange={(enabled) =>
+              update("yAxisMode", enabled ? "manual" : "auto")
+            }
+          />
+        </div>
+        <Text className={panelStyles.helper}>
+          {yAxisMode === "manual"
+            ? "Set min and max manually. You can leave one side empty to keep the automatic bound."
+            : "Automatic range follows the visible evolution data."}
+        </Text>
+        <div className={panelStyles.inline}>
+          <InputNumber
+            size="small"
+            className={panelStyles.control}
+            value={yAxisMin}
+            onChange={(value) =>
+              update("yAxisMin", normalizeOptionalNumber(value))
+            }
+            addonBefore="min"
+            step={0.1}
+            disabled={yAxisMode !== "manual"}
+          />
+          <InputNumber
+            size="small"
+            className={panelStyles.control}
+            value={yAxisMax}
+            onChange={(value) =>
+              update("yAxisMax", normalizeOptionalNumber(value))
+            }
+            addonBefore="max"
+            step={0.1}
+            disabled={yAxisMode !== "manual"}
+          />
+        </div>
+      </div>
+
+      <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Appearance</div>
 
         <SliderControl
@@ -523,6 +625,11 @@ export default function Settings({
             onChange={(v) => update("showGridBehindAll", v)}
           />
         </div>
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Variables</div>
+        <EvolutionVariableSettings />
       </div>
     </div>
   );

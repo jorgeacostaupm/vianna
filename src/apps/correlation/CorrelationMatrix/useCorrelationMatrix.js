@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import { useEffect } from "react";
+import { useSelector } from "react-redux";
 import {
   interpolateBrBG,
   interpolatePiYG,
@@ -14,6 +15,7 @@ import { moveTooltip } from "@/utils/functions";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import { CORRELATION_METHOD_MAP } from "./constants";
 import { CHART_HIGHLIGHT } from "@/utils/chartTheme";
+import { selectAttributeDescriptionsByName } from "@/store/features/metadata/selectors";
 
 const INTERPOLATORS = {
   rdBu: interpolateRdBu,
@@ -26,8 +28,39 @@ const INTERPOLATORS = {
   spectral: interpolateSpectral,
 };
 
-export default function useCorrelationMatrix({ chartRef, data, config, params }) {
+const HIGHLIGHT_STROKE_WIDTH = 2;
+const HIGHLIGHT_BAND_OFFSET = 4;
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (char) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[char] ?? char,
+  );
+}
+
+function getDescriptionHtml(name, description) {
+  const safeName = escapeHtml(name);
+  const safeDescription = escapeHtml(description);
+  return safeDescription
+    ? `<strong>${safeName}</strong><br>${safeDescription}`
+    : `<strong>${safeName}</strong><br><em>No description available.</em>`;
+}
+
+export default function useCorrelationMatrix({
+  chartRef,
+  data,
+  config,
+  params,
+}) {
   const dimensions = useResizeObserver(chartRef);
+  const descriptionsByName = useSelector(selectAttributeDescriptionsByName);
 
   useEffect(() => {
     if (!dimensions || !data || !chartRef.current) return;
@@ -51,16 +84,16 @@ export default function useCorrelationMatrix({ chartRef, data, config, params })
 
       const tempSvg = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "svg"
+        "svg",
       );
       tempContainer.appendChild(tempSvg);
 
       const text = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "text"
+        "text",
       );
       text.textContent = variables.reduce((a, b) =>
-        a.length > b.length ? a : b
+        a.length > b.length ? a : b,
       );
       text.setAttribute("transform", "rotate(-45)");
       tempSvg.appendChild(text);
@@ -103,6 +136,11 @@ export default function useCorrelationMatrix({ chartRef, data, config, params })
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
+    const highlightLayer = chart
+      .append("g")
+      .attr("class", "matrix-highlight-layer")
+      .style("pointer-events", "none");
+
     const position = d3
       .scaleBand()
       .domain(variables)
@@ -133,9 +171,63 @@ export default function useCorrelationMatrix({ chartRef, data, config, params })
       renderLegend();
     }
 
+    function setActiveLabels({ row = null, column = null } = {}) {
+      chart
+        .selectAll(".y-labels")
+        .style("fill", (d) => (d === column ? CHART_HIGHLIGHT : null))
+        .style("font-weight", (d) => (d === column ? 700 : null));
+
+      chart
+        .selectAll(".x-labels")
+        .style("fill", (d) => (d === row ? CHART_HIGHLIGHT : null))
+        .style("font-weight", (d) => (d === row ? 700 : null));
+    }
+
+    function clearBandHighlight() {
+      highlightLayer.selectAll("*").remove();
+      setActiveLabels();
+    }
+
+    function renderBandHighlight({ row = null, column = null } = {}) {
+      highlightLayer.selectAll("*").remove();
+      highlightLayer.raise();
+      setActiveLabels({ row, column });
+
+      if (column && position(column) != null) {
+        const x0 = position(column) - HIGHLIGHT_BAND_OFFSET;
+        const x1 =
+          position(column) + position.bandwidth() + HIGHLIGHT_BAND_OFFSET;
+        [x0, x1].forEach((xPos) => {
+          highlightLayer
+            .append("line")
+            .attr("x1", xPos)
+            .attr("x2", xPos)
+            .attr("y1", 0)
+            .attr("y2", chartSize)
+            .attr("stroke", CHART_HIGHLIGHT)
+            .attr("stroke-width", HIGHLIGHT_STROKE_WIDTH);
+        });
+      }
+
+      if (row && position(row) != null) {
+        const y0 = position(row) - HIGHLIGHT_BAND_OFFSET;
+        const y1 = position(row) + position.bandwidth() + HIGHLIGHT_BAND_OFFSET;
+        [y0, y1].forEach((yPos) => {
+          highlightLayer
+            .append("line")
+            .attr("x1", 0)
+            .attr("x2", chartSize)
+            .attr("y1", yPos)
+            .attr("y2", yPos)
+            .attr("stroke", CHART_HIGHLIGHT)
+            .attr("stroke-width", HIGHLIGHT_STROKE_WIDTH);
+        });
+      }
+    }
+
     function renderCorrelationCell(x, y) {
       const pair = data.find(
-        (d) => (d.x === x && d.y === y) || (d.x === y && d.y === x)
+        (d) => (d.x === x && d.y === y) || (d.x === y && d.y === x),
       );
       if (!pair || !Number.isFinite(pair.value)) return;
       const value = pair.value;
@@ -155,22 +247,19 @@ export default function useCorrelationMatrix({ chartRef, data, config, params })
         .attr("rx", 3)
         .attr("ry", 3)
         .style("fill", color(value))
-        .on("mouseover", function (e) {
-          const target = e.target;
-          d3.select(target).style("stroke", CHART_HIGHLIGHT).raise();
-          tooltip.style("opacity", 1);
+        .on("mouseover", function () {
+          renderBandHighlight({ row: y, column: x });
           const methodLabel = methodInfo?.label || "Pearson (r)";
-          let html = `<strong> ${x} & ${y}</strong> <br> ${methodLabel}: ${value.toFixed(
-            2
-          )}`;
+          let html = `<strong>${escapeHtml(x)} &amp; ${escapeHtml(y)}</strong><br>${escapeHtml(
+            methodLabel,
+          )}: ${value.toFixed(2)}`;
           tooltip.style("opacity", 1).html(html);
         })
         .on("mousemove", function (e) {
           moveTooltip(e, tooltip, chart);
         })
-        .on("mouseout", function (e) {
-          const target = e.target;
-          d3.select(target).style("stroke", null);
+        .on("mouseout", function () {
+          clearBandHighlight();
           tooltip.style("opacity", 0);
         });
     }
@@ -235,11 +324,23 @@ export default function useCorrelationMatrix({ chartRef, data, config, params })
             (position(d) + position.bandwidth() / 2) +
             "," +
             -10 +
-            ")rotate(-45)"
+            ")rotate(-45)",
         )
         .attr("text-anchor", "start")
-        .append("title")
-        .text((d) => d);
+        .style("cursor", "default")
+        .on("mouseover", function (e, d) {
+          renderBandHighlight({ column: d });
+          tooltip
+            .style("opacity", 1)
+            .html(getDescriptionHtml(d, descriptionsByName?.[d] || ""));
+        })
+        .on("mousemove", function (e) {
+          moveTooltip(e, tooltip, chart);
+        })
+        .on("mouseout", function () {
+          clearBandHighlight();
+          tooltip.style("opacity", 0);
+        });
 
       chart
         .selectAll(".x-labels")
@@ -254,8 +355,22 @@ export default function useCorrelationMatrix({ chartRef, data, config, params })
             (chartSize + 10) +
             "," +
             (position(d) + position.bandwidth() / 2 + 5) +
-            ")"
-        );
+            ")",
+        )
+        .style("cursor", "default")
+        .on("mouseover", function (e, d) {
+          renderBandHighlight({ row: d });
+          tooltip
+            .style("opacity", 1)
+            .html(getDescriptionHtml(d, descriptionsByName?.[d] || ""));
+        })
+        .on("mousemove", function (e) {
+          moveTooltip(e, tooltip, chart);
+        })
+        .on("mouseout", function () {
+          clearBandHighlight();
+          tooltip.style("opacity", 0);
+        });
     }
-  }, [data, config, dimensions, params?.method]);
+  }, [data, config, descriptionsByName, dimensions, params?.method]);
 }

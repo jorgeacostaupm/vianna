@@ -269,6 +269,9 @@ function LmmBody({ result }) {
             Group reference = {metadata.groupReference || result.referenceGroup || "—"}
           </div>
           <div className={styles.statLine}>
+            Group coding = {metadata.groupCoding || result.groupCoding || "—"}
+          </div>
+          <div className={styles.statLine}>
             Converged = {(metadata.converged ?? result.converged) ? "yes" : "no"}
           </div>
         </div>

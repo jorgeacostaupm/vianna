@@ -67,36 +67,6 @@ export default function Settings({ config, setConfig, params, setParams }) {
   return (
     <div className={panelStyles.panel}>
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Variables</div>
-        <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Included variables</Text>
-          <Select
-            size="small"
-            mode="multiple"
-            value={params.variables}
-            onChange={onVariablesChange}
-            placeholder="Select variables"
-            options={navioColumns.map((key) => ({
-              value: key,
-              label: key,
-            }))}
-            disabled={!config.isSync}
-          />
-        </div>
-        <div className={panelStyles.inline}>
-          <Text className={panelStyles.label}>Top correlations</Text>
-          <InputNumber
-            size="small"
-            min={0}
-            value={params.nTop}
-            onChange={onChange}
-            style={{ width: 120 }}
-          />
-          <AppButton type="primary" icon={<EditOutlined />} onClick={onClick} />
-        </div>
-      </div>
-
-      <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Correlation</div>
         <div className={panelStyles.rowStack}>
           <Text className={panelStyles.label}>Method</Text>
@@ -147,6 +117,36 @@ export default function Settings({ config, setConfig, params, setParams }) {
           />
         </div>
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
+      </div>
+
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Variables</div>
+        <div className={panelStyles.rowStack}>
+          <Text className={panelStyles.label}>Included variables</Text>
+          <Select
+            size="small"
+            mode="multiple"
+            value={params.variables}
+            onChange={onVariablesChange}
+            placeholder="Select variables"
+            options={navioColumns.map((key) => ({
+              value: key,
+              label: key,
+            }))}
+            disabled={!config.isSync}
+          />
+        </div>
+        <div className={panelStyles.inline}>
+          <Text className={panelStyles.label}>Top correlations</Text>
+          <InputNumber
+            size="small"
+            min={0}
+            value={params.nTop}
+            onChange={onChange}
+            style={{ width: 120 }}
+          />
+          <AppButton type="primary" icon={<EditOutlined />} onClick={onClick} />
+        </div>
       </div>
     </div>
   );

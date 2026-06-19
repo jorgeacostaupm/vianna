@@ -4,29 +4,34 @@ import { moveTooltip } from "@/utils/functions";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import { paintLayersInOrder } from "@/utils/gridInteractions";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
+import {
+  appendLegendRoot,
+  createLegendLayout,
+  truncateSvgText,
+} from "@/utils/chartLegend";
 
 export const catMargins = { top: 30, right: 40, bottom: 50, left: 50 };
 
-export default function useGroupedBarChart({
-  chartRef,
-  legendRef,
-  data,
-  config,
-}) {
+export default function useGroupedBarChart({ chartRef, data, config }) {
   const dimensions = useResizeObserver(chartRef);
 
   useEffect(() => {
-    if (!dimensions || !data || !chartRef.current || !legendRef.current) return;
+    if (!dimensions || !data || !chartRef.current) return;
 
     const { width, height } = dimensions;
     const { chartData, categories, categoriesWithValues, groupVar } = data;
     const { showLegend, showGrid = true, groupOrder, categoryOrder } = config || {};
 
     d3.select(chartRef.current).selectAll("*").remove();
-    d3.select(legendRef.current).selectAll("*").remove();
-
-    const chartWidth = width - catMargins.left - catMargins.right;
-    const chartHeight = height - catMargins.top - catMargins.bottom;
+    const legendLayout = createLegendLayout({
+      width,
+      height,
+      margin: catMargins,
+      showLegend: showLegend !== false,
+      legendMaxWidth: 192,
+      minChartWidth: 240,
+    });
+    const { chartWidth, chartHeight } = legendLayout;
 
     let tooltip = d3.select("body").select("div.tooltip");
     if (tooltip.empty()) {
@@ -34,7 +39,7 @@ export default function useGroupedBarChart({
     }
 
     const svg = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = appendLegendRoot(svg, legendLayout);
 
     const chart = svg
       .append("g")
@@ -124,10 +129,12 @@ export default function useGroupedBarChart({
         return d.key === activeCategory ? 1 : inactiveOpacity;
       });
 
-      legend.selectAll(".legend-item").attr("opacity", (d) => {
-        if (!hasActiveCategory) return 1;
-        return d === activeCategory ? 1 : inactiveOpacity;
-      });
+      if (legend) {
+        legend.selectAll(".legend-item").attr("opacity", (d) => {
+          if (!hasActiveCategory) return 1;
+          return d === activeCategory ? 1 : inactiveOpacity;
+        });
+      }
     };
 
     const groupG = chart
@@ -170,10 +177,11 @@ export default function useGroupedBarChart({
       });
     }
 
-    if (showLegend !== false) {
+    if (showLegend !== false && legend) {
       renderLegend(legend, orderedCategories, color, {
         onItemMouseOver: setCategoryHighlight,
         onItemMouseOut: () => setCategoryHighlight(null),
+        maxWidth: Math.max(0, legendLayout.legendInnerWidth - 43),
       });
     }
   }, [data, config, dimensions]);
@@ -183,7 +191,7 @@ export function renderLegend(
   legend,
   groups,
   color,
-  { onItemMouseOver, onItemMouseOut } = {}
+  { onItemMouseOver, onItemMouseOut, maxWidth = null } = {}
 ) {
   const circleSize = 10;
   const padding = 6;
@@ -224,25 +232,5 @@ export function renderLegend(
         .attr("y", 4)
         .text(group);
     });
-
-  const bbox = legendGroup.node().getBBox();
-
-  const parent = legend.node().parentNode;
-  const { width, height } = parent.getBoundingClientRect();
-
-  if (height > bbox.y + bbox.height) {
-    d3.select(parent).style("align-items", "center");
-  } else {
-    d3.select(parent).style("align-items", null);
-  }
-
-  if (width > bbox.x + bbox.width) {
-    d3.select(parent).style("justify-content", "center");
-  } else {
-    d3.select(parent).style("justify-content", null);
-  }
-
-  legend
-    .attr("width", bbox.x + bbox.width)
-    .attr("height", bbox.y + bbox.height + circleSize * 2);
+  truncateSvgText(legendGroup.selectAll(".legend-label"), maxWidth);
 }

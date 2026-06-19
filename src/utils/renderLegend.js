@@ -1,4 +1,5 @@
 import * as d3 from "d3";
+import { truncateSvgText } from "@/utils/chartLegend";
 
 export default function renderLegend(
   legend,
@@ -12,7 +13,12 @@ export default function renderLegend(
   hideStats,
   options = {}
 ) {
-  const { transientHide = null, setTransientHide = null } = options || {};
+  const {
+    transientHide = null,
+    setTransientHide = null,
+    maxWidth = null,
+    labelByGroup = null,
+  } = options || {};
   const hasTransientHideControl =
     Array.isArray(transientHide) && typeof setTransientHide === "function";
   const circleSize = 10;
@@ -25,16 +31,7 @@ export default function renderLegend(
     .style("cursor", "pointer");
 
   const orderedGroups = Array.isArray(groups) ? [...groups] : [];
-  const parent = legend.node()?.parentNode;
-
-  if (!parent) {
-    legend.attr("width", 0).attr("height", 0);
-    return;
-  }
-
   if (!orderedGroups.length) {
-    d3.select(parent).style("align-items", null).style("justify-content", null);
-    legend.attr("width", 0).attr("height", 0);
     return;
   }
 
@@ -71,11 +68,10 @@ export default function renderLegend(
     const labels = legendItem
       .append("text")
       .attr("class", "legend-label")
-
       .attr("x", circleSize * 2 + 15)
       .attr("y", 4)
       .datum(group)
-      .text(group);
+      .text(labelByGroup ? labelByGroup(group) : group);
 
     if (hide) {
       labels.classed("cross", hide.includes(group)).on("click", (e) => {
@@ -116,24 +112,5 @@ export default function renderLegend(
         });
     }
   });
-
-  const bbox = legendGroup.node().getBBox();
-  const { width, height } = parent.getBoundingClientRect();
-
-  if (height > bbox.y + bbox.height) {
-    d3.select(parent).style("align-items", "center");
-  } else {
-    d3.select(parent).style("align-items", null);
-  }
-
-  if (width > bbox.x + bbox.width) {
-    d3.select(parent).style("justify-content", "center");
-  } else {
-    d3.select(parent).style("justify-content", null);
-  }
-
-  const legendWidth = Math.max(0, Math.ceil(bbox.x + bbox.width));
-  const legendHeight = Math.max(0, Math.ceil(bbox.y + bbox.height));
-
-  legend.attr("width", legendWidth).attr("height", legendHeight);
+  truncateSvgText(legendGroup.selectAll(".legend-label"), maxWidth);
 }

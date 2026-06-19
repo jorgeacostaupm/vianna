@@ -3,9 +3,9 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  flex: 0 0 45px;
-  padding: 0 var(--space-3);
-  height: 45px;
+  flex: 0 0 40px;
+  padding: 0 var(--space-2);
+  height: 40px;
   background: linear-gradient(90deg, #3f5484 0%, #4e6698 100%);
   width: 100%;
   color: #fff;
@@ -19,9 +19,9 @@
   display: block;
   flex: 1 1 auto;
   min-width: 0;
-  margin-left: var(--space-4);
+  margin-left: var(--space-2);
   font-weight: 700;
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-sm);
   font-family: var(--font-family-base);
   text-anchor: middle;
   letter-spacing: 0.01em;
@@ -34,11 +34,11 @@
   display: flex;
   flex: 0 0 auto;
   flex-direction: row;
-  gap: var(--space-2);
+  gap: 6px;
   height: 100%;
   right: 0px;
-  padding-right: var(--space-3);
-  padding-left: var(--space-3);
+  padding-right: var(--space-2);
+  padding-left: var(--space-2);
   background: transparent;
   align-items: center;
 }
@@ -62,7 +62,7 @@
   min-width: 350px;
   max-width: 350px;
   right: -10px;
-  top: 50px;
+  top: 44px;
   max-height: 90%;
   font-size: var(--font-size-base);
   overflow: auto;

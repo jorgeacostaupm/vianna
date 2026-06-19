@@ -1,13 +1,16 @@
 import React, { useState } from "react";
-import { Grid, Modal, Tabs } from "antd";
+import { Modal, Tabs, Typography } from "antd";
 import { DatabaseOutlined } from "@ant-design/icons";
 
 import TabData from "@/components/management/Tabs/TabData";
 import TabHierarchy from "@/components/management/Tabs/TabHierarchy";
 import styles from "@/components/management/Data.module.css";
 import TabDescriptions from "@/components/management/Tabs/TabDescriptions";
-import TabSettings from "@/components/management/Tabs/TabSettings";
+import TabBundle from "@/components/management/Tabs/TabBundle";
+import TabWorkspace from "@/components/management/Tabs/TabWorkspace";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
+
+const { Text, Title } = Typography;
 
 const items = [
   {
@@ -26,9 +29,14 @@ const items = [
     children: <TabDescriptions />,
   },
   {
-    key: "settings",
-    label: "Settings",
-    children: <TabSettings />,
+    key: "zip",
+    label: "All",
+    children: <TabBundle />,
+  },
+  {
+    key: "workspace",
+    label: "Workspace",
+    children: <TabWorkspace />,
   },
 ];
 
@@ -45,9 +53,6 @@ export default function DataManagementButton({
   const [internalIsModalOpen, setInternalIsModalOpen] = useState(defaultOpen);
   const isControlled = typeof controlledOpen === "boolean";
   const isModalOpen = isControlled ? controlledOpen : internalIsModalOpen;
-  const screens = Grid.useBreakpoint();
-  const modalWidth = screens.xl ? 1200 : screens.lg ? "94vw" : "96vw";
-  const modalTop = screens.md ? 24 : 12;
 
   const setModalOpen = (nextOpen) => {
     if (!isControlled) {
@@ -92,17 +97,32 @@ export default function DataManagementButton({
         </AppButton>
       )}
       <Modal
+        title={
+          <div className={styles.modalTitle}>
+            <Title
+              level={3}
+              style={{
+                marginTop: 0,
+                marginBottom: 0,
+                color: "var(--primary-color)",
+              }}
+            >
+              Dataset Assets
+            </Title>
+            <Text type="secondary" className={styles.modalSubtitle}>
+              Review, export, and import the data, hierarchy, descriptions, and
+              workspace files used by VIANNA.
+            </Text>
+          </div>
+        }
         open={isModalOpen}
         onOk={handleOk}
         onCancel={handleCancel}
-        width={modalWidth}
-        style={{ top: modalTop }}
+        width={"800px"}
         footer={null}
-        centered={!screens.md}
-        destroyOnClose
       >
         <Tabs
-          className={styles.customTabs}
+          className={styles.managementTabs}
           defaultActiveKey="data"
           items={items}
         />

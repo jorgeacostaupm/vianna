@@ -11,6 +11,8 @@ const initialState = {
   isNumeric: null,
 
   groupVar: null,
+  idVar: null,
+  timeVar: null,
   selectedVar: null,
   assumptions: {
     normality: null,
@@ -27,6 +29,12 @@ const initialState = {
 
   testResult: null,
   testLoading: false,
+
+  workspace: {
+    views: [],
+    layout: [],
+    revision: 0,
+  },
 };
 
 const compareSlice = createSlice({
@@ -39,6 +47,12 @@ const compareSlice = createSlice({
     setGroupVar: (state, action) => {
       state.groupVar = action.payload;
     },
+    setIdVar: (state, action) => {
+      state.idVar = action.payload;
+    },
+    setTimeVar: (state, action) => {
+      state.timeVar = action.payload;
+    },
     setSelectedVar: (state, action) => {
       state.selectedVar = action.payload;
     },
@@ -47,6 +61,15 @@ const compareSlice = createSlice({
     },
     setTestResult: (state, action) => {
       state.testResult = action.payload;
+    },
+    setWorkspace: (state, action) => {
+      state.workspace = {
+        views: Array.isArray(action.payload?.views) ? action.payload.views : [],
+        layout: Array.isArray(action.payload?.layout)
+          ? action.payload.layout
+          : [],
+        revision: (state.workspace?.revision ?? 0) + 1,
+      };
     },
   },
   extraReducers: (builder) => {
@@ -94,8 +117,11 @@ const compareSlice = createSlice({
 
     builder.addCase(updateData.fulfilled, (state) => {
       state.groupVar = null;
+      state.idVar = null;
+      state.timeVar = null;
       state.selectedVar = null;
       state.selectedTest = null;
+      state.workspace = { views: [], layout: [], revision: 0 };
     });
   },
 });
@@ -105,9 +131,12 @@ export default compareSlice.reducer;
 export const {
   setIsNumeric,
   setGroupVar,
+  setIdVar,
+  setTimeVar,
   setSelectedVar,
   setSelectedTest,
   setTestResult,
+  setWorkspace,
 } = compareSlice.actions;
 
 export {

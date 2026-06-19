@@ -18,7 +18,7 @@ export default function WarningNullButton() {
     hasEmptyInSelection && (
       <AppButton
         preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
-        tooltip="There are empty values in the actual data, click to send them to Quarantine"
+        tooltip="Current selection has missing values in visible columns. Click to send those records to Quarantine"
         onClick={onNullQuarantine}
         icon={<WarningTwoTone twoToneColor={["#000", "#f5dd07"]} />}
       />

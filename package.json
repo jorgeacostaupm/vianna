@@ -1,15 +1,39 @@
 {
   "name": "vianna",
   "private": true,
-  "version": "0.0.11",
+  "version": "0.0.12",
+  "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:desktop": "vite build --base ./ --outDir dist-electron",
+    "desktop": "electron .",
+    "appimage": "npm run build:desktop && electron-builder --linux AppImage",
     "preview": "vite preview",
     "test": "node --test",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix"
+  },
+  "build": {
+    "appId": "es.vianna.app",
+    "productName": "VIANNA",
+    "files": [
+      "dist-electron/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Science",
+      "icon": "electron/assets/icon.png"
+    }
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
@@ -33,8 +57,7 @@
     "redux": "^5.0.1",
     "redux-state-sync": "^3.1.4",
     "resize-observer-polyfill": "^1.5.1",
-    "simple-statistics": "^7.8.8",
-    "yup": "^1.6.1"
+    "simple-statistics": "^7.8.8"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.28.5",
@@ -42,6 +65,8 @@
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react-swc": "^3.8.0",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",

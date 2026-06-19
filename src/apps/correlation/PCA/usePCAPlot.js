@@ -1,11 +1,13 @@
 import * as d3 from "d3";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { selectCorrelationAnalysisContext } from "@/store/features/main";
 import { moveTooltip } from "@/utils/functions";
 import renderLegend from "@/utils/renderLegend";
 import useResizeObserver from "@/hooks/useResizeObserver";
 import useGroupColorDomain from "@/hooks/useGroupColorDomain";
 import { CHART_HIGHLIGHT } from "@/utils/chartTheme";
+import { appendLegendRoot, createLegendLayout } from "@/utils/chartLegend";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
 
@@ -13,13 +15,12 @@ const margin = { top: 30, right: 20, bottom: 40, left: 60 };
 
 export default function usePCAPlot({
   chartRef,
-  legendRef,
   data,
   config,
   grouping,
 }) {
   const dimensions = useResizeObserver(chartRef);
-  const idVar = useSelector((s) => s.main.idVar);
+  const { idVar } = useSelector(selectCorrelationAnalysisContext);
   const [hiddenGroups, setHiddenGroups] = useState([]);
   const [hoverHiddenGroups, setHoverHiddenGroups] = useState([]);
   const { groupVar, pointSize, pointOpacity, showLegend } = config;
@@ -39,47 +40,38 @@ export default function usePCAPlot({
       if (!chartRef.current) return;
       d3.select(chartRef.current).selectAll("*").remove();
     };
-    const clearLegend = () => {
-      if (!legendRef.current) return;
-      const legendSvg = d3.select(legendRef.current);
-      legendSvg.selectAll("*").remove();
-      legendSvg.attr("width", 0).attr("height", 0);
-      const parent = legendRef.current.parentNode;
-      if (parent) {
-        d3.select(parent)
-          .style("align-items", null)
-          .style("justify-content", null);
-      }
-    };
 
-    if (!dimensions || !data || !chartRef.current || !legendRef.current) {
+    if (!dimensions || !data || !chartRef.current) {
       clearChart();
-      clearLegend();
       return;
     }
     if (!groupVar) {
       clearChart();
-      clearLegend();
       return;
     }
     if (data.length === 0) {
       clearChart();
-      clearLegend();
       return;
     }
 
     clearChart();
-    clearLegend();
 
     const totalWidth = dimensions.width;
     const totalHeight = dimensions.height;
-    const chartAreaWidth = totalWidth;
-    const chartWidth = chartAreaWidth - margin.left - margin.right;
-    const chartHeight = totalHeight - margin.top - margin.bottom;
+    const legendLayout = createLegendLayout({
+      width: totalWidth,
+      height: totalHeight,
+      margin,
+      showLegend: showLegend !== false,
+      legendMaxWidth: 210,
+      minChartWidth: 260,
+    });
+    const chartWidth = legendLayout.chartWidth;
+    const chartHeight = legendLayout.chartHeight;
     const chartSize = Math.min(chartWidth, chartHeight);
 
     const svg = d3.select(chartRef.current);
-    const legend = d3.select(legendRef.current);
+    const legend = appendLegendRoot(svg, legendLayout);
 
     const chart = svg
       .append("g")
@@ -182,7 +174,7 @@ export default function usePCAPlot({
 
     updatePointPositions();
 
-    if (showLegend !== false) {
+    if (showLegend !== false && legend) {
       renderLegend(
         legend,
         groups,
@@ -196,6 +188,7 @@ export default function usePCAPlot({
         {
           transientHide: hoverHiddenGroups,
           setTransientHide: setHoverHiddenGroups,
+          maxWidth: Math.max(0, legendLayout.legendInnerWidth - 43),
         },
       );
     }

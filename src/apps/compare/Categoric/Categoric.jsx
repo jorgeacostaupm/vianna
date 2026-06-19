@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 
 import { getCategoricDistributionData as getData } from "@/utils/functionsCompare";
 import ViewContainer from "@/components/charts/ViewContainer";
@@ -6,17 +6,8 @@ import { GroupedBarChart, StackedBarChart } from "./charts";
 import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
 import Settings from "./Settings";
 import useDistributionViewState from "../useDistributionViewState";
-
-const defaultConfig = {
-  isSync: true,
-  chartType: "stacked",
-  stackedMode: "total",
-  showLegend: true,
-  showGrid: true,
-  groupOrder: "alpha",
-  categoryOrder: "alpha",
-  axisLabelFontSize: 16,
-};
+import categoricDefaultConfig from "./categoricDefaultConfig";
+import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
 const chartStrategies = {
   stacked: StackedBarChart,
@@ -34,8 +25,18 @@ export default function Categoric({
   variable,
   remove,
   sourceOrderValues = [],
+  config: persistedConfig,
+  updateView,
 }) {
-  const [config, setConfig] = useState(defaultConfig);
+  const handleConfigChange = useCallback(
+    (nextConfig) => updateView?.({ config: nextConfig }),
+    [updateView],
+  );
+  const [config, setConfig] = useWorkspaceBackedState({
+    defaultValue: categoricDefaultConfig,
+    persistedValue: persistedConfig,
+    onChange: handleConfigChange,
+  });
 
   const { data, requiredVariables, recordOrders, variableDescription } =
     useDistributionViewState({
@@ -59,7 +60,7 @@ export default function Categoric({
     <ViewContainer
       title={`Distribution · ${variable}`}
       hoverTitle={variableDescription || undefined}
-      svgIDs={[id, `${id}-legend`]}
+      svgIDs={[id]}
       remove={remove}
       settings={<Settings config={config} setConfig={setConfig} />}
       chart={chart}

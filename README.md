@@ -1,6 +1,6 @@
 # VIANNA
 
-Visual Analytics for Neuropsychological Assessments
+Visual Analytics for Neuropsychological test datA
 
 Website: https://vianna.es/
 
@@ -15,6 +15,10 @@ VIANNA is a modular visual analytics environment developed within the AI-Mind pr
 - Group comparison and statistical testing
 - Temporal trajectory analysis
 - Correlation exploration
+
+## Documentation
+
+- [Hierarchy format](docs/hierarchy-format.md)
 
 ## Tech Stack
 
@@ -35,6 +39,15 @@ Install and run
 npm install
 npm run dev
 ```
+
+Desktop AppImage
+
+```bash
+npm install
+npm run appimage
+```
+
+The generated AppImage is written to `release/`.
 
 ## Acknowledgements
 

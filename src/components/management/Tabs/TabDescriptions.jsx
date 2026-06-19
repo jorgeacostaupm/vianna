@@ -1,20 +1,35 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { Typography, Divider } from "antd";
+import { Typography } from "antd";
+import { DownloadOutlined } from "@ant-design/icons";
 
 import DragDropDesc from "../DragDrop/DragDropDesc";
-import { selectDescribedNodes } from "@/store/features/metadata";
+import {
+  selectAttributeDescriptionsByName,
+  selectDescribedNodes,
+} from "@/store/features/metadata";
 import styles from "../Data.module.css";
+import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
+import { generateFileName } from "@/utils/functions";
 
 const { Title, Text } = Typography;
-const formatPreview = (arr, max = 12) => {
-  if (!arr || arr.length === 0) return "—";
-  const preview = arr.slice(0, max);
-  const remaining = arr.length - preview.length;
-  return remaining > 0
-    ? `${preview.join(", ")} (+${remaining} more)`
-    : preview.join(", ");
+
+const downloadTextFile = ({ content, filename, mimeType }) => {
+  const blob = new Blob([content], { type: mimeType });
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(href);
 };
+
+const getExportableDescriptions = (descriptionsByName) =>
+  Object.entries(descriptionsByName || {})
+    .filter(([, description]) => {
+      return typeof description === "string" && description.trim().length > 0;
+    })
+    .sort(([nameA], [nameB]) => nameA.localeCompare(nameB));
 
 const Info = () => {
   const filename = useSelector((state) => state.metadata.descriptionsFilename);
@@ -28,41 +43,86 @@ const Info = () => {
         .map((attr) => attr.name),
     ),
   ).filter((name) => !describedSet.has(name));
+  const totalCount = attributes.length + missing.length;
+  const coverage = totalCount
+    ? `${((attributes.length / totalCount) * 100).toFixed(1)}%`
+    : "0%";
 
   return (
     <div className={styles.tabColumn}>
-      <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
-        Metadata
+      <Title level={5} style={{ marginTop: 0, color: "var(--primary-color)" }}>
+        Current
       </Title>
 
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          File Name:
-        </Text>{" "}
-        <Text type="secondary">{filename ? filename : "—"}</Text>
+      <div className={styles.dataStats}>
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            File Name:
+          </Text>{" "}
+          <Text type="secondary">{filename ? filename : "—"}</Text>
+        </div>
+
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Nº Descriptions:
+          </Text>{" "}
+          <Text type="secondary">{attributes.length}</Text>
+        </div>
+
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Nº Measurements:
+          </Text>{" "}
+          <Text type="secondary">{totalCount}</Text>
+        </div>
+
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Missing Descriptions:
+          </Text>{" "}
+          <Text type="secondary">{missing.length}</Text>
+        </div>
+
+        <div>
+          <Text strong style={{ color: "var(--primary-color)" }}>
+            Coverage:
+          </Text>{" "}
+          <Text type="secondary">{coverage}</Text>
+        </div>
       </div>
 
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          Nº Descriptions:
-        </Text>{" "}
-        <Text type="secondary">{attributes.length}</Text>
-      </div>
+      <ExportDescriptions />
+    </div>
+  );
+};
 
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          Measurements with description:
-        </Text>{" "}
-        <Text type="secondary">{formatPreview([...attributes].sort())}</Text>
-      </div>
+const ExportDescriptions = () => {
+  const descriptionsByName = useSelector(selectAttributeDescriptionsByName);
+  const entries = getExportableDescriptions(descriptionsByName);
+  const disabled = entries.length === 0;
 
-      <div>
-        <Text strong style={{ color: "var(--primary-color)" }}>
-          Missing descriptions:
-        </Text>{" "}
-        <Text type="secondary">{formatPreview(missing.sort())}</Text>
-      </div>
+  const handleExport = () => {
+    const content = JSON.stringify(Object.fromEntries(entries), null, 2);
 
+    downloadTextFile({
+      content,
+      filename: `${generateFileName("descriptions")}.json`,
+      mimeType: "application/json;charset=utf-8;",
+    });
+  };
+
+  return (
+    <div className={styles.exportButtonRow}>
+      <AppButton
+        preset={APP_BUTTON_PRESETS.ACTION}
+        className={styles.primaryExportButton}
+        onClick={handleExport}
+        disabled={disabled}
+        icon={<DownloadOutlined />}
+        shape="default"
+      >
+        Export
+      </AppButton>
     </div>
   );
 };
@@ -70,38 +130,10 @@ const Info = () => {
 const UploadDesc = () => {
   return (
     <div className={`${styles.tabColumn} ${styles.tabColumnWithDivider}`}>
-      <Title
-        level={4}
-        style={{ marginBottom: 4, color: "var(--primary-color)" }}
-      >
-        Upload Descriptions
-      </Title>
-      <Text type="secondary">
-        Each row maps a measurement name to its description.
-      </Text>
-      <DragDropDesc />
-
-      <Divider style={{ margin: "1rem 0" }} />
-
       <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
-        Expected File
+        Import
       </Title>
-      <div>
-        <Text type="secondary">
-          Upload a CSV with headers `name` and `description`.
-        </Text>
-      </div>
-      <div>
-        <Text type="secondary">
-          `name` must match the measurement names in your data.
-        </Text>
-      </div>
-      <div>
-        <Text type="secondary">
-          One row per measurement is recommended; if a measurement appears
-          multiple times, the last one takes priority.
-        </Text>
-      </div>
+      <DragDropDesc />
     </div>
   );
 };

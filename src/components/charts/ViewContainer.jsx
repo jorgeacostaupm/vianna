@@ -11,6 +11,9 @@ export default function ViewContainer(props) {
     info,
     settings,
     testsSettings,
+    testsTitle,
+    lmmSettings,
+    results,
     chart,
     remove,
     config,
@@ -34,6 +37,9 @@ export default function ViewContainer(props) {
         remove={remove}
         settings={settings}
         testsSettings={testsSettings}
+        testsTitle={testsTitle}
+        lmmSettings={lmmSettings}
+        results={results}
         config={config}
         setConfig={setConfig}
         recordsExport={recordsExport}

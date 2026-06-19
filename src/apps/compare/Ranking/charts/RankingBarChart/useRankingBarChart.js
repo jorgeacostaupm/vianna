@@ -8,6 +8,10 @@ import {
   attachTickLabelGridHover,
   paintLayersInOrder,
 } from "@/utils/gridInteractions";
+import {
+  getRankingMagnitude,
+  getVisibleRankingData,
+} from "../../rankingFilters";
 
 const margins = { top: 50, right: 30, bottom: 60, left: 90 };
 
@@ -47,18 +51,7 @@ export default function useRankingBarChart({
         .attr("class", "tooltip descTooltip");
     }
 
-    const filteredData = (data.data || [])
-      .filter(
-        (item) =>
-          !config.filterList.includes(item.variable) &&
-          Number(item.pValue ?? item.p_value) < Number(config.pValue),
-      )
-      .sort((a, b) => {
-        const aValue = Math.abs(Number(a.value) || 0);
-        const bValue = Math.abs(Number(b.value) || 0);
-        return config.desc ? bValue - aValue : aValue - bValue;
-      })
-      .slice(0, config.nBars);
+    const filteredData = getVisibleRankingData(data.data, config);
 
     if (!filteredData.length) {
       return;
@@ -70,8 +63,12 @@ export default function useRankingBarChart({
       .range([0, chartWidth])
       .padding(0.2);
 
-    const yMax = d3.max(filteredData, (item) => Math.abs(Number(item.value) || 0)) || 0;
-    const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([chartHeight, 0]);
+    const yMax = d3.max(filteredData, getRankingMagnitude) || 0;
+    const yScale = d3
+      .scaleLinear()
+      .domain([0, yMax])
+      .nice()
+      .range([chartHeight, 0]);
 
     const xAxisG = chart
       .append("g")
@@ -129,9 +126,12 @@ export default function useRankingBarChart({
       .join("rect")
       .attr("class", "bar")
       .attr("x", (item) => xScale(item.variable))
-      .attr("y", (item) => yScale(Math.abs(Number(item.value) || 0)))
+      .attr("y", (item) => yScale(getRankingMagnitude(item)))
       .attr("width", xScale.bandwidth())
-      .attr("height", (item) => chartHeight - yScale(Math.abs(Number(item.value) || 0)))
+      .attr(
+        "height",
+        (item) => chartHeight - yScale(getRankingMagnitude(item)),
+      )
       .attr("fill", "var(--primary-color)")
       .style("cursor", "pointer")
       .classed("selected", (item) => item.variable === selectedVarRef.current)
@@ -147,10 +147,11 @@ export default function useRankingBarChart({
       })
       .on("mouseover", function (event, item) {
         const pValue = item.p_value ?? item.pValue;
+        const effectSize = getRankingMagnitude(item).toFixed(3);
         tooltip
           .style("visibility", "visible")
           .html(
-            `<strong>${item.variable}</strong><br/>${data.measure}: ${Math.abs(Number(item.value) || 0).toFixed(3)}<br/>p-value: ${formatDecimal(pValue)}`,
+            `<strong>${item.variable}</strong><br/>${data.measure}: ${effectSize}<br/>p-value: ${formatDecimal(pValue)}`,
           );
       })
       .on("mousemove", function (event) {
@@ -164,7 +165,8 @@ export default function useRankingBarChart({
       .selectAll(".tick")
       .on("mouseover", function (event, variable) {
         const description =
-          filteredData.find((item) => item.variable === variable)?.desc || "-";
+          filteredData.find((item) => item.variable === variable)
+            ?.description || "-";
 
         descTooltip.style("opacity", 1).html(`${variable}: ${description}`);
       })

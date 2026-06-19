@@ -3,7 +3,11 @@ import { useSelector } from "react-redux";
 
 import { getLineChartData } from "@/utils/functionsEvolution";
 import evolutionTests from "@/utils/evolution_tests";
-import { selectNumericVars, selectVarTypes } from "@/store/features/main";
+import {
+  selectEvolutionAnalysisContext,
+  selectNumericVars,
+  selectVarTypes,
+} from "@/store/features/main";
 import { notifyError } from "@/components/notifications";
 import useSelectionRows from "@/hooks/useSelectionRows";
 import { uniqueColumns } from "@/utils/viewRecords";
@@ -13,18 +17,19 @@ export default function useLineChartData(
   isSync = true,
   showComplete = true,
   showIncomplete = false,
+  incompleteRequiredTimes = [],
   testIds = [],
   timeRange = null,
-  testOptions = null
+  testOptions = null,
 ) {
   const [data, setData] = useState([]);
   const lastErrorRef = useRef(null);
-  const groupVar = useSelector((s) => s.evolution.groupVar);
-  const timeVar = useSelector((s) => s.evolution.timeVar);
+  const { groupVar, timeVar, idVar } = useSelector(
+    selectEvolutionAnalysisContext,
+  );
   const timeOrderConfig = useSelector((s) =>
     timeVar ? s.evolution.timeOrderByVar?.[timeVar] : null
   );
-  const idVar = useSelector((s) => s.main.idVar);
   const variables = useSelector(selectNumericVars);
   const varTypes = useSelector(selectVarTypes);
   const selectionColumns = useMemo(
@@ -74,6 +79,7 @@ export default function useLineChartData(
         idVar,
         showComplete,
         showIncomplete,
+        incompleteRequiredTimes,
         selectedTests,
         timeRange,
         timeOrderConfig,
@@ -110,6 +116,9 @@ export default function useLineChartData(
     idVar,
     showComplete,
     showIncomplete,
+    Array.isArray(incompleteRequiredTimes)
+      ? incompleteRequiredTimes.join("|")
+      : "",
     selectedTests,
     timeRange?.from,
     timeRange?.to,

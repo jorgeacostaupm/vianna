@@ -35,6 +35,7 @@ export default function AnalysisSidebarHeader({ description = null }) {
 
       <AppSwitcher
         appIds={["overview", "hierarchy"]}
+        showManagement={false}
         className={sidebarStyles.analysisSidebarQuickLinks}
         style={{ gap: "8px" }}
       />

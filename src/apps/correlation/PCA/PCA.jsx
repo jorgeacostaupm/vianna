@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import Settings from "./Settings";
 import LassoDock from "./LassoDock";
-import ChartWithLegend from "@/components/charts/ChartWithLegend";
+import BasicChart from "@/components/charts/BasicChart";
 import usePCAPlot from "./usePCAPlot";
 import usePCAData from "./usePCAData";
 import CorrelationView from "../view/CorrelationView";
@@ -26,7 +26,10 @@ import {
 } from "@/components/notifications";
 import { generateFileName, getVariableTypes } from "@/utils/functions";
 import { setDataframe, setNavioColumns } from "@/store/features/dataframe";
-import { setVarTypes } from "@/store/features/main";
+import {
+  selectCorrelationAnalysisContext,
+  setVarTypes,
+} from "@/store/features/main";
 import { addAttribute, updateAttribute } from "@/store/features/metadata";
 import {
   DEFAULT_UNASSIGNED_GROUP_NAME,
@@ -34,25 +37,12 @@ import {
   isLassoEnabled,
   lassoReducer,
 } from "./lassoState";
+import { pcaDefaultConfig, pcaDefaultParams } from "./pcaDefaults";
+import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
 
 const DEFAULT_LASSO_COLUMN_NAME = "pca_lasso_group";
 const LASSO_NODE_DESCRIPTION =
   "User-defined PCA stratification derived from interactive lasso-based subgroup delineation.";
-
-const defaultConfig = {
-  isSync: true,
-  pointSize: 2,
-  pointOpacity: 0.75,
-  showLegend: true,
-  groupVar: null,
-  axisLabelFontSize: 16,
-};
-
-const defaultParams = {
-  groupVar: null,
-  variables: [],
-  nTop: 10,
-};
 
 function toOrderKey(value) {
   return String(value);
@@ -102,24 +92,22 @@ function downloadCsv(rows, filenameBase = "pca_groups") {
 
 function Chart({ data, id, config, grouping }) {
   const chartRef = useRef(null);
-  const legendRef = useRef(null);
 
-  usePCAPlot({ chartRef, legendRef, data, config, grouping });
+  usePCAPlot({ chartRef, data, config, grouping });
 
-  return (
-    <ChartWithLegend
-      id={id}
-      chartRef={chartRef}
-      legendRef={legendRef}
-      showLegend={config.showLegend}
-      legendWidthMode="content"
-    />
-  );
+  return <BasicChart id={id} chartRef={chartRef} />;
 }
 
-export default function PCA({ id, remove, sourceOrderValues = [] }) {
+export default function PCA({
+  id,
+  remove,
+  sourceOrderValues = [],
+  config: persistedConfig,
+  params: persistedParams,
+  updateView,
+}) {
   const dispatch = useDispatch();
-  const groupVar = useSelector((s) => s.correlation.groupVar);
+  const { groupVar } = useSelector(selectCorrelationAnalysisContext);
   const fullData = useSelector((s) => s.dataframe.dataframe);
   const navioColumns = useSelector((s) => s.dataframe.navioColumns || []);
   const metadataAttributes = useSelector((s) => s.metadata.attributes || []);
@@ -133,8 +121,24 @@ export default function PCA({ id, remove, sourceOrderValues = [] }) {
   );
   const selection = useSelectionRows(selectionColumns);
 
-  const [config, setConfig] = useState(defaultConfig);
-  const [params, setParams] = useState(defaultParams);
+  const handleConfigChange = useCallback(
+    (nextConfig) => updateView?.({ config: nextConfig }),
+    [updateView],
+  );
+  const handleParamsChange = useCallback(
+    (nextParams) => updateView?.({ params: nextParams }),
+    [updateView],
+  );
+  const [config, setConfig] = useWorkspaceBackedState({
+    defaultValue: pcaDefaultConfig,
+    persistedValue: persistedConfig,
+    onChange: handleConfigChange,
+  });
+  const [params, setParams] = useWorkspaceBackedState({
+    defaultValue: pcaDefaultParams,
+    persistedValue: persistedParams,
+    onChange: handleParamsChange,
+  });
   const [info, setInfo] = useState(null);
   const [data] = usePCAData(config.isSync, params, setInfo);
   const dockAnchorRef = useRef(null);
@@ -389,7 +393,7 @@ export default function PCA({ id, remove, sourceOrderValues = [] }) {
             name: columnName,
             type: "attribute",
             dtype: "string",
-            desc: LASSO_NODE_DESCRIPTION,
+            description: LASSO_NODE_DESCRIPTION,
             recover: false,
           }),
         ).unwrap();
@@ -423,7 +427,7 @@ export default function PCA({ id, remove, sourceOrderValues = [] }) {
           name: columnName,
           type: "attribute",
           dtype: "string",
-          desc: LASSO_NODE_DESCRIPTION,
+          description: LASSO_NODE_DESCRIPTION,
           recover: false,
         }),
       ).unwrap();
@@ -594,7 +598,7 @@ export default function PCA({ id, remove, sourceOrderValues = [] }) {
 
   const viewModel = createCorrelationViewModel({
     title: `PCA · ${params.variables.length} Variables`,
-    svgIDs: [id, `${id}-legend`],
+    svgIDs: [id],
     remove,
     settings: (
       <Settings

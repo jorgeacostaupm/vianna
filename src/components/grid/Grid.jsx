@@ -41,6 +41,8 @@ export default function Grid({
   panelPlacement = "top",
   panelGridLayout,
   compactType = null,
+  workspace,
+  onWorkspaceChange,
 }) {
   const normalizedRegistry = useMemo(
     () => normalizeViewRegistry(registry),
@@ -71,16 +73,19 @@ export default function Grid({
     );
   }, [leftPanelBounds.h, leftPanelBounds.maxH, leftPanelBounds.minH]);
 
-  const { views, layout, setLayout, addView, removeView } = useGridViews(
-    10,
-    4,
-    {
-      topOffsetRows: 0,
-      leftOffsetCols: hasLeftPanel ? leftPanelCols : 0,
-      totalCols: GRID_COLS,
-      getLayoutPreset: (type) => resolveViewLayout(normalizedRegistry[type]),
-    },
-  );
+  const { views, layout, setLayout, addView, removeView, updateView } =
+    useGridViews(
+      10,
+      4,
+      {
+        topOffsetRows: 0,
+        leftOffsetCols: hasLeftPanel ? leftPanelCols : 0,
+        totalCols: GRID_COLS,
+        getLayoutPreset: (type) => resolveViewLayout(normalizedRegistry[type]),
+        workspace,
+        onWorkspaceChange,
+      },
+    );
   const panelNode = panel ? panel(addView) : null;
   const leftPanelLayout = useMemo(() => {
     const minW = Math.max(1, leftPanelBounds.minW);
@@ -110,7 +115,11 @@ export default function Grid({
     return layout;
   }, [leftPanelBounds, leftPanelCols, leftPanelRows]);
 
-  const renderView = createViewRenderer(normalizedRegistry, removeView);
+  const renderView = createViewRenderer(
+    normalizedRegistry,
+    removeView,
+    updateView,
+  );
   const handleLayoutChange = useCallback(
     (nextLayout) => {
       if (!hasLeftPanel) {

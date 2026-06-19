@@ -1,5 +1,4 @@
-import { get_parser } from "./parser";
-import buildAggregation from "./formulaGenerator";
+import { compileAggregationFormula } from "@/store/features/metadata/utils/thunkUtils";
 
 const generateFormula = (operation, attributes) => {
   if (operation === "custom") return;
@@ -13,8 +12,9 @@ const generateFormula = (operation, attributes) => {
     let totalWeights = 0;
     formula = attributes
       .map((n) => {
-        totalWeights += n.weight;
-        return `${n.weight || 1} * $(${n.name})`;
+        const weight = Number.isFinite(n.weight) ? n.weight : 1;
+        totalWeights += weight;
+        return `${weight} * $(${n.name})`;
       })
       .join(" + ");
 
@@ -24,24 +24,11 @@ const generateFormula = (operation, attributes) => {
   return formula;
 };
 
-let parser = get_parser();
 export const generateFormulaSimplified = (operation, attributes) => {
   const formula = generateFormula(operation, attributes);
-
-  let parsed = null;
-  let exec = null;
-
-  try {
-    parsed = parser.parse(formula);
-  } catch {
-    return { valid: false, msg: "Fallo de Sintaxis al crear la fórmula" };
+  const compiled = compileAggregationFormula(formula);
+  if (!compiled.valid) {
+    return { valid: false, msg: compiled.message || "Invalid formula." };
   }
-
-  try {
-    exec = buildAggregation(parsed)["formula"];
-  } catch (error) {
-    return { valid: false, msg: `${error.error}: ${error.msg}` };
-  }
-
-  return { valid: true, formula, exec };
+  return { valid: true, formula };
 };
