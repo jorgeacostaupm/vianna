@@ -8,5 +8,5 @@ export default function AppsButtons() {
   const dt = useSelector((state) => state.dataframe.dataframe);
   const appIds = dt ? ["overview", ...APPS_WITH_DATA] : ["overview"];
 
-  return <AppSwitcher appIds={appIds} managementAtEnd />;
+  return <AppSwitcher appIds={appIds} managementAtEnd stackedTooltipPlacement />;
 }

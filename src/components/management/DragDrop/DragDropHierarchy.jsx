@@ -1,12 +1,9 @@
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useDropzone } from "react-dropzone";
-import { UploadOutlined } from "@ant-design/icons";
 
+import FileImportDropzone from "./FileImportDropzone";
 import { FileProcessorFactory } from "./drag";
-import styles from "../Data.module.css";
 import { updateHierarchy } from "@/store/features/metadata";
-import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 import { notifyError, notifyWarning } from "@/components/notifications";
 
 const ACCEPTED_FORMATS = {
@@ -99,54 +96,18 @@ export default function DragAndDropHierarchy() {
     reader.readAsText(file);
   }, []);
 
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop: handleFileDrop,
-    maxFiles: 1,
-    accept: ACCEPTED_FORMATS,
-    multiple: false,
-    onDropRejected: () => {
-      notifyWarning({
-        message: "Unsupported file",
-        description: "Accepted format: .json",
-      });
-    },
-  });
-
   return (
-    <>
-      <div
-        {...getRootProps({
-          className: `${styles.dropzone} ${styles.dataDropzone}`,
-          "aria-label": "Upload hierarchy file",
-        })}
-      >
-        <input {...getInputProps()} />
-        <UploadOutlined />
-        <span className={styles.dataDropLabel}>
-          Choose a file or drag it here
-        </span>
-      </div>
-      <div className={styles.dataDropHint}>
-        <span className={styles.subtitle}>Accepted: .json</span>
-        {(isReadingFile || filename) && (
-          <span className={styles.text}>
-            {isReadingFile ? "Reading file..." : filename}
-          </span>
-        )}
-      </div>
-
-      <div className={`${styles.controls} ${styles.dataImportControls}`}>
-        <AppButton
-          preset={APP_BUTTON_PRESETS.ACTION}
-          onClick={handleUpload}
-          disabled={uploadDisabled}
-          loading={loading}
-          icon={<UploadOutlined />}
-          shape="default"
-        >
-          Import
-        </AppButton>
-      </div>
-    </>
+    <FileImportDropzone
+      accept={ACCEPTED_FORMATS}
+      onDrop={handleFileDrop}
+      ariaLabel="Upload hierarchy file"
+      acceptedLabel="Accepted: .json"
+      rejectedDescription="Accepted format: .json"
+      filename={filename}
+      isReadingFile={isReadingFile}
+      onUpload={handleUpload}
+      disabled={uploadDisabled}
+      loading={loading}
+    />
   );
 }

@@ -112,8 +112,8 @@
   border-radius: 999px;
   background: linear-gradient(
     180deg,
-    rgba(63, 84, 132, 0.16) 0%,
-    rgba(63, 84, 132, 0.3) 100%
+    var(--color-accent-soft-subtle) 0%,
+    var(--color-accent-soft) 100%
   );
   transition: background var(--transition-fast);
 }
@@ -121,7 +121,7 @@
 .analysisSidebarResizeHandle:hover::before {
   background: linear-gradient(
     180deg,
-    rgba(63, 84, 132, 0.28) 0%,
-    rgba(63, 84, 132, 0.5) 100%
+    var(--color-accent-soft) 0%,
+    var(--color-accent) 100%
   );
 }

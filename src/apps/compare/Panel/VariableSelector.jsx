@@ -1,11 +1,15 @@
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { AreaChartOutlined } from "@ant-design/icons";
+import { Typography } from "antd";
 
 import { selectCompareAnalysisContext, selectVars } from "@/store/features/main";
 import { checkAssumptions, setSelectedVar } from "@/store/features/compare";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 import AnalysisSelectField from "@/components/ui/AnalysisSelectField";
+import panelStyles from "@/styles/SettingsPanel.module.css";
+
+const { Text } = Typography;
 
 export default function VariableSelector({ generateDistribution }) {
   const dispatch = useDispatch();
@@ -32,6 +36,11 @@ export default function VariableSelector({ generateDistribution }) {
         placeholder="Select variable"
         options={variables}
         allowClear={true}
+        extra={
+          <Text className={panelStyles.helper}>
+            Clear the variable to rank all variables compatible with a test.
+          </Text>
+        }
       />
 
       <AppButton
@@ -46,7 +55,7 @@ export default function VariableSelector({ generateDistribution }) {
         onClick={() => selectedVar && generateDistribution(selectedVar)}
         disabled={!selectedVar || !groupVar}
       >
-        Add distribution
+        Add distribution view
       </AppButton>
     </>
   );

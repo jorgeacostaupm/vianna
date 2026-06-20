@@ -45,14 +45,21 @@ export default function ChartBar({
       recordsExport,
     },
   });
+  const closeAction = toolbarActions.find(
+    (action) => String(action.key) === "close",
+  );
+  const primaryActions = toolbarActions.filter(
+    (action) => String(action.key) !== "close",
+  );
 
   return (
     <BaseBar title={title} hoverTitle={hoverTitle}>
-      {toolbarActions.map((actionNode, index) => (
+      {primaryActions.map((actionNode, index) => (
         <React.Fragment key={actionNode.key || `toolbar-action-${index}`}>
           {actionNode}
         </React.Fragment>
       ))}
+      {closeAction}
     </BaseBar>
   );
 }

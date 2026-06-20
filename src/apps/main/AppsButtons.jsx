@@ -17,6 +17,7 @@ export default function AppsButtons({
     <AppSwitcher
       appIds={appIds}
       managementAtEnd
+      stackedTooltipPlacement
       dataManagementButtonProps={{
         open: dataManagementOpen,
         onOpenChange: onDataManagementOpenChange,

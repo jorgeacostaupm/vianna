@@ -12,41 +12,36 @@
   box-shadow: var(--focus-ring);
 }
 
-.buttonBase:global(.ant-btn-loading),
-.buttonBase:global(.ant-btn-loading) :global(.ant-btn-loading-icon),
-.buttonBase:global(.ant-btn-loading) :global(.ant-btn-loading-icon .anticon) {
-  color: var(--color-brand);
-}
-
-.buttonActive {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border-strong);
-  color: var(--color-ink-secondary);
+.buttonBase.buttonActive {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+  color: var(--color-on-brand);
+  box-shadow: var(--shadow-xs);
 }
 
 .toolbarButton,
 .actionButton,
 .panelButton {
   background: var(--color-surface);
-  color: var(--color-ink-secondary);
-  border: 1px solid var(--color-border);
+  color: var(--color-brand);
+  border: 1px solid var(--color-brand);
   box-shadow: var(--shadow-xs);
 }
 
 .toolbarButton:hover,
 .actionButton:hover,
 .panelButton:hover {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border-strong);
-  color: var(--color-ink);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-brand);
 }
 
 .toolbarButton:active,
 .actionButton:active,
 .panelButton:active {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border-strong);
-  color: var(--color-ink-secondary);
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+  color: var(--color-on-brand);
   transform: translateY(1px);
 }
 
@@ -56,9 +51,9 @@
 .actionButton:global(.ant-btn-disabled),
 .panelButton:disabled,
 .panelButton:global(.ant-btn-disabled) {
-  background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-border);
+  background: var(--color-disabled-bg);
+  border-color: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
   box-shadow: none;
   transform: none;
 }
@@ -69,9 +64,9 @@
 .actionButton:global(.ant-btn-disabled):hover,
 .panelButton:disabled:hover,
 .panelButton:global(.ant-btn-disabled):hover {
-  background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-border);
+  background: var(--color-disabled-bg);
+  border-color: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
 }
 
 .toolbarButton {
@@ -84,18 +79,18 @@
   height: var(--control-height-sm);
   width: var(--control-height-sm);
   padding: 0;
-  color: var(--color-ink-tertiary);
-  background: var(--color-surface-muted);
-  border: 1px solid var(--color-border);
+  color: var(--color-brand);
+  background: var(--color-surface);
+  border: 1px solid var(--color-brand);
   box-shadow: none;
-  opacity: 0.9;
+  opacity: 1;
 }
 
 .toolbarButtonMuted:hover,
 .toolbarButtonMuted:active {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border-strong);
-  color: var(--color-ink-secondary);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-brand);
   opacity: 1;
   transform: none;
 }
@@ -104,9 +99,9 @@
 .toolbarButtonMuted:global(.ant-btn-disabled),
 .toolbarButtonMuted:disabled:hover,
 .toolbarButtonMuted:global(.ant-btn-disabled):hover {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border);
-  color: var(--color-ink-tertiary);
+  background: var(--color-disabled-bg);
+  border-color: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
   box-shadow: none;
   opacity: 0.9;
   transform: none;
@@ -118,13 +113,13 @@
 
 .panelButton {
   padding: 0;
-  font-size: 22px;
+  font-size: 24px;
 }
 
 .borderedButton {
   background: var(--color-surface);
-  color: var(--color-ink);
-  border: 2px solid var(--color-border-strong);
+  color: var(--color-brand);
+  border: 1px solid var(--color-brand);
   box-shadow: var(--shadow-xs);
   height: auto;
   padding: 10px;
@@ -135,10 +130,14 @@
 }
 
 .borderedButton:hover {
-  color: var(--color-brand);
-  border-color: var(--color-brand);
+  color: var(--color-on-brand);
+  border-color: var(--color-accent);
+  background: var(--color-accent);
 }
 
 .borderedButton:active {
+  color: var(--color-on-brand);
+  border-color: var(--color-accent-active);
+  background: var(--color-accent-active);
   transform: translateY(1px);
 }

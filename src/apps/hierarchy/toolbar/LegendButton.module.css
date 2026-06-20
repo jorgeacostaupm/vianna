@@ -1,4 +1,68 @@
-.popoverMenu {
-  max-width: min(520px, 90vw);
-  white-space: normal;
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(100%, 320px);
+  color: var(--color-ink);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.section:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.sectionTitle {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  min-height: 30px;
+  column-gap: var(--space-2);
+}
+
+.marker {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 28px;
+}
+
+.shapeIcon {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.shapeIconWide {
+  width: 34px;
+  height: 18px;
+}
+
+.itemLabel {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--color-ink);
 }

@@ -1,7 +1,10 @@
 import React, { useCallback, useMemo } from "react";
 
 import { useSelector } from "react-redux";
-import { selectNumericVars } from "@/store/features/main";
+import {
+  selectCategoricalVars,
+  selectNumericVars,
+} from "@/store/features/main";
 import ViewContainer from "@/components/charts/ViewContainer";
 import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
 import useRankingViewState from "./useRankingViewState";
@@ -10,6 +13,8 @@ import { RankingBarChart } from "./charts";
 import { createRankingInitialConfig } from "./rankingDefaultConfig";
 import { getRankingMagnitude } from "./rankingFilters";
 import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
+import tests from "@/utils/tests";
+import { VariableTypes } from "@/utils/constants";
 
 export default function Ranking({
   test,
@@ -21,9 +26,16 @@ export default function Ranking({
   updateView,
 }) {
   const numericVars = useSelector(selectNumericVars);
+  const categoricalVars = useSelector(selectCategoricalVars);
+  const testVariableType = tests.find((candidate) => candidate.label === test)
+    ?.variableType;
+  const compatibleVariableCount =
+    testVariableType === VariableTypes.CATEGORICAL
+      ? categoricalVars.length
+      : numericVars.length;
   const defaultConfig = useMemo(
-    () => createRankingInitialConfig(numericVars.length),
-    [numericVars.length],
+    () => createRankingInitialConfig(compatibleVariableCount),
+    [compatibleVariableCount],
   );
   const handleConfigChange = useCallback(
     (nextConfig) => updateView?.({ config: nextConfig }),

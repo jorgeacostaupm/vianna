@@ -68,10 +68,11 @@ export default function HierarchyViewSettings({
           />
         </div>
 
-        <SwitchControl label="Animations"
+        <SwitchControl
+          label="Animations"
           size="small"
-            checked={viewConfig.animateTransitions !== false}
-            onChange={(value) => update("animateTransitions", value)}
+          checked={viewConfig.animateTransitions !== false}
+          onChange={(value) => update("animateTransitions", value)}
         />
       </div>
 
@@ -89,7 +90,7 @@ export default function HierarchyViewSettings({
         />
 
         <SliderControl
-          label="H. space"
+          label="Horizontal gap"
           valueLabel={sliderFormatter(viewConfig.nodeSize, " px")}
           min={36}
           max={140}
@@ -99,7 +100,7 @@ export default function HierarchyViewSettings({
         />
 
         <SliderControl
-          label="V. space"
+          label="Vertical gap"
           valueLabel={sliderFormatter(viewConfig.depthSpacing, " px")}
           min={120}
           max={420}
@@ -123,7 +124,7 @@ export default function HierarchyViewSettings({
         />
 
         <SliderControl
-          label="Label chars"
+          label="Label length"
           valueLabel={sliderFormatter(viewConfig.labelMaxLength, " chars")}
           min={8}
           max={60}
@@ -141,10 +142,11 @@ export default function HierarchyViewSettings({
           value={viewConfig.linkWidth}
           onChange={(value) => update("linkWidth", value)}
         />
-
       </div>
 
       <AppButton
+        className={panelStyles.resetButton}
+        size="small"
         onClick={() =>
           onViewConfigChange?.(() => DEFAULT_HIERARCHY_VIEW_CONFIG)
         }

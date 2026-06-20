@@ -1,17 +1,20 @@
-import { Space, Typography } from "antd";
 import { BgColorsOutlined } from "@ant-design/icons";
 
 import { NodeColors } from "@/utils/constants";
 import styles from "./LegendButton.module.css";
 import PopoverButton from "@/components/buttons/ui/PopoverButton";
 
-const { Text } = Typography;
-
 const renderShapeSVG = (shape, color) => {
+  const iconProps = {
+    className: styles.shapeIcon,
+    "aria-hidden": "true",
+    focusable: "false",
+  };
+
   switch (shape) {
     case "triangle":
       return (
-        <svg width="25" height="25" viewBox="-15 -15 30 30">
+        <svg {...iconProps} viewBox="-15 -15 30 30">
           <path
             d="M 0 -14.4 L 12.5 7.2 L -12.5 7.2 Z"
             fill={color}
@@ -22,7 +25,7 @@ const renderShapeSVG = (shape, color) => {
       );
     case "square":
       return (
-        <svg width="25" height="25" viewBox="-15 -15 30 30">
+        <svg {...iconProps} viewBox="-15 -15 30 30">
           <rect
             x="-12.5"
             y="-12.5"
@@ -37,7 +40,7 @@ const renderShapeSVG = (shape, color) => {
       );
     case "circle":
       return (
-        <svg width="25" height="25" viewBox="-15 -15 30 30">
+        <svg {...iconProps} viewBox="-15 -15 30 30">
           <circle
             r="12.5"
             fill={color}
@@ -48,7 +51,11 @@ const renderShapeSVG = (shape, color) => {
       );
     case "rect":
       return (
-        <svg width="40" height="20">
+        <svg
+          {...iconProps}
+          className={`${styles.shapeIcon} ${styles.shapeIconWide}`}
+          viewBox="0 0 40 20"
+        >
           <rect
             x="0"
             y="0"
@@ -66,11 +73,27 @@ const renderShapeSVG = (shape, color) => {
   }
 };
 
+function LegendSection({ title, items }) {
+  return (
+    <section className={styles.section}>
+      <div className={styles.sectionTitle}>{title}</div>
+      <div className={styles.items}>
+        {items.map(({ name, shape, color }) => (
+          <div className={styles.item} key={name}>
+            <span className={styles.marker}>{renderShapeSVG(shape, color)}</span>
+            <span className={styles.itemLabel}>{name}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Legend() {
   const shapeLegend = [
     { name: "Original variable", shape: "circle", color: "white" },
-    { name: "Aggregation with childs", shape: "square", color: "white" },
-    { name: "Aggregation without childs", shape: "triangle", color: "white" },
+    { name: "Aggregation with children", shape: "square", color: "white" },
+    { name: "Aggregation without children", shape: "triangle", color: "white" },
   ];
 
   const colorLegend = [
@@ -84,55 +107,10 @@ function Legend() {
   ];
 
   return (
-    <>
-      <Space direction="vertical" size="large" className={styles.popoverMenu}>
-        <div>
-          <Text strong style={{ fontSize: "24px" }}>
-            Node types
-          </Text>
-
-          {shapeLegend.map(({ name, shape, color }) => (
-            <div
-              key={name}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginTop: "5px",
-              }}
-            >
-              {renderShapeSVG(shape, color)}
-              <Text strong style={{ fontSize: "18px" }}>
-                {name}
-              </Text>
-            </div>
-          ))}
-        </div>
-
-        <div>
-          <Text strong style={{ fontSize: "24px" }}>
-            Variable types
-          </Text>
-
-          {colorLegend.map(({ name, shape, color }) => (
-            <div
-              key={name}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "5px",
-              }}
-            >
-              {renderShapeSVG(shape, color)}
-              <Text strong style={{ fontSize: "18px" }}>
-                {name}
-              </Text>
-            </div>
-          ))}
-        </div>
-      </Space>
-    </>
+    <div className={styles.legend}>
+      <LegendSection title="Node types" items={shapeLegend} />
+      <LegendSection title="Variable types" items={colorLegend} />
+    </div>
   );
 }
 
@@ -142,6 +120,7 @@ export default function LegendButton() {
       title={"Legend"}
       icon={<BgColorsOutlined />}
       content={<Legend></Legend>}
+      panelWidth={320}
     ></PopoverButton>
   );
 }

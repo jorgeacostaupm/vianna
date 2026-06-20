@@ -1,17 +1,15 @@
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useDropzone } from "react-dropzone";
 import { Switch, Tooltip, Typography } from "antd";
 import {
   CheckOutlined,
   CloseOutlined,
-  UploadOutlined,
 } from "@ant-design/icons";
 
+import FileImportDropzone from "./FileImportDropzone";
 import { FileProcessorFactory } from "./drag";
 import { updateData } from "@/store/features/dataframe";
 import styles from "../Data.module.css";
-import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 import { notifyError, notifyWarning } from "@/components/notifications";
 
 const { Text } = Typography;
@@ -117,68 +115,32 @@ export default function DragDropData() {
     reader.readAsText(file);
   }, []);
 
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop: handleFileDrop,
-    maxFiles: 1,
-    accept: ACCEPTED_FORMATS,
-    multiple: false,
-    onDropRejected: () => {
-      notifyWarning({
-        message: "Unsupported file",
-        description: "Accepted formats: .csv, .tsv, .txt, .json",
-      });
-    },
-  });
-
   return (
-    <>
-      <div
-        {...getRootProps({
-          className: `${styles.dropzone} ${styles.dataDropzone}`,
-          "aria-label": "Upload data file",
-        })}
-      >
-        <input {...getInputProps()} />
-        <UploadOutlined />
-        <span className={styles.dataDropLabel}>
-          Choose a file or drag it here
-        </span>
+    <FileImportDropzone
+      accept={ACCEPTED_FORMATS}
+      onDrop={handleFileDrop}
+      ariaLabel="Upload data file"
+      acceptedLabel="Accepted: .csv, .tsv, .txt, .json"
+      rejectedDescription="Accepted formats: .csv, .tsv, .txt, .json"
+      filename={filename}
+      isReadingFile={isReadingFile}
+      onUpload={handleUpload}
+      disabled={!parsedData || isUploading || isReadingFile}
+      loading={isUploading}
+    >
+      <div className={styles.switchRow}>
+        <Text>Reset Hierarchy</Text>
+        <Tooltip title="Start a new hierarchy">
+          <Switch
+            size="small"
+            checked={generateHierarchy}
+            onChange={setGenerateHierarchy}
+            disabled={isUploading}
+            checkedChildren={<CheckOutlined />}
+            unCheckedChildren={<CloseOutlined />}
+          />
+        </Tooltip>
       </div>
-      <div className={styles.dataDropHint}>
-        <span className={styles.subtitle}>Accepted: .csv, .tsv, .txt, .json</span>
-        {(isReadingFile || filename) && (
-          <span className={styles.text}>
-            {isReadingFile ? "Reading file..." : filename}
-          </span>
-        )}
-      </div>
-
-      <div className={`${styles.controls} ${styles.dataImportControls}`}>
-        <div className={styles.switchRow}>
-          <Text>Reset Hierarchy</Text>
-          <Tooltip title="Start a new hierarchy">
-            <Switch
-              size="small"
-              checked={generateHierarchy}
-              onChange={setGenerateHierarchy}
-              disabled={isUploading}
-              checkedChildren={<CheckOutlined />}
-              unCheckedChildren={<CloseOutlined />}
-            />
-          </Tooltip>
-        </div>
-
-        <AppButton
-          preset={APP_BUTTON_PRESETS.ACTION}
-          onClick={handleUpload}
-          disabled={!parsedData || isUploading || isReadingFile}
-          loading={isUploading}
-          icon={<UploadOutlined />}
-          shape="default"
-        >
-          Import
-        </AppButton>
-      </div>
-    </>
+    </FileImportDropzone>
   );
 }

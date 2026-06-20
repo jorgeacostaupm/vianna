@@ -75,6 +75,7 @@ export default function AppSettingsButton({
   open: controlledOpen,
   defaultOpen = false,
   onOpenChange,
+  tooltipPlacement = "top",
 }) {
   const [internalIsModalOpen, setInternalIsModalOpen] = useState(defaultOpen);
   const isControlled = typeof controlledOpen === "boolean";
@@ -93,6 +94,7 @@ export default function AppSettingsButton({
       <AppButton
         preset={APP_BUTTON_PRESETS.PANEL_ICON}
         tooltip="Settings"
+        tooltipPlacement={tooltipPlacement}
         ariaLabel="Settings"
         onClick={() => setModalOpen(true)}
         icon={<SettingOutlined />}

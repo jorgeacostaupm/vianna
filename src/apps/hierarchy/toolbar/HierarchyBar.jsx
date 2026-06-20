@@ -47,9 +47,11 @@ export default function HierarchyBar({
           preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
           tooltip="Brush selection (B)"
           icon={<DragOutlined />}
+          active={selectionMode === "brush"}
           onClick={() => toggleSelectionMode("brush")}
           disabled={!hasNodes}
           ariaLabel="Brush selection mode"
+          aria-pressed={selectionMode === "brush"}
           variant={
             selectionMode === "brush"
               ? APP_BUTTON_VARIANTS.TOOLBAR
@@ -60,9 +62,11 @@ export default function HierarchyBar({
           preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
           tooltip="Click selection (C)"
           icon={<CheckSquareOutlined />}
+          active={selectionMode === "click"}
           onClick={() => toggleSelectionMode("click")}
           disabled={!hasNodes}
           ariaLabel="Click selection mode"
+          aria-pressed={selectionMode === "click"}
           variant={
             selectionMode === "click"
               ? APP_BUTTON_VARIANTS.TOOLBAR

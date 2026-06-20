@@ -13,11 +13,11 @@
 
 .managementTabs :global(.ant-tabs-tab:hover .ant-tabs-tab-btn),
 .managementTabs :global(.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn) {
-  color: var(--primary-color);
+  color: var(--color-accent-active);
 }
 
 .managementTabs :global(.ant-tabs-ink-bar) {
-  background: var(--primary-color);
+  background: var(--color-accent);
 }
 
 .modalTitle {
@@ -88,23 +88,16 @@
 }
 
 .primaryExportButton,
-.primaryExportButton:hover,
-.primaryExportButton:active,
 .primaryExportButton:focus-visible {
   align-self: flex-start;
-  background: var(--primary-color);
-  border-color: var(--primary-color);
-  color: #fff;
+  background: var(--color-surface);
+  border: 1px solid var(--color-brand);
+  color: var(--color-brand);
   width: fit-content;
 }
 
 .primaryExportButton :global(.anticon) {
-  color: #fff;
-}
-
-.primaryExportButton:hover {
-  background: var(--color-brand-hover);
-  border-color: var(--color-brand-hover);
+  color: inherit;
 }
 
 .dropzone {

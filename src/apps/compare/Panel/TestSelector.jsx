@@ -1,5 +1,5 @@
 // SelectorPanel.jsx
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { Select, Tooltip } from "antd";
 import {
@@ -15,8 +15,11 @@ import { selectCompareAnalysisContext } from "@/store/features/main";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 import panelStyles from "@/styles/modules/analysisPanels.module.css";
 import styles from "./TestSelector.module.css";
-import { notifyError } from "@/components/notifications";
 import useSelectionRows from "@/hooks/useSelectionRows";
+import {
+  getApplicableTests,
+  isTestApplicable,
+} from "./applicableTests";
 
 const { Option, OptGroup } = Select;
 
@@ -53,26 +56,35 @@ export default function TestSelector({ generateTest, generateRanking }) {
     return "Other";
   }
 
-  function safeApplicable(test, count) {
-    try {
-      return typeof test.isApplicable === "function"
-        ? test.isApplicable(count)
-        : false;
-    } catch {
-      return false;
-    }
-  }
-
   function getCountLabel(test) {
-    const supports2 = safeApplicable(test, 2);
-    const supports3 = safeApplicable(test, 3);
+    const supports2 = isTestApplicable(test, 2);
+    const supports3 = isTestApplicable(test, 3);
     if (supports2 && !supports3) return "Pairs (n=2)";
     if (supports3) return "n>=2";
     if (supports2) return "Pairs (n=2)";
     return "Other";
   }
 
-  const groupedTests = tests.reduce((acc, t) => {
+  const selectedVarType = selectedVar ? varTypes[selectedVar] : null;
+  const applicableTests = useMemo(
+    () =>
+      getApplicableTests(tests, {
+        groupCount: groups.length,
+        variableType: selectedVarType,
+      }),
+    [groups.length, selectedVarType],
+  );
+
+  useEffect(() => {
+    if (
+      selectedTest &&
+      !applicableTests.some((test) => test.label === selectedTest)
+    ) {
+      dispatch(setSelectedTest(null));
+    }
+  }, [applicableTests, dispatch, selectedTest]);
+
+  const groupedTests = applicableTests.reduce((acc, t) => {
     const label = `${getTypeLabel(t)} — ${getCountLabel(t)}`;
     if (!acc[label]) acc[label] = [];
     acc[label].push(t);
@@ -100,9 +112,8 @@ export default function TestSelector({ generateTest, generateRanking }) {
     () => tests.find((t) => t.label === selectedTest) || null,
     [selectedTest],
   );
-  const selectedVarType = selectedVar ? varTypes[selectedVar] : null;
   const isGroupCountApplicable = selectedTestObj
-    ? safeApplicable(selectedTestObj, groups.length)
+    ? isTestApplicable(selectedTestObj, groups.length)
     : false;
   const isTypeApplicable =
     selectedVarType && selectedTestObj
@@ -157,25 +168,15 @@ export default function TestSelector({ generateTest, generateRanking }) {
   );
 
   function triggerTest() {
-    const testObj = tests.find((t) => t.label === selectedTest);
-    const testType = testObj.variableType;
-    const variableType = varTypes[selectedVar];
-    if (testType === variableType && testObj.isApplicable(groups.length))
-      generateTest(selectedTest, selectedVar);
-    else {
-      notifyError({
-        message: "Selected test is not applicable",
-        description: "Review variable type and number of groups for this test.",
-        source: "test",
-      });
-    }
+    if (!selectedVar || !isApplicableNow) return;
+    generateTest(selectedTest, selectedVar);
   }
 
   return (
     <>
       <div className={panelStyles.selectorField}>
         <div className={panelStyles.selectorLabelRow}>
-          <span className={panelStyles.selectorLabel}>Test</span>
+          <span className={panelStyles.selectorLabel}>Statistical test</span>
           <Tooltip
             title={testInfoTooltip}
             placement="rightTop"
@@ -197,6 +198,11 @@ export default function TestSelector({ generateTest, generateRanking }) {
           placeholder="Select test"
           listHeight={520}
           allowClear={true}
+          notFoundContent={
+            groupVar
+              ? "No tests apply to the current context"
+              : "Select a group variable first"
+          }
         >
           {orderedGroups.map((category) => (
             <OptGroup key={category} label={category}>
@@ -222,7 +228,7 @@ export default function TestSelector({ generateTest, generateRanking }) {
             tooltipPlacement={"bottom"}
             icon={<ExperimentOutlined />}
             onClick={triggerTest}
-            disabled={!selectedVar || !selectedTest || !groupVar}
+            disabled={!selectedVar || !selectedTest || !isApplicableNow}
           >
             Run test
           </AppButton>
@@ -233,15 +239,15 @@ export default function TestSelector({ generateTest, generateRanking }) {
             preset={APP_BUTTON_PRESETS.ACTION}
             tooltip={
               groupVar
-                ? "Compare all variables with the selected test"
+                ? "Rank every variable compatible with the selected test"
                 : "Group variable must be set."
             }
             tooltipPlacement={"bottom"}
             icon={<BarChartOutlined />}
             onClick={() => selectedTest && generateRanking(selectedTest)}
-            disabled={!selectedTest || !groupVar}
+            disabled={!selectedTest || !isGroupCountApplicable}
           >
-            Rank variables
+            Rank applicable variables
           </AppButton>
         </div>
       </div>

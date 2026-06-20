@@ -4,7 +4,7 @@ import styles from "./NoDataPlaceholder.module.css";
 const { Text } = Typography;
 
 export default function NoDataPlaceholder({
-  message = "No data available",
+  message = "No records available",
   description,
 }) {
   return (

@@ -9,7 +9,7 @@ import NotificationHost from "@/components/notifications/ui/NotificationHost";
 export default function App() {
   return (
     <Provider store={store}>
-      <ConfigProvider theme={theme}>
+      <ConfigProvider theme={theme} wave={{ disabled: true }}>
         <NotificationHost />
         <AppRoutes />
       </ConfigProvider>

@@ -30,7 +30,7 @@ const items = [
   },
   {
     key: "zip",
-    label: "All",
+    label: "Dataset bundle",
     children: <TabBundle />,
   },
   {
@@ -49,6 +49,7 @@ export default function DataManagementButton({
   open: controlledOpen,
   defaultOpen = false,
   onOpenChange,
+  tooltipPlacement = "top",
 }) {
   const [internalIsModalOpen, setInternalIsModalOpen] = useState(defaultOpen);
   const isControlled = typeof controlledOpen === "boolean";
@@ -80,6 +81,7 @@ export default function DataManagementButton({
         <AppButton
           preset={APP_BUTTON_PRESETS.PANEL_ICON}
           tooltip="Management"
+          tooltipPlacement={tooltipPlacement}
           ariaLabel="Management"
           onClick={showModal}
           icon={<DatabaseOutlined />}

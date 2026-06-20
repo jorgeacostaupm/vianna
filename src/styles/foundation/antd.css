@@ -42,6 +42,44 @@
     transform var(--transition-fast);
 }
 
+/* Every button shares one interaction language, regardless of Ant variant. */
+.ant-btn.ant-btn {
+  border: 1px solid var(--color-brand);
+}
+
+.ant-btn.ant-btn:not(:disabled):not(.ant-btn-disabled) {
+  background: var(--color-surface) !important;
+  color: var(--color-brand) !important;
+  box-shadow: var(--shadow-xs);
+}
+
+.ant-btn.ant-btn:not(:disabled):not(.ant-btn-disabled):hover {
+  background: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+  color: var(--color-on-brand) !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.ant-btn.ant-btn:not(:disabled):not(.ant-btn-disabled):hover * {
+  color: inherit;
+}
+
+.ant-btn.ant-btn:not(:disabled):not(.ant-btn-disabled):active {
+  background: var(--color-accent-active) !important;
+  border-color: var(--color-accent-active) !important;
+  color: var(--color-on-brand) !important;
+}
+
+.ant-btn.ant-btn[data-active="true"]:not(:disabled):not(.ant-btn-disabled) {
+  background: var(--color-accent-active) !important;
+  border-color: var(--color-accent-active) !important;
+  color: var(--color-on-brand) !important;
+}
+
+.ant-btn.ant-btn[data-active="true"]:not(:disabled):not(.ant-btn-disabled) * {
+  color: inherit;
+}
+
 :where(.ant-btn-sm) {
   height: var(--control-height-sm);
   padding: 0 var(--space-3);
@@ -52,40 +90,136 @@
   padding: 0 var(--space-5);
 }
 
-:where(.ant-btn-default),
-:where(.ant-btn-primary) {
-  background: var(--color-brand);
-  border-color: var(--color-brand);
-  color: #fff;
+:where(.ant-btn-default) {
+  background: var(--color-surface);
+  border-color: var(--color-brand-border);
+  color: var(--color-brand);
   box-shadow: var(--shadow-xs);
 }
 
-:where(.ant-btn-default:not(:disabled):hover),
-:where(.ant-btn-primary:not(:disabled):hover) {
-  background: var(--color-brand-hover);
-  border-color: var(--color-brand-hover);
+:where(.ant-btn-default:not(:disabled):hover) {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-brand);
 }
 
-:where(.ant-btn-default:not(:disabled):active),
+:where(.ant-btn-default:not(:disabled):active) {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+  color: var(--color-on-brand);
+  transform: translateY(0);
+}
+
+:where(.ant-btn-primary) {
+  background: var(--color-surface);
+  border-color: var(--color-brand-border);
+  color: var(--color-brand);
+  box-shadow: var(--shadow-xs);
+}
+
+:where(.ant-btn-primary:not(:disabled):hover) {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-brand);
+}
+
 :where(.ant-btn-primary:not(:disabled):active) {
-  background: var(--color-brand-active);
-  border-color: var(--color-brand-active);
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+  color: var(--color-on-brand);
   transform: translateY(0);
 }
 
 :where(.ant-btn-text) {
-  color: var(--color-ink-secondary);
+  background: var(--color-surface);
+  border-color: var(--color-brand-border);
+  color: var(--color-brand);
 }
 
 :where(.ant-btn[disabled], .ant-btn-disabled) {
-  background: #d6ddea;
-  border-color: #d6ddea;
-  color: #8c9bb8;
+  background: var(--color-disabled-bg);
+  border-color: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
   box-shadow: none;
 }
 
 :where(.ant-btn):focus-visible {
   box-shadow: var(--focus-ring);
+}
+
+:where(.ant-switch) {
+  border: 0;
+}
+
+.ant-radio-group.ant-radio-group-solid {
+  display: inline-flex;
+  gap: 0;
+  width: fit-content;
+  padding: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  box-shadow: var(--shadow-xs);
+}
+
+.ant-radio-group.ant-radio-group-solid .ant-radio-button-wrapper::before {
+  display: none;
+}
+
+.ant-radio-group.ant-radio-group-solid
+  .ant-radio-button-wrapper.ant-radio-button-wrapper {
+  height: calc(var(--control-height-sm) - 4px);
+  line-height: calc(var(--control-height-sm) - 4px);
+  margin: 0;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 3px);
+  background: transparent;
+  color: var(--color-ink-secondary);
+  box-shadow: none;
+}
+
+.ant-radio-group.ant-radio-group-solid
+  .ant-radio-button-wrapper:not(.ant-radio-button-wrapper-disabled):hover {
+  background: var(--color-accent);
+  color: var(--color-on-brand);
+}
+
+.ant-radio-group.ant-radio-group-solid
+  .ant-radio-button-wrapper-checked:not(.ant-radio-button-wrapper-disabled) {
+  background: var(--color-accent-active);
+  color: var(--color-on-brand);
+}
+
+.ant-radio-group.ant-radio-group-solid
+  .ant-radio-button-wrapper-checked:not(
+    .ant-radio-button-wrapper-disabled
+  ):hover {
+  background: var(--color-accent-active);
+  color: var(--color-on-brand);
+}
+
+:where(.ant-segmented) {
+  padding: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  box-shadow: var(--shadow-xs);
+}
+
+:where(.ant-segmented-item) {
+  border-radius: calc(var(--radius-md) - 3px);
+  color: var(--color-ink-secondary);
+}
+
+:where(.ant-segmented-item:hover) {
+  background: var(--color-accent);
+  color: var(--color-on-brand);
+}
+
+:where(.ant-segmented-item-selected) {
+  background: var(--color-accent-active);
+  color: var(--color-on-brand);
+  box-shadow: none;
 }
 
 :where(.ant-input),
@@ -137,11 +271,11 @@
 }
 
 :where(.ant-select-item-option-active) {
-  background: var(--color-brand-soft);
+  background: var(--color-accent-soft-subtle);
 }
 
 :where(.ant-select-item-option-selected) {
-  background: rgba(30, 112, 194, 0.16);
+  background: var(--color-accent-soft);
 }
 
 :where(.ant-list-item) {
@@ -151,7 +285,7 @@
 }
 
 :where(.ant-list-item:hover) {
-  background: var(--color-brand-soft);
+  background: var(--color-accent-soft-subtle);
 }
 
 :where(.ant-table) {
@@ -172,7 +306,7 @@
 }
 
 :where(.ant-table-tbody > tr:hover > td) {
-  background: var(--color-brand-soft);
+  background: var(--color-accent-soft-subtle);
 }
 
 :where(.ant-modal-content) {
@@ -218,4 +352,8 @@
 
 :where(.ant-tabs-tab) {
   font-weight: 600;
+}
+
+:where(.ant-tabs-ink-bar) {
+  background: var(--color-accent);
 }

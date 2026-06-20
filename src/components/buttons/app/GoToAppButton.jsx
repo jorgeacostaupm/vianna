@@ -4,7 +4,7 @@ import { getAppNavigation } from "@/navigation/apps";
 import { openApp } from "@/navigation/openApp";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 
-export default function GoToAppButton({ to }) {
+export default function GoToAppButton({ to, tooltipPlacement = "top" }) {
   const dispatch = useDispatch();
   const appConfig = getAppNavigation(to);
   const Icon = appConfig?.icon;
@@ -26,6 +26,7 @@ export default function GoToAppButton({ to }) {
     <AppButton
       preset={APP_BUTTON_PRESETS.PANEL_ICON}
       tooltip={tooltipTitle}
+      tooltipPlacement={tooltipPlacement}
       ariaLabel={tooltipTitle}
       onClick={handleOpenTab}
       icon={<Icon />}

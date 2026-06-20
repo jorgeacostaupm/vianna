@@ -24,7 +24,7 @@ export default function TabSettings() {
       <div className={styles.settingsPanel}>
         <section className={styles.settingsSection}>
           <div className={styles.settingsRowBetween}>
-            <Text strong style={{ color: "var(--primary-color)" }}>
+            <Text strong style={{ color: "var(--color-ink)" }}>
               Informative tooltips
             </Text>
             <Switch
@@ -40,7 +40,7 @@ export default function TabSettings() {
         </section>
 
         <section className={styles.settingsSection}>
-          <Text strong style={{ color: "var(--primary-color)" }}>
+          <Text strong style={{ color: "var(--color-ink)" }}>
             Open applications in
           </Text>
           <Radio.Group

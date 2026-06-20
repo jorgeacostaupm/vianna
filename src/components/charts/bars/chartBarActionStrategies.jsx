@@ -31,15 +31,17 @@ const DEFAULT_CHART_BAR_ACTION_ORDER = Object.freeze([
 function buildSyncAction({ isSync, updateConfig }) {
   if (typeof updateConfig !== "function") return null;
 
+  const tooltip = isSync
+    ? "Synced with Explorer selection. Click to freeze this view."
+    : "Frozen selection. Click to sync with Explorer again.";
+
   return (
     <AppButton
       preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
       key="sync"
-      tooltip={
-        isSync
-          ? "Disable sync with Explorer selection"
-          : "Enable sync with Explorer selection"
-      }
+      active={isSync}
+      tooltip={tooltip}
+      ariaLabel={tooltip}
       icon={<SyncOutlined />}
       onClick={() => updateConfig("isSync", !isSync)}
       variant={
@@ -67,7 +69,7 @@ function buildInfoAction({ info }) {
       key="info"
       content={info}
       icon={<InfoCircleFilled />}
-      title="Info"
+      title="About this view"
     />
   ) : null;
 }
@@ -78,7 +80,7 @@ function buildSettingsAction({ settings }) {
       key="settings"
       content={settings}
       icon={<SettingOutlined />}
-      title="Settings"
+      title="View settings"
       panelWidth={400}
     />
   ) : null;
@@ -125,7 +127,8 @@ function buildCloseAction({ remove }) {
     <AppButton
       preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
       key="close"
-      tooltip="Close"
+      tooltip="Close view"
+      ariaLabel="Close view"
       icon={<CloseOutlined />}
       onClick={remove}
     />

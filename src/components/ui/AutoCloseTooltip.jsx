@@ -8,10 +8,12 @@ export default function AutoCloseTooltip({
   children,
   placement = "top",
   autoCloseMs = 2000,
+  disabled = false,
 }) {
   const [visible, setVisible] = useState(false);
   const showInformativeTooltips = useSelector(selectShowInformativeTooltips);
-  const shouldShowTooltip = Boolean(title) && showInformativeTooltips;
+  const shouldShowTooltip =
+    Boolean(title) && showInformativeTooltips && !disabled;
 
   const closeTooltip = useCallback(() => {
     setVisible(false);

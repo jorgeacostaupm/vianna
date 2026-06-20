@@ -3,41 +3,70 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  flex: 0 0 40px;
+  flex: 0 0 35px;
   padding: 0 var(--space-2);
-  height: 40px;
-  background: linear-gradient(90deg, #3f5484 0%, #4e6698 100%);
+  height: 35px;
+  background: linear-gradient(
+    90deg,
+    var(--color-brand-active) 0%,
+    var(--color-brand) 100%
+  );
   width: 100%;
-  color: #fff;
+  color: var(--color-on-brand);
   box-shadow: var(--shadow-xs);
-  border-bottom: 1px solid rgba(188, 200, 222, 0.35);
   border-top-left-radius: var(--radius-lg);
   border-top-right-radius: var(--radius-lg);
 }
 
+.chartBar :global(.ant-btn.ant-btn),
+.chartBar button:not([class*="ant-"]) {
+  border: 0;
+}
+
+.chartBar :global(.ant-btn.ant-btn) {
+  width: 24px !important;
+  min-width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  font-size: 16px;
+}
+
 .chartTitle {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   flex: 1 1 auto;
   min-width: 0;
-  margin-left: var(--space-2);
+  margin-left: var(--space-1);
   font-weight: 700;
-  font-size: var(--font-size-sm);
+  font-size: 13px;
   font-family: var(--font-family-base);
   text-anchor: middle;
   letter-spacing: 0.01em;
+}
+
+.chartTitleText {
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.chartBarLogo {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
 .right {
   display: flex;
   flex: 0 0 auto;
   flex-direction: row;
-  gap: 6px;
+  gap: var(--space-1);
   height: 100%;
   right: 0px;
-  padding-right: var(--space-2);
+  padding-right: var(--space-1);
   padding-left: var(--space-2);
   background: transparent;
   align-items: center;
@@ -62,7 +91,7 @@
   min-width: 350px;
   max-width: 350px;
   right: -10px;
-  top: 44px;
+  top: 39px;
   max-height: 90%;
   font-size: var(--font-size-base);
   overflow: auto;
@@ -75,6 +104,7 @@
 
 .separator {
   height: 80%; /* altura de la barra */
-  border-left: 2px solid rgba(230, 232, 241, 0.55);
+  border-left: 2px solid
+    color-mix(in srgb, var(--color-on-brand) 55%, transparent);
   margin: 0 var(--space-2); /* espacio a los lados de la barra */
 }

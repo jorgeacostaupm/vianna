@@ -19,11 +19,41 @@ body {
   background:
     radial-gradient(
       1200px 900px at 12% -10%,
-      var(--brand-radial-tint),
+      var(--accent-radial-tint),
       transparent 60%
+    ),
+    radial-gradient(
+      1000px 700px at 100% 100%,
+      var(--brand-radial-tint),
+      transparent 65%
     ),
     var(--color-bg);
   overflow-x: hidden;
+}
+
+/* Native buttons follow the same states as AppButton. */
+button:not([class*="ant-"]) {
+  background: var(--color-surface);
+  border: 1px solid var(--color-brand);
+  color: var(--color-brand);
+  box-shadow: var(--shadow-xs);
+}
+
+button:not([class*="ant-"]):not(:disabled):hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-brand);
+  box-shadow: var(--shadow-sm);
+}
+
+button:not([class*="ant-"]):not(:disabled):hover * {
+  color: inherit;
+}
+
+button:not([class*="ant-"]):not(:disabled):active {
+  background: var(--color-accent-active);
+  border-color: var(--color-accent-active);
+  color: var(--color-on-brand);
 }
 
 #root {

@@ -41,35 +41,35 @@ const Info = () => {
       <div className={styles.dataStats}>
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            File Name:
+            File:
           </Text>{" "}
           <Text type="secondary">{filename ? filename : "—"}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Nº Nodes:
+            Nodes:
           </Text>{" "}
           <Text type="secondary">{nodes.length}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Nº Measurements:
+            Measurements:
           </Text>{" "}
           <Text type="secondary">{measurementCount}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Nº Aggregations:
+            Aggregations:
           </Text>{" "}
           <Text type="secondary">{aggregationCount}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Unknown Attributes:
+            Unknown attributes:
           </Text>{" "}
           <Text type="secondary">{unknownCount}</Text>
         </div>
@@ -90,7 +90,7 @@ const Info = () => {
           icon={<DownloadOutlined />}
           shape="default"
         >
-          Export
+          Export hierarchy
         </AppButton>
       </div>
     </div>

@@ -44,7 +44,24 @@ export default function ViewContainer(props) {
         recordsExport={recordsExport}
         actions={actions}
       />
+      <ViewRecordCount recordsExport={recordsExport} />
       {chart}
+    </div>
+  );
+}
+
+function ViewRecordCount({ recordsExport }) {
+  const recordCount = Array.isArray(recordsExport?.recordOrders)
+    ? recordsExport.recordOrders.length
+    : null;
+
+  if (recordCount == null) return null;
+
+  const label = `${recordCount} records`;
+
+  return (
+    <div className={styles.viewRecordCount} aria-label={label} title={label}>
+      {label}
     </div>
   );
 }

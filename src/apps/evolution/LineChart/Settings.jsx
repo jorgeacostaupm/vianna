@@ -129,7 +129,7 @@ export default function Settings({
     return (
       <div className={panelStyles.panel}>
         <div className={panelStyles.section}>
-          <div className={panelStyles.sectionTitle}>GLOBAL</div>
+          <div className={panelStyles.sectionTitle}>Global</div>
           <Text className={panelStyles.helper}>
             Select one or more tests to compute for the evolution view.
           </Text>

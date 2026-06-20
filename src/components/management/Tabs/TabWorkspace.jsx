@@ -1,9 +1,9 @@
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { Typography } from "antd";
-import { DownloadOutlined, UploadOutlined } from "@ant-design/icons";
+import { DownloadOutlined } from "@ant-design/icons";
 import { useDispatch, useSelector } from "react-redux";
-import { useDropzone } from "react-dropzone";
 
+import FileImportDropzone from "../DragDrop/FileImportDropzone";
 import styles from "../Data.module.css";
 import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 import {
@@ -72,19 +72,6 @@ export default function TabWorkspace() {
     }
   };
 
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop: handleFileDrop,
-    maxFiles: 1,
-    accept: ACCEPTED_FORMATS,
-    multiple: false,
-    onDropRejected: () => {
-      notifyWarning({
-        message: "Unsupported file",
-        description: "Accepted format: .json",
-      });
-    },
-  });
-
   return (
     <div className={styles.tabPaneBody}>
       <div className={styles.tabSplit}>
@@ -113,35 +100,18 @@ export default function TabWorkspace() {
           <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
             Import
           </Title>
-          <div
-            {...getRootProps({
-              className: `${styles.dropzone} ${styles.dataDropzone}`,
-              "aria-label": "Upload workspace JSON",
-            })}
-          >
-            <input {...getInputProps()} />
-            <UploadOutlined />
-            <span className={styles.dataDropLabel}>
-              Choose a file or drag it here
-            </span>
-          </div>
-          <div className={styles.dataDropHint}>
-            <span className={styles.subtitle}>Workspace JSON</span>
-            {file ? <span className={styles.text}>{file.name}</span> : null}
-          </div>
-
-          <div className={`${styles.controls} ${styles.dataImportControls}`}>
-            <AppButton
-              preset={APP_BUTTON_PRESETS.ACTION}
-              onClick={handleImport}
-              disabled={!file || isImporting}
-              loading={isImporting}
-              icon={<UploadOutlined />}
-              shape="default"
-            >
-              Load workspace
-            </AppButton>
-          </div>
+          <FileImportDropzone
+            accept={ACCEPTED_FORMATS}
+            onDrop={handleFileDrop}
+            ariaLabel="Upload workspace JSON"
+            acceptedLabel="Workspace JSON"
+            rejectedDescription="Accepted format: .json"
+            filename={file?.name}
+            onUpload={handleImport}
+            disabled={!file || isImporting}
+            loading={isImporting}
+            buttonLabel="Load workspace"
+          />
         </div>
       </div>
     </div>

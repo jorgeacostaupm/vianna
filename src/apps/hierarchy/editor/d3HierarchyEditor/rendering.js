@@ -130,7 +130,7 @@ export function drawNodes(source, instant = false) {
           .attr("class", "ghostCircle")
           .attr("r", this.getAssignRadius())
           .attr("opacity", 0.2)
-          .attr("fill", "var(--color-brand)")
+          .attr("fill", "var(--chart-focus)")
           .attr("fill-opacity", 0)
           .attr("pointer-events", "all");
 
@@ -141,8 +141,8 @@ export function drawNodes(source, instant = false) {
           .attr("text-anchor", "middle")
           .style("font-size", `${Math.round(this.viewConfig.labelFontSize)}px`)
           .text((node) => graph.getLabelText(node))
-          .style("fill", "var(--color-ink)")
-          .style("stroke", "var(--color-surface)")
+          .style("fill", "var(--chart-text)")
+          .style("stroke", "var(--chart-surface)")
           .style("stroke-width", 3)
           .style("stroke-linejoin", "round")
           .style("paint-order", "stroke");
@@ -241,12 +241,12 @@ export function drawNodes(source, instant = false) {
     .attr("text-anchor", isHorizontal ? "middle" : "start")
     .attr("transform", isHorizontal ? null : "rotate(-25)")
     .style("font-size", `${Math.round(this.viewConfig.labelFontSize)}px`)
-    .attr("stroke", "var(--color-surface)")
+    .attr("stroke", "var(--chart-surface)")
     .attr("display", this.viewConfig.showLabels ? null : "none")
     .style("fill", (d) =>
       d.data?.isActive === false
-        ? "var(--color-ink-tertiary)"
-        : "var(--color-ink)",
+        ? "var(--chart-text-muted)"
+        : "var(--chart-text)",
     )
     .attr("text-decoration", (d) =>
       d.data?.isActive === false ? "line-through" : null,

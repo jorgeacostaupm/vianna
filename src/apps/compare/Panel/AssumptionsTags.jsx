@@ -40,22 +40,22 @@ const StatusTag = ({ condition, successText, failText, label }) =>
         color={condition ? "success" : "warning"}
         style={tagStyle}
       >
-        {label}
+        {label}: {condition ? "Pass" : "Review"}
       </Tag>
     </AutoCloseTooltip>
   ) : (
-    <Tag style={{ ...grayStyle, ...tagStyle }}>-</Tag>
+    <Tag style={{ ...grayStyle, ...tagStyle }}>{label}: Not checked</Tag>
   );
 
 const TypeTag = ({ type }) =>
   type ? (
     <AutoCloseTooltip title={`Variable type: ${getNameByDtype(type)}`}>
       <Tag color={getColorByDtype(type)} style={tagStyle}>
-        {getNameByDtype(type)}
+        Type: {getNameByDtype(type)}
       </Tag>
     </AutoCloseTooltip>
   ) : (
-    <Tag style={{ ...grayStyle, ...tagStyle }}>-</Tag>
+    <Tag style={{ ...grayStyle, ...tagStyle }}>Type: Not selected</Tag>
   );
 
 export default function AssumptionsTags() {
@@ -87,14 +87,14 @@ export default function AssumptionsTags() {
         condition={assumptions.normality && type !== null ? allNormal : null}
         successText="All distributions meet normality"
         failText="Some distributions fail normality"
-        label="μ"
+        label="Normality"
       />
 
       <StatusTag
         condition={type !== null ? assumptions.equalVariance : null}
         successText="Homogeneous variances"
         failText="Heterogeneous variances"
-        label="σ²"
+        label="Equal variances"
       />
 
       <TypeTag type={type} />

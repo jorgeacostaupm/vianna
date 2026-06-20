@@ -49,7 +49,8 @@ export default function PopoverButton({
           preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
           active={open}
           icon={icon}
-          tooltip={open ? null : title}
+          tooltip={title}
+          tooltipDisabled={open}
           tooltipAutoCloseMs={tooltipDuration}
           ariaLabel={title || "Open menu"}
         />

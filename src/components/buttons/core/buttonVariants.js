@@ -30,6 +30,7 @@ export const APP_BUTTON_PRESETS = Object.freeze({
 const PRESET_PROPS_MAP = Object.freeze({
   [APP_BUTTON_PRESETS.BRAND]: {
     variant: APP_BUTTON_VARIANTS.BRAND,
+    type: "primary",
   },
   [APP_BUTTON_PRESETS.TOOLBAR_ICON]: {
     variant: APP_BUTTON_VARIANTS.TOOLBAR,

@@ -1,10 +1,10 @@
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useDropzone } from "react-dropzone";
 import { Typography } from "antd";
-import { DownloadOutlined, UploadOutlined } from "@ant-design/icons";
+import { DownloadOutlined } from "@ant-design/icons";
 
 import { FileProcessorFactory } from "../DragDrop/drag";
+import FileImportDropzone from "../DragDrop/FileImportDropzone";
 import {
   createAssetBundleZip,
   readAssetBundle,
@@ -115,14 +115,14 @@ const Info = () => {
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Nº Rows:
+            Rows:
           </Text>{" "}
           <Text type="secondary">{rowCount}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Nº Nodes:
+            Nodes:
           </Text>{" "}
           <Text type="secondary">{nodeCount}</Text>
         </div>
@@ -137,7 +137,7 @@ const Info = () => {
           icon={<DownloadOutlined />}
           shape="default"
         >
-          Export
+          Export dataset bundle
         </AppButton>
       </div>
     </div>
@@ -228,59 +228,23 @@ const UploadPanel = () => {
     }
   };
 
-  const { getRootProps, getInputProps } = useDropzone({
-    onDrop: handleFileDrop,
-    maxFiles: 1,
-    accept: ACCEPTED_FORMATS,
-    multiple: false,
-    onDropRejected: () => {
-      notifyWarning({
-        message: "Unsupported file",
-        description: "Accepted format: .zip",
-      });
-    },
-  });
-
   return (
     <div className={`${styles.tabColumn} ${styles.tabColumnWithDivider}`}>
       <Title level={4} style={{ marginTop: 0, color: "var(--primary-color)" }}>
         Import
       </Title>
-      <div
-        {...getRootProps({
-          className: `${styles.dropzone} ${styles.dataDropzone}`,
-          "aria-label": "Upload dataset assets ZIP",
-        })}
-      >
-        <input {...getInputProps()} />
-        <UploadOutlined />
-        <span className={styles.dataDropLabel}>
-          Choose a file or drag it here
-        </span>
-      </div>
-      <div className={styles.dataDropHint}>
-        <span className={styles.subtitle}>
-          Required: data, hierarchy, descriptions
-        </span>
-        {(isReadingFile || filename) && (
-          <span className={styles.text}>
-            {isReadingFile ? "Reading file..." : filename}
-          </span>
-        )}
-      </div>
-
-      <div className={`${styles.controls} ${styles.dataImportControls}`}>
-        <AppButton
-          preset={APP_BUTTON_PRESETS.ACTION}
-          onClick={handleUpload}
-          disabled={!filename || isUploading}
-          loading={isUploading}
-          icon={<UploadOutlined />}
-          shape="default"
-        >
-          Import
-        </AppButton>
-      </div>
+      <FileImportDropzone
+        accept={ACCEPTED_FORMATS}
+        onDrop={handleFileDrop}
+        ariaLabel="Upload dataset assets ZIP"
+        acceptedLabel="Required: data, hierarchy, descriptions"
+        rejectedDescription="Accepted format: .zip"
+        filename={filename}
+        isReadingFile={isReadingFile}
+        onUpload={handleUpload}
+        disabled={!filename || isUploading}
+        loading={isUploading}
+      />
     </div>
   );
 };

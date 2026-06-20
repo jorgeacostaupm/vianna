@@ -1,8 +1,8 @@
 .panelBox {
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.96) 0%,
-    rgba(248, 250, 252, 0.94) 100%
+    var(--color-surface) 0%,
+    var(--color-surface-muted) 100%
   );
   width: 100%;
   border-radius: var(--radius-md);
@@ -17,9 +17,9 @@
 }
 
 .panelBoxContext {
-  border-color: rgba(78, 102, 152, 0.3);
+  border-color: var(--color-accent-border);
   box-shadow:
-    0 0 0 1px rgba(78, 102, 152, 0.1),
+    0 0 0 1px var(--color-accent-soft-subtle),
     var(--shadow-xs);
 }
 
@@ -75,9 +75,9 @@
   width: 20px;
   height: 20px;
   border-radius: 999px;
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-brand);
   background: var(--color-surface);
-  color: var(--color-ink-secondary);
+  color: var(--color-brand);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -89,9 +89,9 @@
 }
 
 .testInfoTrigger:hover {
-  background: var(--color-surface-muted);
-  border-color: var(--color-ink-secondary);
-  color: var(--color-ink);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-brand);
 }
 
 .testInfoTrigger:focus-visible {
@@ -118,7 +118,7 @@
 
 .contextStatsBox {
   margin-top: 2px;
-  border-top: 1px dashed rgba(78, 102, 152, 0.3);
+  border-top: 1px dashed var(--color-accent-border);
   padding-top: var(--space-2);
   display: flex;
   flex-direction: column;
@@ -152,8 +152,8 @@
   padding: 0 12px !important;
   border-radius: var(--radius-md) !important;
   border-color: var(--color-border-strong) !important;
-  background: #fff !important;
-  box-shadow: inset 0 1px 0 rgba(15, 23, 42, 0.02);
+  background: var(--color-surface) !important;
+  box-shadow: inset 0 1px 0 var(--color-brand-soft-subtle);
 }
 
 .selectorControl :global(.ant-select-selection-item),

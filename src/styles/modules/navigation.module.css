@@ -1,8 +1,11 @@
 .appBar {
-  background: linear-gradient(90deg, #3f5484 0%, #4e6698 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-brand-active) 0%,
+    var(--color-brand) 100%
+  );
   padding: 0 var(--space-4);
   height: var(--nav-height);
-  border-bottom: 1px solid var(--color-border);
   box-shadow: var(--shadow-xs);
 }
 
@@ -24,6 +27,11 @@
   padding: 0 var(--space-3);
 }
 
+.appBar :global(.ant-btn.ant-btn),
+.appBar button:not([class*="ant-"]) {
+  border: 0;
+}
+
 .appBarLogo {
   display: block;
   width: fit-content;
@@ -39,8 +47,12 @@
 }
 
 .mainSidebar {
-  background: linear-gradient(180deg, #3f5484 0%, #4e6698 100%);
-  border: 1px solid rgba(188, 200, 222, 0.36);
+  background: linear-gradient(
+    180deg,
+    var(--color-brand-active) 0%,
+    var(--color-brand) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--color-on-brand) 24%, transparent);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
   backdrop-filter: blur(4px);
@@ -95,13 +107,19 @@
   gap: 10px;
 }
 
+.mainSidebar :global(.ant-btn.ant-btn),
+.mainSidebar button:not([class*="ant-"]),
+.mainSidebarContainer button.mainSidebarShowButton {
+  border: 0;
+}
+
 .mainSidebarHideButton {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-brand);
   background: var(--color-surface);
-  color: var(--color-ink-secondary);
+  color: var(--color-brand);
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -115,9 +133,9 @@
 }
 
 .mainSidebarHideButton:hover {
-  background: var(--color-surface-muted);
-  border-color: var(--color-border-strong);
-  color: var(--color-ink);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-brand);
 }
 
 .mainSidebarHideButton:active {
@@ -133,21 +151,19 @@
   width: 32px;
   height: 72px;
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-  border: 1px solid rgba(188, 200, 222, 0.42);
-  background: linear-gradient(180deg, #3f5484 0%, #4e6698 100%);
-  color: #d6ddea;
-  box-shadow:
-    inset 1px 0 0 rgba(188, 200, 222, 0.45),
-    var(--shadow-sm);
+  border: 1px solid var(--color-brand);
+  background: var(--color-surface);
+  color: var(--color-brand);
+  box-shadow: var(--shadow-sm);
   display: grid;
   place-items: center;
   cursor: pointer;
 }
 
 .mainSidebarShowButton:hover {
-  background: linear-gradient(180deg, #4e6698 0%, #5f78ad 100%);
-  border-color: rgba(188, 200, 222, 0.6);
-  color: #e6e8f1;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-brand);
 }
 
 .mainSidebarShowButton:active {
@@ -156,7 +172,5 @@
 
 .mainSidebarShowButton:focus-visible {
   outline: none;
-  box-shadow:
-    inset 1px 0 0 rgba(188, 200, 222, 0.45),
-    0 0 0 3px rgba(78, 102, 152, 0.3);
+  box-shadow: var(--focus-ring);
 }

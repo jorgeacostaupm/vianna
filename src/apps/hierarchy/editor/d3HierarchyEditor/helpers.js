@@ -10,7 +10,7 @@ const dtypeColors = {
 
 export function colorNode(node) {
   if (node?.data?.isActive === false) {
-    return "var(--color-surface-muted)";
+    return "var(--chart-bg-muted)";
   }
 
   const isRootNode = node?.data?.type === "root" || node?.data?.id === 0;

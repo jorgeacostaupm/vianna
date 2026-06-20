@@ -14,7 +14,7 @@ export default function ChartSelector({ onAddChart }) {
         label="Chart type"
         value={chart ?? undefined}
         onChange={(v) => setChart(v ?? null)}
-        placeholder="Select graph"
+        placeholder="Select chart type"
         options={Object.keys(registry)}
         notFoundContent="No charts found"
         allowClear={true}
@@ -29,7 +29,7 @@ export default function ChartSelector({ onAddChart }) {
         }}
         disabled={!chart}
       >
-        Add chart
+        Add correlation view
       </AppButton>
     </>
   );

@@ -18,7 +18,15 @@ export default function BaseBar({
   return (
     <div className={styles.chartBar} data-view-bar>
       <div className={titleClassName} title={titleHoverText}>
-        {title}
+        {title && (
+          <img
+            src="./app_name.svg"
+            alt=""
+            aria-hidden="true"
+            className={styles.chartBarLogo}
+          />
+        )}
+        <span className={styles.chartTitleText}>{title}</span>
       </div>
 
       <div className={styles.right}>{children}</div>

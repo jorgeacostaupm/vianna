@@ -85,6 +85,8 @@ export default function useWelcomeController() {
     onLoadDemo,
     onRestoreAutosave,
     onLoadWorkspace,
+    onStartWithData: () =>
+      navigate(OVERVIEW_PATH, { state: { openDataManagement: true } }),
     onContinueWithoutData: () => navigate(OVERVIEW_PATH),
     autosavedWorkspaceSummary: autosavedWorkspace
       ? getWorkspaceSummary(autosavedWorkspace)

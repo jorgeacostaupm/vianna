@@ -51,35 +51,35 @@ const Info = () => {
       <div className={styles.dataStats}>
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            File Name:
+            File:
           </Text>{" "}
           <Text type="secondary">{filename ? filename : "—"}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Nº Rows:
+            Rows:
           </Text>{" "}
           <Text type="secondary">{dt?.length || 0}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Nº Columns:
+            Columns:
           </Text>{" "}
           <Text type="secondary">{columnCount}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Missing Values:
+            Missing values:
           </Text>{" "}
           <Text type="secondary">{missingValues}</Text>
         </div>
 
         <div>
           <Text strong style={{ color: "var(--primary-color)" }}>
-            Missing %:
+            Missing values (%):
           </Text>{" "}
           <Text type="secondary">{missingPercent}</Text>
         </div>
@@ -100,7 +100,7 @@ const Info = () => {
           icon={<DownloadOutlined />}
           shape="default"
         >
-          Export
+          Export data
         </AppButton>
       </div>
     </div>

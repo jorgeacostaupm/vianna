@@ -23,6 +23,7 @@ const AppButton = forwardRef(function AppButton(
     type,
     active = false,
     tooltip,
+    tooltipDisabled = false,
     tooltipPlacement = "top",
     tooltipAutoCloseMs = 2000,
     ariaLabel,
@@ -54,6 +55,7 @@ const AppButton = forwardRef(function AppButton(
       shape={resolvedShape}
       type={resolvedType}
       aria-label={resolvedAriaLabel}
+      data-active={active || undefined}
     />
   );
 
@@ -66,6 +68,7 @@ const AppButton = forwardRef(function AppButton(
       title={tooltip}
       placement={tooltipPlacement}
       autoCloseMs={tooltipAutoCloseMs}
+      disabled={tooltipDisabled}
     >
       {button}
     </AutoCloseTooltip>

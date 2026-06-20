@@ -1,15 +1,17 @@
+import { UI_COLORS } from "@/styles/uiColors";
+
 const STATIC_TOKENS = {
-  colorSuccess: "#26A88E",
-  colorWarning: "#B07A2A",
-  colorError: "#B2545A",
-  colorText: "#25324A",
-  colorTextSecondary: "#4C5D7E",
-  colorTextTertiary: "#7483A3",
-  colorBgLayout: "#F3F5FB",
-  colorBgContainer: "#ffffff",
-  colorBgElevated: "#ffffff",
-  colorBorder: "#D6DDEA",
-  colorBorderSecondary: "#D6DDEA",
+  colorSuccess: UI_COLORS.success,
+  colorWarning: UI_COLORS.warning,
+  colorError: UI_COLORS.error,
+  colorText: UI_COLORS.ink,
+  colorTextSecondary: UI_COLORS.inkSecondary,
+  colorTextTertiary: UI_COLORS.inkTertiary,
+  colorBgLayout: UI_COLORS.background,
+  colorBgContainer: UI_COLORS.surface,
+  colorBgElevated: UI_COLORS.surface,
+  colorBorder: UI_COLORS.border,
+  colorBorderSecondary: UI_COLORS.border,
   fontFamily:
     'Manrope, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
   fontSize: 16,
@@ -28,99 +30,108 @@ const STATIC_TOKENS = {
   borderRadius: 10,
   borderRadiusSM: 8,
   borderRadiusLG: 14,
-  boxShadow: "0 4px 12px rgba(37, 50, 74, 0.14)",
-  boxShadowSecondary: "0 1px 3px rgba(37, 50, 74, 0.12)",
+  boxShadow: UI_COLORS.shadowSm,
+  boxShadowSecondary: UI_COLORS.shadowXs,
   controlHeight: 40,
   controlHeightSM: 32,
   controlHeightLG: 48,
 };
 
-const palette = {
-  brandColor: "#4e6698",
-  brandHover: "#435985",
-  brandActive: "#374a73",
-  brandSoft: "rgba(78, 102, 152, 0.16)",
-  brandSoftSubtle: "rgba(78, 102, 152, 0.12)",
-  focusRingColor: "rgba(78, 102, 152, 0.25)",
-  brandBorder: "#b7c1d6",
-};
-
-const createTheme = () => {
-  return {
-    token: {
-      ...STATIC_TOKENS,
-      colorPrimary: palette.brandColor,
-      colorPrimaryBg: palette.brandSoft,
-      colorPrimaryBgHover: palette.brandSoftSubtle,
-      colorPrimaryBorder: palette.brandBorder,
-      colorInfo: palette.brandColor,
+const createTheme = () => ({
+  token: {
+    ...STATIC_TOKENS,
+    colorPrimary: UI_COLORS.brand,
+    colorPrimaryBg: UI_COLORS.brandSoft,
+    colorPrimaryBgHover: UI_COLORS.brandSoftSubtle,
+    colorPrimaryBorder: UI_COLORS.brandBorder,
+    colorInfo: UI_COLORS.brand,
+    colorLink: UI_COLORS.brand,
+  },
+  components: {
+    Slider: {
+      handleColor: UI_COLORS.accent,
+      trackBg: UI_COLORS.accent,
+      trackHoverBg: UI_COLORS.accentHover,
+      railBg: UI_COLORS.border,
     },
-    components: {
-      Slider: {
-        handleColor: palette.brandColor,
-        railBg: "#D6DDEA",
-      },
-      Button: {
-        defaultBg: palette.brandColor,
-        defaultColor: "#fff",
-        defaultBorderColor: palette.brandColor,
-        defaultHoverBg: palette.brandHover,
-        defaultHoverColor: "#fff",
-        defaultHoverBorderColor: palette.brandHover,
-        defaultActiveBg: palette.brandActive,
-        defaultActiveBorderColor: palette.brandActive,
-        fontWeight: 600,
-      },
-      Input: {
-        activeBorderColor: palette.brandColor,
-        hoverBorderColor: "#BCC8DE",
-        activeShadow: `0 0 0 3px ${palette.focusRingColor}`,
-      },
-      Select: {
-        optionSelectedBg: palette.brandSoft,
-        optionActiveBg: palette.brandSoftSubtle,
-        selectorBg: "#ffffff",
-      },
-      Card: {
-        headerBg: "#ffffff",
-      },
-      Table: {
-        headerBg: "#F7F8FC",
-        rowHoverBg: palette.brandSoftSubtle,
-        borderColor: "#D6DDEA",
-      },
-      Modal: {
-        contentBg: "#ffffff",
-        headerBg: "#ffffff",
-      },
-      Tag: {
-        defaultBg: "#F7F8FC",
-        defaultColor: "#4C5D7E",
-      },
-      Tooltip: {
-        colorBgSpotlight: "#ffffff",
-        colorTextLightSolid: "#25324A",
-      },
-      Popover: {
-        colorBgElevated: "#ffffff",
-        colorText: "#25324A",
-      },
-      Radio: {
-        buttonBg: "transparent",
-        buttonColor: "#4C5D7E",
-        buttonBorderColor: "#D6DDEA",
-        buttonHoverColor: "#25324A",
-        buttonHoverBorderColor: palette.brandColor,
-        buttonCheckedBg: palette.brandColor,
-        buttonCheckedColor: "#ffffff",
-        buttonCheckedBorderColor: palette.brandColor,
-        buttonSolidCheckedBg: palette.brandColor,
-        buttonSolidCheckedColor: "#ffffff",
-        buttonSolidCheckedHoverBg: palette.brandHover,
-        buttonSolidCheckedHoverColor: "#ffffff",
-      },
+    Switch: {
+      colorPrimary: UI_COLORS.accent,
+      colorPrimaryHover: UI_COLORS.accentHover,
     },
-  };
-};
+    Checkbox: {
+      colorPrimary: UI_COLORS.accent,
+      colorPrimaryHover: UI_COLORS.accentHover,
+    },
+    Button: {
+      defaultBg: UI_COLORS.surface,
+      defaultColor: UI_COLORS.brand,
+      defaultBorderColor: UI_COLORS.brand,
+      defaultHoverBg: UI_COLORS.accent,
+      defaultHoverColor: UI_COLORS.onBrand,
+      defaultHoverBorderColor: UI_COLORS.accent,
+      defaultActiveBg: UI_COLORS.accentActive,
+      defaultActiveColor: UI_COLORS.onBrand,
+      defaultActiveBorderColor: UI_COLORS.accentActive,
+      colorPrimary: UI_COLORS.surface,
+      colorPrimaryHover: UI_COLORS.accent,
+      colorPrimaryActive: UI_COLORS.accentActive,
+      primaryColor: UI_COLORS.brand,
+      fontWeight: 600,
+    },
+    Input: {
+      activeBorderColor: UI_COLORS.brand,
+      hoverBorderColor: UI_COLORS.accentBorder,
+      activeShadow: UI_COLORS.focusRing,
+    },
+    Select: {
+      optionSelectedBg: UI_COLORS.accentSoft,
+      optionActiveBg: UI_COLORS.accentSoftSubtle,
+      selectorBg: UI_COLORS.surface,
+    },
+    Card: {
+      headerBg: UI_COLORS.surface,
+    },
+    Table: {
+      headerBg: UI_COLORS.surfaceMuted,
+      rowHoverBg: UI_COLORS.accentSoftSubtle,
+      borderColor: UI_COLORS.border,
+    },
+    Modal: {
+      contentBg: UI_COLORS.surface,
+      headerBg: UI_COLORS.surface,
+    },
+    Tabs: {
+      inkBarColor: UI_COLORS.accent,
+      itemSelectedColor: UI_COLORS.brand,
+      itemHoverColor: UI_COLORS.accentActive,
+    },
+    Tag: {
+      defaultBg: UI_COLORS.surfaceMuted,
+      defaultColor: UI_COLORS.inkSecondary,
+    },
+    Tooltip: {
+      colorBgSpotlight: UI_COLORS.surface,
+      colorTextLightSolid: UI_COLORS.ink,
+    },
+    Popover: {
+      colorBgElevated: UI_COLORS.surface,
+      colorText: UI_COLORS.ink,
+    },
+    Radio: {
+      buttonBg: UI_COLORS.surface,
+      buttonColor: UI_COLORS.brand,
+      buttonBorderColor: UI_COLORS.brand,
+      buttonHoverColor: UI_COLORS.onBrand,
+      buttonHoverBorderColor: UI_COLORS.accent,
+      buttonCheckedBg: UI_COLORS.accentActive,
+      buttonCheckedColor: UI_COLORS.onBrand,
+      buttonCheckedBorderColor: UI_COLORS.accentActive,
+      buttonSolidCheckedBg: UI_COLORS.accentActive,
+      buttonSolidCheckedColor: UI_COLORS.onBrand,
+      buttonSolidCheckedHoverBg: UI_COLORS.accentActive,
+      buttonSolidCheckedHoverColor: UI_COLORS.onBrand,
+    },
+  },
+});
 
 export const theme = createTheme();

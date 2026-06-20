@@ -21,30 +21,7 @@
   --line-height-base: 1.5;
   --line-height-relaxed: 1.65;
 
-  --color-brand: #4e6698;
-  --color-brand-hover: #435985;
-  --color-brand-active: #374a73;
-  --color-brand-soft: rgba(78, 102, 152, 0.16);
-  --brand-radial-tint: rgba(78, 102, 152, 0.12);
-
-  --color-ink: #25324a;
-  --color-ink-secondary: #4c5d7e;
-  --color-ink-tertiary: #7483a3;
-
-  --color-bg: #f3f5fb;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f7f8fc;
-
-  --color-border: #d6ddea;
-  --color-border-strong: #bcc8de;
-
-  --color-success: #26a88e;
-  --color-warning: #b07a2a;
-  --color-error: #b2545a;
-
-  --shadow-xs: 0 1px 3px rgba(37, 50, 74, 0.12);
-  --shadow-sm: 0 4px 12px rgba(37, 50, 74, 0.14);
-  --shadow-md: 0 12px 26px rgba(37, 50, 74, 0.18);
+  /* UI colors are injected from styles/uiColors.js, the single source of truth. */
 
   --radius-xs: 6px;
   --radius-sm: 8px;
@@ -65,7 +42,6 @@
   --control-height-md: 40px;
   --control-height-lg: 48px;
 
-  --focus-ring: 0 0 0 3px rgba(78, 102, 152, 0.25);
   --transition-fast: 140ms ease;
   --transition-base: 220ms ease;
 
@@ -73,22 +49,32 @@
 
   /* Legacy aliases used across the app */
   --primary-color: var(--color-brand);
-  --secondary-color: #e6e8f1;
+  --secondary-color: var(--color-surface-muted);
   --warning-color: var(--color-warning);
-  --axis-color: var(--color-ink-secondary);
+  --axis-color: var(--chart-axis);
 
-  --chart-bg: var(--color-surface);
-  --chart-bg-muted: var(--color-surface-muted);
-  --chart-border: var(--color-border);
-  --chart-border-strong: var(--color-border-strong);
-  --chart-axis: var(--color-ink-secondary);
-  --chart-axis-muted: var(--color-ink-tertiary);
+  /*
+   * Analytical colors are intentionally independent from the product UI.
+   * Changing styles/uiColors.js must not recolor existing visualizations.
+   */
+  --chart-bg: #ffffff;
+  --chart-bg-muted: #f7f8fc;
+  --chart-surface: #ffffff;
+  --chart-text: #25324a;
+  --chart-text-secondary: #4c5d7e;
+  --chart-text-muted: #657493;
+  --chart-border: #d6ddea;
+  --chart-border-strong: #bcc8de;
+  --chart-axis: #4c5d7e;
+  --chart-axis-muted: #657493;
   --chart-grid: #d6ddea;
   --chart-grid-strong: #aebad2;
-  --chart-outline: var(--color-ink-secondary);
-  --chart-outline-muted: var(--color-ink-tertiary);
+  --chart-outline: #4c5d7e;
+  --chart-outline-muted: #657493;
   --chart-zero-line: #8c9bb8;
-  --chart-focus: var(--color-brand);
+  --chart-focus: #4e6698;
+  --chart-warning: #b07a2a;
+  --chart-selection-fill: rgba(30, 112, 194, 0.2);
 
   --chart-series-1: #4e6698;
   --chart-series-2: #5f78ad;

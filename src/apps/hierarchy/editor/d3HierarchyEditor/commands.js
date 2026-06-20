@@ -451,7 +451,7 @@ export function focusNode({ nodeId }) {
       const nodeColor =
         nodeG.select("circle").attr("fill") ||
         nodeG.select("circle").attr("stroke") ||
-        "var(--color-brand)";
+        "var(--chart-focus)";
 
       const highlight = nodeG
         .append("circle")

@@ -1,8 +1,8 @@
 .panel {
   display: flex;
   flex-direction: column;
-  display: flex;
   gap: var(--space-3);
+  color: var(--color-ink);
 }
 
 .section {
@@ -10,39 +10,44 @@
   flex-direction: column;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
-  display: flex;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  gap: var(--space-2);
+  padding: var(--space-3);
+  box-shadow: var(--shadow-xs);
 }
 
 .sectionTitle {
-  font-size: var(--font-size-xs);
+  margin-bottom: 2px;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-sm);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--color-ink-tertiary);
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--color-ink);
 }
 
 .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  min-height: var(--control-height-sm);
 }
 
 .rowStack {
   display: flex;
   flex-direction: column;
-  display: flex;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 
 .label {
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-ink);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .labelInline {
@@ -65,9 +70,10 @@
 
 .sliderInlineRow {
   display: grid;
-  grid-template-columns: 80px 56px minmax(0, 1fr);
+  grid-template-columns: 96px 64px minmax(0, 1fr);
   align-items: center;
   column-gap: var(--space-2);
+  min-height: var(--control-height-sm);
 }
 
 .sliderInlineRowOverview {
@@ -100,8 +106,9 @@
 }
 
 .value {
-  color: var(--color-ink-tertiary);
-  font-size: var(--font-size-sm);
+  color: var(--color-ink-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 
 .control {
@@ -137,19 +144,21 @@
 
 .helper {
   font-size: var(--font-size-xs);
-  color: var(--color-ink-tertiary);
+  line-height: 1.45;
+  color: var(--color-ink-secondary);
+}
+
+.resetButton {
+  align-self: flex-end;
 }
 
 .optionList {
   display: flex;
   flex-direction: column;
-  display: flex;
   gap: var(--space-2);
 }
 
 .optionItem {
-  display: flex;
-  align-items: center;
   display: flex;
   align-items: flex-start;
   gap: var(--space-2);
@@ -158,7 +167,6 @@
 .optionBody {
   display: flex;
   flex-direction: column;
-  display: flex;
   gap: 2px;
 }
 
@@ -169,5 +177,6 @@
 
 .optionDesc {
   font-size: var(--font-size-xs);
-  color: var(--color-ink-tertiary);
+  line-height: 1.4;
+  color: var(--color-ink-secondary);
 }

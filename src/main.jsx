@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import { initializeStoreSync } from "@/store/store";
 import App from "./App";
 import "@/styles/index.css";
+import { applyUiColorVariables } from "@/styles/uiColors";
+
+applyUiColorVariables();
 
 async function bootstrap() {
   try {

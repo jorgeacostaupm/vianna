@@ -3,7 +3,12 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  padding: 24px;
+  min-height: 100%;
+  padding: clamp(16px, 4vw, 40px);
+}
+
+.welcomeCard {
+  width: min(720px, 100%);
 }
 
 .initialDataChoiceContent {
@@ -12,7 +17,8 @@
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+  padding: clamp(4px, 2vw, 16px);
 }
 
 .initialChoiceLogo {
@@ -23,21 +29,107 @@
 
 .initialChoiceTitle {
   text-align: center;
-  font-size: 24px;
+  font-size: clamp(26px, 4vw, 34px) !important;
+  margin: 0 !important;
 }
 
 .initialChoiceText {
   text-align: center;
+  max-width: 560px;
 }
 
-.initialChoiceButtonsRow {
+.savedSession,
+.startSection {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-muted);
+  padding: var(--space-4);
+}
+
+.savedSession {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-soft);
+}
+
+.savedSessionHeader,
+.sectionHeading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  text-align: left;
+}
+
+.savedSessionDate {
+  font-size: var(--font-size-sm);
+}
+
+.savedSessionSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(90px, 1fr));
+  gap: var(--space-2);
+}
+
+.savedSessionSummary > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  text-align: left;
+}
+
+.savedSessionSummary span {
+  color: var(--color-ink-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.savedSessionSummary strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+
+.startSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  background: var(--color-surface);
+}
+
+.primaryActions,
+.secondaryActions {
   display: flex;
   justify-content: center;
-  flex-wrap: nowrap;
-  gap: 10px;
-  margin-top: 8px;
+  gap: var(--space-2);
+}
+
+.primaryActions > *,
+.secondaryActions > * {
+  flex: 1 1 0;
 }
 
 .hiddenInput {
   display: none;
+}
+
+@media (max-width: 640px) {
+  .savedSessionSummary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .savedSessionSummary > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .primaryActions,
+  .secondaryActions {
+    flex-direction: column;
+  }
 }
