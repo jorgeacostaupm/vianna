@@ -16,10 +16,7 @@ import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 import panelStyles from "@/styles/modules/analysisPanels.module.css";
 import styles from "./TestSelector.module.css";
 import useSelectionRows from "@/hooks/useSelectionRows";
-import {
-  getApplicableTests,
-  isTestApplicable,
-} from "./applicableTests";
+import { getApplicableTests, isTestApplicable } from "./applicableTests";
 
 const { Option, OptGroup } = Select;
 
@@ -247,7 +244,7 @@ export default function TestSelector({ generateTest, generateRanking }) {
             onClick={() => selectedTest && generateRanking(selectedTest)}
             disabled={!selectedTest || !isGroupCountApplicable}
           >
-            Rank applicable variables
+            Rank variables
           </AppButton>
         </div>
       </div>

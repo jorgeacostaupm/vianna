@@ -52,13 +52,6 @@
   text-overflow: ellipsis;
 }
 
-.chartBarLogo {
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-}
-
 .right {
   display: flex;
   flex: 0 0 auto;

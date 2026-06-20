@@ -42,7 +42,7 @@ export default function VariableSelector({ generateEvolution }) {
         onClick={() => selectedVar && generateEvolution(selectedVar)}
         disabled={!selectedVar || !groupVar || !timeVar}
       >
-        Add evolution view
+        Add view
       </AppButton>
     </>
   );

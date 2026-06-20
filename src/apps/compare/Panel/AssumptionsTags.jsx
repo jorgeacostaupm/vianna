@@ -40,11 +40,11 @@ const StatusTag = ({ condition, successText, failText, label }) =>
         color={condition ? "success" : "warning"}
         style={tagStyle}
       >
-        {label}: {condition ? "Pass" : "Review"}
+        {label}
       </Tag>
     </AutoCloseTooltip>
   ) : (
-    <Tag style={{ ...grayStyle, ...tagStyle }}>{label}: Not checked</Tag>
+    <Tag style={{ ...grayStyle, ...tagStyle }}>-</Tag>
   );
 
 const TypeTag = ({ type }) =>
@@ -87,14 +87,14 @@ export default function AssumptionsTags() {
         condition={assumptions.normality && type !== null ? allNormal : null}
         successText="All distributions meet normality"
         failText="Some distributions fail normality"
-        label="Normality"
+        label="μ"
       />
 
       <StatusTag
         condition={type !== null ? assumptions.equalVariance : null}
         successText="Homogeneous variances"
         failText="Heterogeneous variances"
-        label="Equal variances"
+        label="σ²"
       />
 
       <TypeTag type={type} />

@@ -16,14 +16,6 @@ export default function Bar({ title, config, updateConfig }) {
     <>
       <div className={styles.chartBar} data-view-bar>
         <div className={styles.chartTitle} title={title}>
-          {title && (
-            <img
-              src="./app_name.svg"
-              alt=""
-              aria-hidden="true"
-              className={styles.chartBarLogo}
-            />
-          )}
           <span className={styles.chartTitleText}>{title}</span>
         </div>
 

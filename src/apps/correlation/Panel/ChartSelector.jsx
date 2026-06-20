@@ -29,7 +29,7 @@ export default function ChartSelector({ onAddChart }) {
         }}
         disabled={!chart}
       >
-        Add correlation view
+        Add view
       </AppButton>
     </>
   );
