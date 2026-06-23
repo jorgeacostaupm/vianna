@@ -73,12 +73,14 @@ const isCollapsedWithHiddenChildren = (node) =>
 
 export function drawHierarchy(source, instant = false) {
   const { root } = this;
-  const siblingSpacing = this.viewConfig.nodeSize;
-  const treeLayout = d3.tree().nodeSize([siblingSpacing, siblingSpacing]);
+  const minNodeDistance = this.getMinimumNodeDistance();
+  const siblingSpacing = Math.max(this.viewConfig.nodeSize, minNodeDistance);
+  const depthSpacing = Math.max(this.viewConfig.depthSpacing, minNodeDistance);
+  const treeLayout = d3.tree().nodeSize([siblingSpacing, depthSpacing]);
   treeLayout(root);
 
   root.descendants().forEach((node) => {
-    node.y = node.depth * this.viewConfig.depthSpacing;
+    node.y = node.depth * depthSpacing;
   });
 
   this.drawNodes(source, instant);

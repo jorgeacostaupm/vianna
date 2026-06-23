@@ -2,7 +2,6 @@ import { getCompleteSubjects, runRMAnova } from "@/utils/functionsEvolution";
 import { friedmanTest } from "@/utils/tests/numerical/friedman";
 import { mauchlyTest } from "@/utils/tests/numerical/Mauchly";
 import { pairedTTest } from "@/utils/tests/numerical/PairedStudentT";
-import { signTest } from "@/utils/tests/numerical/SignTest";
 import { fitRandomInterceptLmm } from "@/utils/evolution_lmm";
 
 const UNKNOWN_GROUP = "All";
@@ -23,8 +22,7 @@ function resolveTimePair(times, timeRange) {
     return { error: "At least two time points are required." };
   }
 
-  const from =
-    timeRange?.from != null ? String(timeRange.from) : available[0];
+  const from = timeRange?.from != null ? String(timeRange.from) : available[0];
   const to =
     timeRange?.to != null
       ? String(timeRange.to)
@@ -63,7 +61,7 @@ function runPerGroupTest({ participantData, times }, test, options = {}) {
   const groupResults = [...groupsMap.entries()].map(([group, participants]) => {
     const { completeSubjects, excluded } = getCompleteSubjects(
       participants,
-      times
+      times,
     );
     const n = completeSubjects.length;
     const k = times.length;
@@ -109,7 +107,7 @@ function runPerGroupTest({ participantData, times }, test, options = {}) {
 function runPairedTimeTest(
   { participantData, times, timeRange },
   test,
-  options = {}
+  options = {},
 ) {
   const minSubjects = options.minSubjects ?? 2;
 
@@ -131,7 +129,7 @@ function runPairedTimeTest(
   const groupResults = [...groupsMap.entries()].map(([group, participants]) => {
     const { completeSubjects, excluded } = getCompleteSubjects(
       participants,
-      pairTimes
+      pairTimes,
     );
     const n = completeSubjects.length;
 
@@ -189,8 +187,7 @@ const lmmRandomIntercept = {
   label: "LMM (Random Intercept)",
   description:
     "Random-intercept mixed model (REML) with fixed time, optional group interaction, and user-selected covariates.",
-  referenceUrl:
-    "https://en.wikipedia.org/wiki/Mixed_model#Linear_mixed_model",
+  referenceUrl: "https://en.wikipedia.org/wiki/Mixed_model#Linear_mixed_model",
   scope: null,
   variant: "lmm",
   minTimepoints: 2,
@@ -199,7 +196,17 @@ const lmmRandomIntercept = {
   // y ~ time + group + covariates + optional(time:group) + (1|subject)
   // Out of scope: random slopes, nested random effects, complex residual covariance,
   // free-form formulas and automatic model selection/imputation.
-  run: ({ participantData, times, testOptions, rawRows, groupVar, timeVar, idVar, variable, varTypes }) => {
+  run: ({
+    participantData,
+    times,
+    testOptions,
+    rawRows,
+    groupVar,
+    timeVar,
+    idVar,
+    variable,
+    varTypes,
+  }) => {
     if (!participantData || participantData.length === 0) {
       return { error: "No data available for this test." };
     }
@@ -213,14 +220,21 @@ const lmmRandomIntercept = {
     }
 
     if (!variable || !idVar || !timeVar) {
-      return { error: "Missing required model variables (outcome, subject ID, or time)." };
+      return {
+        error:
+          "Missing required model variables (outcome, subject ID, or time).",
+      };
     }
 
     const configuredCovariates = Array.isArray(testOptions?.lmmCovariates)
       ? testOptions.lmmCovariates
       : [];
-    const blocked = new Set([variable, idVar, timeVar, groupVar].filter(Boolean));
-    const covariates = configuredCovariates.filter((name) => !blocked.has(name));
+    const blocked = new Set(
+      [variable, idVar, timeVar, groupVar].filter(Boolean),
+    );
+    const covariates = configuredCovariates.filter(
+      (name) => !blocked.has(name),
+    );
 
     if (covariates.length !== configuredCovariates.length) {
       return {
@@ -229,7 +243,9 @@ const lmmRandomIntercept = {
       };
     }
 
-    const includeInteraction = Boolean(testOptions?.lmmIncludeInteraction && groupVar);
+    const includeInteraction = Boolean(
+      testOptions?.lmmIncludeInteraction && groupVar,
+    );
     const requestedTimeCoding =
       testOptions?.lmmTimeCoding === "continuous" ||
       testOptions?.lmmTimeCoding === "ordered-index"
@@ -266,8 +282,7 @@ const lmmRandomIntercept = {
       includeTimeGroupInteraction: includeInteraction,
       timeCoding: requestedTimeCoding,
       declaredVarTypes: varTypes || null,
-      referenceGroup:
-        selectedGroup === UNKNOWN_GROUP ? null : selectedGroup,
+      referenceGroup: selectedGroup === UNKNOWN_GROUP ? null : selectedGroup,
       referenceMode: selectedGroup === UNKNOWN_GROUP ? "all" : "group",
     });
 
@@ -328,26 +343,12 @@ const pairedTTestEvolution = {
     }),
 };
 
-const signTestEvolution = {
-  id: signTest.id,
-  label: signTest.label,
-  description: "Non-parametric paired test using signs of differences.",
-  referenceUrl:
-    "https://www.itl.nist.gov/div898/software/dataplot/refman1/auxillar/signtest.htm",
-  scope: "Within-group",
-  variant: "paired",
-  minTimepoints: 2,
-  minSubjects: 2,
-  run: (ctx) => runPairedTimeTest(ctx, signTest, { minSubjects: 2 }),
-};
-
 const evolutionTests = [
   lmmRandomIntercept,
   rmAnovaTest,
   friedmanEvolution,
   mauchlyEvolution,
   pairedTTestEvolution,
-  signTestEvolution,
 ];
 
 export default evolutionTests;

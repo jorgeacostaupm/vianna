@@ -1,8 +1,7 @@
 import { useSelector } from "react-redux";
-import { Select, Typography } from "antd";
+import { Select, Tabs, Typography } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
-import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import { AppButton } from "@/components/buttons/core";
 import CorrelationVariableSettings from "../VariableSettings";
@@ -59,8 +58,8 @@ export default function Settings({
     };
   });
 
-  return (
-    <div className={panelStyles.panel}>
+  const styleSettings = (
+    <>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Points</div>
         <SliderControl
@@ -81,17 +80,17 @@ export default function Settings({
           onChange={(v) => update("pointOpacity", v)}
         />
       </div>
+    </>
+  );
 
+  const axisSettings = (
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Legend</div>
-        <SwitchControl label="Show legend"
-          size="small"
-            checked={config.showLegend}
-            onChange={(v) => update("showLegend", v)}
-        />
+        <div className={panelStyles.sectionTitle}>Axis Labels</div>
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
+  );
 
+  const lassoSettings = (
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Lasso Mode</div>
         <div className={panelStyles.rowStack}>
@@ -113,7 +112,10 @@ export default function Settings({
           </Text>
         </div>
       </div>
+  );
 
+  const variableSettings = (
+    <>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Variables</div>
         <CorrelationVariableSettings />
@@ -146,6 +148,20 @@ export default function Settings({
           </Text>
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <div className={`${panelStyles.panel} ${panelStyles.tabbedPanelWideInset}`}>
+      <Tabs
+        defaultActiveKey="style"
+        items={[
+          { key: "style", label: "Style", children: styleSettings },
+          { key: "axis", label: "Axis", children: axisSettings },
+          { key: "lasso", label: "Lasso", children: lassoSettings },
+          { key: "variables", label: "Variables", children: variableSettings },
+        ]}
+      />
     </div>
   );
 }

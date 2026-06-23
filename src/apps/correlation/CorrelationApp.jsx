@@ -15,8 +15,12 @@ export default function CorrelationApp() {
     [dispatch],
   );
 
-  const panel = (addView) => (
-    <Panel addChart={(type) => type && addView(type)} />
+  const panel = (addView, gridActions = {}) => (
+    <Panel
+      addChart={(type) => type && addView(type)}
+      closeAllViews={gridActions.closeAllViews}
+      hasViews={gridActions.hasViews}
+    />
   );
 
   return (
@@ -29,6 +33,7 @@ export default function CorrelationApp() {
       compactType="vertical"
       workspace={workspace}
       onWorkspaceChange={handleWorkspaceChange}
+      enableCloseAllViews
     />
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Modal, Tooltip } from "antd";
+import { Modal } from "antd";
 import { QuestionCircleOutlined } from "@ant-design/icons";
 
 import CustomFormulaHelp from "./CustomFormulaHelp";
@@ -11,15 +11,15 @@ export default function CustomFormulaHelpModalButton() {
 
   return (
     <>
-      <Tooltip title="Custom Operations Help">
-        <AppButton
-          variant={APP_BUTTON_VARIANTS.TOOLBAR}
-          size="small"
-          icon={<QuestionCircleOutlined />}
-          onClick={() => setOpen(true)}
-          aria-label="Open custom operations help"
-        />
-      </Tooltip>
+      <AppButton
+        variant={APP_BUTTON_VARIANTS.ACTION}
+        size="small"
+        icon={<QuestionCircleOutlined />}
+        onClick={() => setOpen(true)}
+        aria-label="Open custom operations help"
+      >
+        Formula help
+      </AppButton>
       <Modal
         title="Custom Operations Help"
         open={open}

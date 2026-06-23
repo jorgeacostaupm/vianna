@@ -10,12 +10,12 @@ import styles from "@/styles/Charts.module.css";
 
 import { validateNodeValues } from "./NodeValidation";
 import NodeAggregationConfig from "./NodeAggregationConfig";
-import CustomMeasure from "./aggregations/CustomMeasure";
 import { VARIABLE_VALUES_LIMIT } from "./nodeMenuConstants";
 import {
   getVariableSampleValues,
   resolveExistingColumnName,
 } from "./nodeMenuUtils";
+import { buildAggregationMenuNodes } from "./aggregationMenuNodes";
 import NodeDescriptionField from "./components/NodeDescriptionField";
 import NodeHeaderFields from "./components/NodeHeaderFields";
 import NodeVariablePreview from "./components/NodeVariablePreview";
@@ -45,28 +45,20 @@ const NodeMenu = () => {
   const availableNodes = useMemo(() => {
     if (!node) return [];
 
-    const usedAttributeIds = new Set(
-      Array.isArray(node.aggregationConfig?.usedAttributes)
-        ? node.aggregationConfig.usedAttributes
-        : [],
-    );
     const meanWeights =
       node.aggregationConfig?.operation === "mean"
         ? extractMeanWeightsFromFormula(node.aggregationConfig?.formula)
         : new Map();
+    const relatedNodes = (Array.isArray(node.related) ? node.related : [])
+      .map((id) => attributes.find((attribute) => attribute.id === id))
+      .filter(Boolean);
 
-    return (Array.isArray(node.related) ? node.related : [])
-      .map((i) => {
-        const n = attributes.find((n) => n.id === i);
-        if (n == null) return null;
-        return {
-          id: n.id,
-          name: n.name,
-          weight: meanWeights.get(n.name) ?? 1,
-          used: usedAttributeIds.has(n.id),
-        };
-      })
-      .filter((n) => n != null);
+    return buildAggregationMenuNodes({
+      attributes,
+      node,
+      relatedNodes,
+      meanWeights,
+    });
   }, [attributes, node]);
 
   useEffect(() => {
@@ -173,44 +165,47 @@ const NodeMenu = () => {
                 )
               : [];
 
+            const isAggregationNode = values.type === "aggregation";
+            const childCount = Array.isArray(node.related)
+              ? node.related.length
+              : 0;
+            const aggregationScope =
+              childCount > 0 ? "children" : "all variables";
+
             return (
               <Form className={styles.nodeInfoBody} ref={resizeRef}>
-                <NodeHeaderFields
-                  nChildren={availableNodes.length}
-                  nodeType={node.type == null ? "root" : node.type}
-                />
-
-                {node?.type === "attribute" ? (
-                  <NodeVariablePreview
-                    values={previewValues}
-                    columnName={previewColumn}
+                <section className={styles.nodeInfoSection}>
+                  <NodeHeaderFields
+                    nChildren={childCount}
+                    nodeType={node.type == null ? "root" : node.type}
                   />
-                ) : null}
 
-                <NodeDescriptionField />
+                  {node?.type === "attribute" ? (
+                    <NodeVariablePreview
+                      values={previewValues}
+                      columnName={previewColumn}
+                    />
+                  ) : null}
 
-                {values.type === "aggregation" ? (
-                  availableNodes.length === 0 ? (
-                    <CustomMeasure formula={values.aggregationConfig.formula} />
-                  ) : (
+                  <NodeDescriptionField />
+                </section>
+
+                {isAggregationNode ? (
+                  <section className={styles.nodeInfoSection}>
                     <NodeAggregationConfig
                       aggOp={values.aggregationConfig.operation || "sum"}
                       nodes={availableNodes}
                       vals={values}
-                      save={<SaveButton />}
+                      scope={aggregationScope}
                     />
-                  )
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <SaveButton />
-                  </div>
-                )}
+                  </section>
+                ) : null}
+
+                <section
+                  className={`${styles.nodeInfoSection} ${styles.nodeInfoActions}`}
+                >
+                  <SaveButton />
+                </section>
               </Form>
             );
           }}

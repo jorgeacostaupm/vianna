@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { Select, Typography, InputNumber, Slider } from "antd";
+import { Select, Tabs, Typography, InputNumber, Slider } from "antd";
 import { getTopCorrelations } from "@/utils/functionsCorrelation";
 import {
   COLOR_SCALES,
@@ -63,8 +63,7 @@ export default function Settings({ config, setConfig, params, setParams }) {
     }));
   };
 
-  return (
-    <div className={panelStyles.panel}>
+  const correlationSettings = (
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Correlation</div>
         <div className={panelStyles.rowStack}>
@@ -99,7 +98,9 @@ export default function Settings({ config, setConfig, params, setParams }) {
           />
         </div>
       </div>
+  );
 
+  const styleSettings = (
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Display</div>
         <div className={panelStyles.rowStack}>
@@ -115,9 +116,17 @@ export default function Settings({ config, setConfig, params, setParams }) {
             className={panelStyles.control}
           />
         </div>
-        <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
+  );
 
+  const axisSettings = (
+    <div className={panelStyles.section}>
+      <div className={panelStyles.sectionTitle}>Axis Labels</div>
+      <AxisLabelSizeControl config={config} setConfig={setConfig} />
+    </div>
+  );
+
+  const variableSettings = (
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Variables</div>
         <div className={panelStyles.rowStack}>
@@ -147,6 +156,23 @@ export default function Settings({ config, setConfig, params, setParams }) {
           <AppButton type="primary" icon={<EditOutlined />} onClick={onClick} />
         </div>
       </div>
+  );
+
+  return (
+    <div className={`${panelStyles.panel} ${panelStyles.tabbedPanel}`}>
+      <Tabs
+        defaultActiveKey="correlation"
+        items={[
+          {
+            key: "correlation",
+            label: "Correlation",
+            children: correlationSettings,
+          },
+          { key: "style", label: "Style", children: styleSettings },
+          { key: "axis", label: "Axis", children: axisSettings },
+          { key: "variables", label: "Variables", children: variableSettings },
+        ]}
+      />
     </div>
   );
 }

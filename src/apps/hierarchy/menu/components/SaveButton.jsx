@@ -5,7 +5,6 @@ import { SaveOutlined, EyeOutlined } from "@ant-design/icons";
 
 import { deriveAggregationColumnsForRows } from "@/utils/aggregationEngine";
 import { notifyError } from "@/components/notifications";
-import AutoCloseTooltip from "@/components/ui/AutoCloseTooltip";
 import { AppButton, APP_BUTTON_VARIANTS } from "@/components/buttons/core";
 import {
   compileAggregationFormula,
@@ -201,30 +200,30 @@ export default function SaveButton() {
 
   return (
     <>
-      <AutoCloseTooltip title="Save">
-        <AppButton
-          variant={APP_BUTTON_VARIANTS.ACTION}
-          shape="circle"
-          size="large"
-          onClick={handleSave}
-          disabled={isSaveInProgress}
-          loading={isSaveInProgress}
-          icon={<SaveOutlined />}
-        />
-      </AutoCloseTooltip>
+      <AppButton
+        variant={APP_BUTTON_VARIANTS.ACTION}
+        size="large"
+        onClick={handleSave}
+        disabled={isSaveInProgress}
+        loading={isSaveInProgress}
+        icon={<SaveOutlined />}
+        style={{ minWidth: 132 }}
+      >
+        Save
+      </AppButton>
 
       {isAggregation ? (
-        <AutoCloseTooltip title={`Preview ${PREVIEW_LIMIT} rows`}>
-          <AppButton
-            variant={APP_BUTTON_VARIANTS.ACTION}
-            shape="circle"
-            size="large"
-            onClick={handlePreview}
-            disabled={!canPreview}
-            loading={previewLoading}
-            icon={<EyeOutlined />}
-          />
-        </AutoCloseTooltip>
+        <AppButton
+          variant={APP_BUTTON_VARIANTS.ACTION}
+          size="large"
+          onClick={handlePreview}
+          disabled={!canPreview}
+          loading={previewLoading}
+          icon={<EyeOutlined />}
+          style={{ minWidth: 132 }}
+        >
+          Preview
+        </AppButton>
       ) : null}
 
       <AggregationPreviewModal

@@ -6,12 +6,55 @@ import { fixTooltipToNode } from "@/utils/functions";
 
 import {
   dragClickThreshold,
+  nodeDoubleClickDelayMs,
   tooltipHoverDelayMs,
 } from "./constants";
-import { rangeUnordered } from "./helpers";
 import { getSiblingReorderIndex } from "./siblingReorder";
 
 const { publish } = pubsub;
+
+const getNodeSubtree = (node) =>
+  node?.descendants ? node.descendants() : [node];
+
+const rememberOriginalSubtreePosition = (subtree) => {
+  subtree.forEach((d) => {
+    if (d._originalX === undefined) d._originalX = d.x;
+    if (d._originalY === undefined) d._originalY = d.y;
+  });
+};
+
+const renderSubtreePreview = (graph, subtree) => {
+  graph.main
+    .selectAll(".circleG")
+    .filter((nodeD) => subtree.some((d) => d.id === nodeD.id))
+    .attr("transform", (d) => graph.getNodeTransform(d));
+
+  graph.main
+    .select("#links")
+    .selectAll("path")
+    .filter(
+      (l) =>
+        subtree.some((n) => n.id === l.source.id) ||
+        subtree.some((n) => n.id === l.target.id),
+    )
+    .attr("d", (l) => graph.getLinkPath(l));
+};
+
+const resetSiblingPreview = (graph, siblings, movingIds) => {
+  siblings.forEach((childNode) => {
+    if (movingIds.has(childNode.id)) return;
+
+    const subtree = getNodeSubtree(childNode);
+    rememberOriginalSubtreePosition(subtree);
+
+    subtree.forEach((d) => {
+      d.x = d._originalX;
+      d.y = d._originalY;
+    });
+
+    renderSubtreePreview(graph, subtree);
+  });
+};
 
 export function addNodeEvents(nodes) {
   const graph = this;
@@ -117,10 +160,20 @@ export function getDragBehaviour() {
 
         if (parent && parent.children) {
           const siblings = parent.children.slice();
+          const nodesToReorder = graph.isMultiSelect
+            ? graph.getSelectedNodesToModify()
+            : [node];
+          const canReorderDraggedNodes =
+            nodesToReorder.length > 0 &&
+            nodesToReorder.some((d) => d.id === node.id) &&
+            nodesToReorder.every((d) => d.parent?.id === parent.id);
 
           const xs = siblings.map((s) => s.x);
           const ys = siblings.map((s) => s.y);
           graph._dragSiblingXPositions = xs;
+          graph._dragSiblingOriginalPositions = new Map(
+            siblings.map((s) => [s.id, { x: s.x, y: s.y }]),
+          );
 
           graph._dragSiblingMinX = Math.min(...xs);
           graph._dragSiblingMaxX = Math.max(...xs);
@@ -129,9 +182,26 @@ export function getDragBehaviour() {
           graph._dragSiblingMaxY =
             Math.max(...ys) + graph.viewConfig.depthSpacing;
 
-          graph._dragOriginalIndex = graph._dragSiblingXPositions.indexOf(
-            node.x,
+          graph._canReorderDraggedNodes = canReorderDraggedNodes;
+          graph._dragReorderNodes = canReorderDraggedNodes
+            ? nodesToReorder
+            : [];
+
+          const movingIds = new Set(
+            graph._dragReorderNodes.map((d) => d.id),
           );
+          const orderedSiblings = siblings
+            .slice()
+            .sort((a, b) => a.x - b.x);
+          const firstMovingIndex = orderedSiblings.findIndex((s) =>
+            movingIds.has(s.id),
+          );
+          graph._dragOriginalIndex =
+            firstMovingIndex === -1
+              ? -1
+              : orderedSiblings
+                  .slice(0, firstMovingIndex)
+                  .filter((s) => !movingIds.has(s.id)).length;
           graph._originalX = node.x;
           graph._currentHoverIndex = graph._dragOriginalIndex;
         }
@@ -139,9 +209,7 @@ export function getDragBehaviour() {
 
       graph.svg.style("cursor", "grabbing");
 
-      const movingNodes = [node].flatMap((n) =>
-        n.descendants ? n.descendants() : [n],
-      );
+      const movingNodes = getNodeSubtree(node);
 
       const { x: deltaX, y: deltaY } = graph.getLogicalDelta(
         event.dx,
@@ -171,7 +239,15 @@ export function getDragBehaviour() {
         })
         .attr("d", (l) => graph.getLinkPath(l));
 
-      if (graph.nodesDragged.length === 1) {
+      if (graph._canReorderDraggedNodes) {
+        const parent = node.parent;
+        if (!parent || !parent.children) return;
+
+        const siblings = parent.children.slice();
+        const movingIds = new Set(
+          (graph._dragReorderNodes || []).map((d) => d.id),
+        );
+
         if (
           node.x < graph._dragSiblingMinX - 150 ||
           node.x > graph._dragSiblingMaxX + 150 ||
@@ -179,15 +255,31 @@ export function getDragBehaviour() {
           node.y > graph._dragSiblingMaxY
         ) {
           graph.main.selectAll(".circleG").classed("highlight-sibling", false);
+          resetSiblingPreview(graph, siblings, movingIds);
         } else {
-          const parent = node.parent;
-          if (!parent || !parent.children) return;
+          const originalX = (d) =>
+            graph._dragSiblingOriginalPositions?.get(d.id)?.x ?? d.x;
+          const orderedSiblings = siblings
+            .slice()
+            .sort((a, b) => originalX(a) - originalX(b));
+          const movingSiblings = orderedSiblings.filter((sib) =>
+            movingIds.has(sib.id),
+          );
+          const unselectedSiblings = orderedSiblings.filter(
+            (sib) => !movingIds.has(sib.id),
+          );
 
-          const siblings = parent.children.filter((sib) => sib.id !== node.id);
+          if (unselectedSiblings.length === 0) {
+            graph.main
+              .selectAll(".circleG")
+              .classed("highlight-sibling", false);
+            return;
+          }
 
-          if (siblings.length === 0) return;
-
-          const sortedSiblings = siblings.slice().sort((a, b) => a.x - b.x);
+          const sortedSiblings = unselectedSiblings.map((sib) => ({
+            ...sib,
+            x: originalX(sib),
+          }));
 
           const newIndex = getSiblingReorderIndex({
             draggedX: node.x,
@@ -196,67 +288,34 @@ export function getDragBehaviour() {
             assignRadius: graph.getAssignRadius(),
           });
 
-          const range = rangeUnordered(newIndex, graph._dragOriginalIndex);
-          parent.children.forEach((childNode, i) => {
-            const subtree = childNode.descendants
-              ? childNode.descendants()
-              : [childNode];
+          const nextSiblings = [
+            ...unselectedSiblings.slice(0, newIndex),
+            ...movingSiblings,
+            ...unselectedSiblings.slice(newIndex),
+          ];
+          const nextIndexById = new Map(
+            nextSiblings.map((childNode, index) => [childNode.id, index]),
+          );
+
+          orderedSiblings.forEach((childNode) => {
+            const subtree = getNodeSubtree(childNode);
+            rememberOriginalSubtreePosition(subtree);
+
+            if (movingIds.has(childNode.id)) return;
+
+            const nextIndex = nextIndexById.get(childNode.id);
+            const targetX = graph._dragSiblingXPositions[nextIndex];
+            const childOriginalX =
+              graph._dragSiblingOriginalPositions?.get(childNode.id)?.x ??
+              childNode._originalX;
+            const deltaX = targetX - childOriginalX;
 
             subtree.forEach((d) => {
-              if (d._originalX === undefined) d._originalX = d.x;
-              if (d._originalY === undefined) d._originalY = d.y;
+              d.x = d._originalX + deltaX;
+              d.y = d._originalY;
             });
 
-            if (i === graph._dragOriginalIndex) return;
-
-            const moveLeft = range.includes(i) && i < graph._dragOriginalIndex;
-            const moveRight = range.includes(i) && i > graph._dragOriginalIndex;
-
-            if (moveLeft || moveRight) {
-              const referenceIndex = moveLeft ? i + 1 : i - 1;
-              const space = Math.abs(
-                childNode.x - graph._dragSiblingXPositions[referenceIndex],
-              );
-
-              subtree.forEach((d) => {
-                d.x += moveLeft ? space : -space;
-
-                graph.main
-                  .selectAll(".circleG")
-                  .filter((nodeD) => nodeD.id === d.id)
-                  .attr("transform", graph.getNodeTransform(d));
-              });
-
-              graph.main
-                .select("#links")
-                .selectAll("path")
-                .filter(
-                  (l) =>
-                    subtree.some((n) => n.id === l.source.id) ||
-                    subtree.some((n) => n.id === l.target.id),
-                )
-                .attr("d", (l) => graph.getLinkPath(l));
-            } else {
-              subtree.forEach((d) => {
-                d.x = d._originalX;
-                d.y = d._originalY;
-
-                graph.main
-                  .selectAll(".circleG")
-                  .filter((nodeD) => nodeD.id === d.id)
-                  .attr("transform", graph.getNodeTransform(d));
-              });
-
-              graph.main
-                .select("#links")
-                .selectAll("path")
-                .filter(
-                  (l) =>
-                    subtree.some((n) => n.id === l.source.id) ||
-                    subtree.some((n) => n.id === l.target.id),
-                )
-                .attr("d", (l) => graph.getLinkPath(l));
-            }
+            renderSubtreePreview(graph, subtree);
           });
 
           graph.newIndex = newIndex;
@@ -284,7 +343,7 @@ export function getDragBehaviour() {
       if (graph.targetNode) {
         if (graph.nodesDragged.length === 1) graph.onChangeHierarchy();
         else graph.addSelectedNodes({ parent: graph.targetNode.id });
-      } else if (graph.nodesDragged.length === 1 && graph.onDrag) {
+      } else if (graph._canReorderDraggedNodes && graph.onDrag) {
         const hasHighlightedSibling = !graph.main
           .selectAll(".circleG.highlight-sibling")
           .empty();
@@ -294,9 +353,13 @@ export function getDragBehaviour() {
         } else {
           graph.drawHierarchy(graph.root);
         }
-        d3.select(this).select(".showCircle").classed("selectedNode", false);
+        if (graph.isMultiSelect) {
+          graph.clearSelection();
+        } else {
+          d3.select(this).select(".showCircle").classed("selectedNode", false);
+        }
       } else if (!graph.onDrag) {
-        graph.onNodeClick(node);
+        graph.onNodeClick(node, event.sourceEvent);
       } else {
         graph.drawHierarchy(graph.root, true);
       }
@@ -304,6 +367,9 @@ export function getDragBehaviour() {
       graph.resetDragVisualState();
       graph.targetNode = null;
       graph.nodesDragged = [];
+      graph._canReorderDraggedNodes = false;
+      graph._dragReorderNodes = [];
+      graph._dragSiblingOriginalPositions = null;
       graph.onDrag = false;
     });
 }
@@ -371,40 +437,52 @@ export function onInitialNodeDrag(node, isMultiSelect = false) {
   }
 }
 
-export function onNodeClick(node) {
-  if (this.isNodeMenuOpen && node?.id != null) {
-    publish("nodeInspectionNode", { nodeId: node.id });
+export function onNodeClick(node, sourceEvent) {
+  if ((sourceEvent?.detail ?? 1) > 1) {
+    clearTimeout(this.nodeClickTimer);
+    this.nodeClickTimer = null;
+    this.inspectNode({ nodeId: node.id });
     return;
   }
 
-  if (this.isRootNodeId(node?.id)) {
-    publish("untoggleEvent", {});
-    return;
-  }
+  clearTimeout(this.nodeClickTimer);
+  this.nodeClickTimer = setTimeout(() => {
+    this.nodeClickTimer = null;
 
-  if (this.isClickSelectionMode) {
-    this.toggleNodeSelection(node.id);
-    return;
-  }
+    if (this.isNodeMenuOpen && node?.id != null) {
+      publish("nodeInspectionNode", { nodeId: node.id });
+      return;
+    }
 
-  if (node.children === undefined || node._children === undefined) {
-    return;
-  }
+    if (this.isRootNodeId(node?.id)) {
+      publish("untoggleEvent", {});
+      return;
+    }
 
-  if (node.children) {
-    node._children = node.children;
-    node.children = null;
-  } else {
-    node.children = node._children;
-    node._children = null;
-  }
+    if (this.isClickSelectionMode) {
+      this.toggleNodeSelection(node.id);
+      return;
+    }
 
-  this.dispatcher(
-    toggleAttribute({ attributeID: node.data.id, fromFocus: false }),
-  );
+    if (node.children === undefined || node._children === undefined) {
+      return;
+    }
 
-  this.drawHierarchy(node);
-  this.scheduleNavioSync(this.getTransitionDuration());
+    if (node.children) {
+      node._children = node.children;
+      node.children = null;
+    } else {
+      node.children = node._children;
+      node._children = null;
+    }
+
+    this.dispatcher(
+      toggleAttribute({ attributeID: node.data.id, fromFocus: false }),
+    );
+
+    this.drawHierarchy(node);
+    this.scheduleNavioSync(this.getTransitionDuration());
+  }, nodeDoubleClickDelayMs);
 }
 
 export function getBrush() {
@@ -460,6 +538,7 @@ export function getBrush() {
     vis.svg.selectAll(".brush").remove();
     vis.svg.on(".brush", null);
     vis.svg.call(vis.zoomBehaviour);
+    vis.disableZoomDoubleClick?.();
   }
 
   function rearmBrushIfNeeded() {

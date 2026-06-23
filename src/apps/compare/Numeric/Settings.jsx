@@ -1,4 +1,4 @@
-import { Typography, Radio, InputNumber } from "antd";
+import { Typography, Radio, InputNumber, Tabs } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
@@ -16,8 +16,6 @@ export default function Settings({ config, setConfig }) {
     useCustomRange,
     pointSize,
     showPoints,
-    showLegend,
-    showGrid,
     showGroupCountInLegend,
     showGroupCountInAxis,
     scaleDensityStrokeByGroupSize,
@@ -41,8 +39,8 @@ export default function Settings({ config, setConfig }) {
   const showMargin = chartType === "density" || chartType === "violin";
   const supportsAxisLabels = chartType === "box" || chartType === "violin";
 
-  return (
-    <div className={panelStyles.panel}>
+  const viewSettings = (
+    <>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>View</div>
         <div className={panelStyles.controlInlineRow}>
@@ -60,38 +58,7 @@ export default function Settings({ config, setConfig }) {
             <Radio.Button value="box">Boxplots</Radio.Button>
           </Radio.Group>
         </div>
-        <SwitchControl label="Legend"
-          size="small"
-            checked={showLegend}
-            onChange={(v) => update("showLegend", v)}
-        />
-        <SwitchControl label="Grid"
-          size="small"
-            checked={showGrid}
-            onChange={(v) => update("showGrid", v)}
-        />
-        <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
-
-      {chartType === "box" && (
-        <div className={panelStyles.section}>
-          <div className={panelStyles.sectionTitle}>Observations</div>
-          <SwitchControl label="Show points"
-          size="small"
-              checked={showPoints}
-              onChange={(v) => update("showPoints", v)}
-        />
-          <SliderControl
-            label="Point size"
-            valueLabel={`${pointSize}px`}
-            min={1}
-            max={30}
-            step={1}
-            value={pointSize}
-            onChange={(v) => update("pointSize", v)}
-          />
-        </div>
-      )}
 
       {showBins && (
         <div className={panelStyles.section}>
@@ -105,34 +72,48 @@ export default function Settings({ config, setConfig }) {
             value={nPoints}
             onChange={(v) => update("nPoints", v)}
           />
-          {showMargin && (
-            <div className={panelStyles.rowStack}>
-              <SliderControl
-                label="Padding"
-                valueLabel={`${(margin * 100).toFixed(0)}%`}
-                min={0}
-                max={1}
-                step={0.05}
-                value={margin}
-                onChange={(v) => update("margin", v)}
-                disabled={useCustomRange}
-              />
-              <Text className={panelStyles.helper}>
-                Adds breathing room around the distribution.
-              </Text>
-            </div>
-          )}
+        </div>
+      )}
+    </>
+  );
+
+  const axisSettings = (
+    <>
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Axis Labels</div>
+        <AxisLabelSizeControl config={config} setConfig={setConfig} />
+      </div>
+
+      {showMargin && (
+        <div className={panelStyles.section}>
+          <div className={panelStyles.sectionTitle}>Padding</div>
+          <div className={panelStyles.rowStack}>
+            <SliderControl
+              label="Padding"
+              valueLabel={`${(margin * 100).toFixed(0)}%`}
+              min={0}
+              max={1}
+              step={0.05}
+              value={margin}
+              onChange={(v) => update("margin", v)}
+              disabled={useCustomRange}
+            />
+            <Text className={panelStyles.helper}>
+              Adds breathing room around the distribution.
+            </Text>
+          </div>
         </div>
       )}
 
       {(chartType === "density" || chartType === "violin") && (
         <div className={panelStyles.section}>
           <div className={panelStyles.sectionTitle}>Range</div>
-          <SwitchControl label="Custom range"
-          size="small"
-              checked={useCustomRange}
-              onChange={(checked) => update("useCustomRange", checked)}
-        />
+          <SwitchControl
+            label="Custom range"
+            size="small"
+            checked={useCustomRange}
+            onChange={(checked) => update("useCustomRange", checked)}
+          />
           <div className={panelStyles.inline}>
             <span className={panelStyles.helper}>Min</span>
             <InputNumber
@@ -151,30 +132,96 @@ export default function Settings({ config, setConfig }) {
           </div>
         </div>
       )}
+    </>
+  );
+
+  const styleSettings = (
+    <>
+      {chartType === "box" && (
+        <div className={panelStyles.section}>
+          <div className={panelStyles.sectionTitle}>Observations</div>
+          <SwitchControl
+            label="Show points"
+            size="small"
+            checked={showPoints}
+            onChange={(v) => update("showPoints", v)}
+          />
+          <SliderControl
+            label="Point size"
+            valueLabel={`${pointSize}px`}
+            min={1}
+            max={30}
+            step={1}
+            value={pointSize}
+            onChange={(v) => update("pointSize", v)}
+          />
+        </div>
+      )}
 
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Groups</div>
-        <SwitchControl label="Count in legend"
+        <div className={panelStyles.sectionTitle}>Group Style</div>
+        <SwitchControl
+          label="Count in legend"
           size="small"
-            checked={showGroupCountInLegend}
-            onChange={(v) => update("showGroupCountInLegend", v)}
+          checked={showGroupCountInLegend}
+          onChange={(v) => update("showGroupCountInLegend", v)}
         />
         {supportsAxisLabels && (
-          <SwitchControl label="Count in group labels"
-          size="small"
-              checked={showGroupCountInAxis}
-              onChange={(v) => update("showGroupCountInAxis", v)}
-        />
+          <SwitchControl
+            label="Count in group labels"
+            size="small"
+            checked={showGroupCountInAxis}
+            onChange={(v) => update("showGroupCountInAxis", v)}
+          />
         )}
         {chartType === "density" && (
-          <SwitchControl label="Density stroke by size"
-          size="small"
-              checked={scaleDensityStrokeByGroupSize}
-              onChange={(v) => update("scaleDensityStrokeByGroupSize", v)}
-        />
+          <SwitchControl
+            label="Density stroke by size"
+            size="small"
+            checked={scaleDensityStrokeByGroupSize}
+            onChange={(v) => update("scaleDensityStrokeByGroupSize", v)}
+          />
         )}
+      </div>
+    </>
+  );
+
+  const groupingSettings = (
+    <>
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Groups</div>
         <GroupSettings />
       </div>
+    </>
+  );
+
+  return (
+    <div className={`${panelStyles.panel} ${panelStyles.tabbedPanel}`}>
+      <Tabs
+        defaultActiveKey="view"
+        items={[
+          {
+            key: "view",
+            label: "View",
+            children: viewSettings,
+          },
+          {
+            key: "grouping",
+            label: "Grouping",
+            children: groupingSettings,
+          },
+          {
+            key: "axis",
+            label: "Axis",
+            children: axisSettings,
+          },
+          {
+            key: "style",
+            label: "Style",
+            children: styleSettings,
+          },
+        ]}
+      />
     </div>
   );
 }

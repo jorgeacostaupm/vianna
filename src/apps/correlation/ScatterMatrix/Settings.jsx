@@ -1,7 +1,6 @@
 import { useSelector } from "react-redux";
-import { Select, Typography } from "antd";
+import { Select, Tabs, Typography } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
-import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import CorrelationVariableSettings from "../VariableSettings";
 import SliderControl from "@/components/ui/SliderControl";
@@ -27,8 +26,7 @@ export default function Settings({ config, setConfig }) {
     }));
   };
 
-  return (
-    <div className={panelStyles.panel}>
+  const styleSettings = (
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Points</div>
         <SliderControl
@@ -54,22 +52,17 @@ export default function Settings({ config, setConfig }) {
           }
         />
       </div>
+  );
 
+  const axisSettings = (
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Legend</div>
-        <SwitchControl label="Show legend"
-          size="small"
-            checked={config.showLegend}
-            onChange={(v) =>
-              setConfig((prev) => ({
-                ...prev,
-                showLegend: v,
-              }))
-            }
-        />
+        <div className={panelStyles.sectionTitle}>Axis Labels</div>
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
+  );
 
+  const variableSettings = (
+    <>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Variables</div>
         <CorrelationVariableSettings />
@@ -93,6 +86,19 @@ export default function Settings({ config, setConfig }) {
           />
         </div>
       </div>
+    </>
+  );
+
+  return (
+    <div className={`${panelStyles.panel} ${panelStyles.tabbedPanel}`}>
+      <Tabs
+        defaultActiveKey="style"
+        items={[
+          { key: "style", label: "Style", children: styleSettings },
+          { key: "axis", label: "Axis", children: axisSettings },
+          { key: "variables", label: "Variables", children: variableSettings },
+        ]}
+      />
     </div>
   );
 }

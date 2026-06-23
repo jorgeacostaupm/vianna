@@ -26,7 +26,7 @@ export default function AnalysisSelectField({
 }) {
   return (
     <div className={styles.selectorField}>
-      <span className={styles.selectorLabel}>{label}</span>
+      {label ? <span className={styles.selectorLabel}>{label}</span> : null}
       <Select
         size="small"
         showSearch={showSearch}

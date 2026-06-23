@@ -114,8 +114,9 @@ export default function useRankingBarChart({
     chart
       .append("text")
       .attr("class", "yAxisLabel")
-      .attr("transform", "translate(0,-15)")
-      .attr("text-anchor", "middle")
+      .attr("x", chartWidth)
+      .attr("y", -18)
+      .attr("text-anchor", "end")
       .text(data.measure || "");
 
     chart

@@ -6,10 +6,14 @@ import EvolutionVariableSettings from "../VariableSettings";
 import { EVO_DESC } from "@/utils/constants";
 
 export default function Panel(props) {
-  const { generateEvolution } = props;
+  const { generateEvolution, closeAllViews, hasViews = false } = props;
 
   return (
-    <AnalysisSidebar description={EVO_DESC}>
+    <AnalysisSidebar
+      description={EVO_DESC}
+      onCloseAllViews={closeAllViews}
+      closeAllViewsDisabled={!hasViews}
+    >
       <AnalysisPanelSection title="Analysis Context">
         <EvolutionVariableSettings />
       </AnalysisPanelSection>

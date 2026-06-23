@@ -4,7 +4,7 @@ import ChildHolder from "./ChildHolder";
 import { useFormikContext } from "formik";
 import { generateFormulaSimplified } from "../logic/simplifiedFormulas";
 
-const AggregateComponent = ({ nodes, aggOp, save }) => {
+const AggregateComponent = ({ nodes, aggOp }) => {
   return (
     <div
       style={{
@@ -14,12 +14,12 @@ const AggregateComponent = ({ nodes, aggOp, save }) => {
         gap: "0.5rem",
       }}
     >
-      <DropWrapper nodes={nodes} aggOp={aggOp} save={save} />
+      <DropWrapper nodes={nodes} aggOp={aggOp} />
     </div>
   );
 };
 
-const DropWrapper = ({ nodes, aggOp, save }) => {
+const DropWrapper = ({ nodes, aggOp }) => {
   const {
     setFieldValue,
     values: { aggregationConfig },
@@ -120,7 +120,6 @@ const DropWrapper = ({ nodes, aggOp, save }) => {
         moveNode={moveNode}
         updateNodeWeight={updateNodeWeight}
         modeAllNodes={modeAllNodes}
-        save={save}
       />
 
       <ChildHolder

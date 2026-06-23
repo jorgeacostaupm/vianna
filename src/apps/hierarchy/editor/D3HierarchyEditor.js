@@ -8,6 +8,7 @@ import {
   allowedLinkStyles,
   assignRadius,
   defaultViewConfig,
+  getGhostCircleMinDistance,
   nodeCornerRadius,
   nodeHalfSize,
   resolveTransitionDuration,
@@ -62,6 +63,7 @@ export default class D3HierarchyEditor {
   isClickSelectionMode = false;
   targetNode = null;
   nodesDragged = [];
+  nodeClickTimer = null;
   navioSyncTimeout = null;
   subscriptionHandlers = {};
   isNodeMenuOpen = false;
@@ -186,6 +188,7 @@ export default class D3HierarchyEditor {
     this.svg
       .call(this.zoomBehaviour)
       .call(this.zoomBehaviour.transform, baseTransform);
+    this.disableZoomDoubleClick();
 
     const glink = this.main.select("g#links").node()
       ? this.main.select("g#links")
@@ -341,6 +344,10 @@ export default class D3HierarchyEditor {
     return assignRadius * this.viewConfig.nodeScale;
   }
 
+  getMinimumNodeDistance() {
+    return getGhostCircleMinDistance(this.getAssignRadius());
+  }
+
   getLabelOffset() {
     return -(this.getNodeHalfSize() + 15.5);
   }
@@ -408,6 +415,10 @@ export default class D3HierarchyEditor {
     this.setSelectionMode(enabled ? "click" : "none");
   }
 
+  disableZoomDoubleClick() {
+    this.svg?.on("dblclick.zoom", null);
+  }
+
   setSelectionMode(mode) {
     const nextMode = mode === "brush" || mode === "click" ? mode : "none";
     this.selectionMode = nextMode;
@@ -439,6 +450,7 @@ export default class D3HierarchyEditor {
     this.svg.on(".brush", null);
     if (this.zoomBehaviour) {
       this.svg.call(this.zoomBehaviour);
+      this.disableZoomDoubleClick();
     }
   }
 

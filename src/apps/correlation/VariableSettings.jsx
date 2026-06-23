@@ -16,6 +16,7 @@ export default function CorrelationVariableSettings() {
     <AnalysisVariableSettings
       context={context}
       fields={["idVar", "groupVar"]}
+      variant="cards"
       actions={{
         idVar: setIdVar,
         groupVar: setGroupVar,

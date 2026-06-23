@@ -4,18 +4,24 @@ import AnalysisPanelSection from "@/components/ui/AnalysisPanelSection";
 import VariableSelector from "./VariableSelector";
 import AssumptionsTags from "./AssumptionsTags";
 import TestSelector from "./TestSelector";
-import GroupSettings from "../GroupSettings";
+import CompareVariableSettings from "../VariableSettings";
 import { COMP_DESC } from "@/utils/constants";
 
 export default function Panel({
   generateDistribution,
   generateTest,
   generateRanking,
+  closeAllViews,
+  hasViews = false,
 }) {
   return (
-    <AnalysisSidebar description={COMP_DESC}>
+    <AnalysisSidebar
+      description={COMP_DESC}
+      onCloseAllViews={closeAllViews}
+      closeAllViewsDisabled={!hasViews}
+    >
       <AnalysisPanelSection title="Analysis Context">
-        <GroupSettings />
+        <CompareVariableSettings />
       </AnalysisPanelSection>
 
       <AnalysisPanelSection title="Create Distribution View">

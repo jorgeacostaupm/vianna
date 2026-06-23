@@ -9,7 +9,6 @@ import { compileAggregationFormula } from "@/store/features/metadata/utils/thunk
 import CustomFormulaHelpModalButton from "./CustomFormulaHelpModalButton";
 import styles from "./DropArea.module.css";
 import { AttributePaste } from "./CustomAggregate";
-import SaveButton from "../components/SaveButton";
 
 const { Text } = Typography;
 
@@ -105,9 +104,6 @@ const CustomMeasure = ({ formula }) => {
           {errors.aggregationConfig.formula}
         </div>
       )}
-      <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
-        <SaveButton />
-      </div>
       <div
         style={{
           display: "flex",

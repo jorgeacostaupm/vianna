@@ -7,13 +7,19 @@ const { Text } = Typography;
 
 const { Option } = Select;
 
-const NodeAggregationConfig = ({ aggOp, nodes, vals, save }) => {
+const NodeAggregationConfig = ({ aggOp, nodes, vals, scope }) => {
   const selectStyle = {
     flex: 1,
   };
 
   return (
     <>
+      <div>
+        <Text strong>Derived measure</Text>
+        <br />
+        <Text type="secondary">Use {scope} to define this variable.</Text>
+      </div>
+
       <div
         style={{
           display: "flex",
@@ -24,7 +30,8 @@ const NodeAggregationConfig = ({ aggOp, nodes, vals, save }) => {
         <Text strong>Operation type:</Text>
         <Field name="aggregationConfig.operation">
           {({ field, form }) => (
-            <Select size="small"
+            <Select
+              size="small"
               id="aggregationConfig.operation"
               style={selectStyle}
               value={vals?.aggregationConfig?.operation || "sum"}
@@ -39,15 +46,16 @@ const NodeAggregationConfig = ({ aggOp, nodes, vals, save }) => {
         </Field>
       </div>
 
-      {vals.aggregationConfig == null || vals.aggregationConfig.operation !== "custom" ? (
-        <AggregateComponent nodes={nodes} aggOp={aggOp} save={save} />
+      {vals.aggregationConfig == null ||
+      vals.aggregationConfig.operation !== "custom" ? (
+        <AggregateComponent nodes={nodes} aggOp={aggOp} />
       ) : null}
 
-      {vals.aggregationConfig != null && vals.aggregationConfig.operation === "custom" ? (
+      {vals.aggregationConfig != null &&
+      vals.aggregationConfig.operation === "custom" ? (
         <CustomAggregate
           nodes={nodes}
           formula={vals.aggregationConfig.formula}
-          save={save}
         />
       ) : null}
     </>

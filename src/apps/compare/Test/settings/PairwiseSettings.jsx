@@ -50,9 +50,6 @@ export default function PairwiseSettings({ config, setConfig }) {
             disabled={disabled}
             onChange={(v) => update("sortDescending", v)}
         />
-        <SwitchControl label="Grid lines"
-          size="small" checked disabled
-        />
         <SliderControl
           label="Y label space"
           valueLabel={`${Number.isFinite(yAxisLabelSpace) ? yAxisLabelSpace : 160}px`}

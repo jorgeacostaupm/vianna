@@ -13,10 +13,15 @@ import {
   convertColumnType,
   generateColumn,
   generateColumnBatch,
+  renameColumnEverywhere,
   removeBatch,
   updateData,
 } from "../dataframe/thunks";
 import { MAIN_CONFIG_DEFAULTS } from "./configDefaults";
+import { renameColumnInRows } from "../dataframe/utils/rowColumns";
+
+const renameVariableRef = (value, prevName, newName) =>
+  value === prevName ? newName : value;
 
 const initialState = {
   quarantineData: [],
@@ -113,6 +118,22 @@ const mainSlice = createSlice({
       .addCase(generateColumn.fulfilled, applyGeneratedColumns)
       .addCase(generateColumnBatch.fulfilled, applyGeneratedColumns)
       .addCase(removeBatch.fulfilled, applyGeneratedColumns);
+
+    builder.addCase(renameColumnEverywhere.fulfilled, (state, action) => {
+      const { data, quarantineData, prevName, newName } = action.payload;
+      state.quarantineData = Array.isArray(quarantineData)
+        ? quarantineData
+        : [];
+      state.quarantineSelection = Array.isArray(state.quarantineSelection)
+        ? renameColumnInRows(state.quarantineSelection, prevName, newName)
+        : state.quarantineSelection;
+      state.quarantineNavioUiState = null;
+      state.quarantineVersion += 1;
+      state.varTypes = getVariableTypes(data);
+      state.idVar = renameVariableRef(state.idVar, prevName, newName);
+      state.groupVar = renameVariableRef(state.groupVar, prevName, newName);
+      state.timeVar = renameVariableRef(state.timeVar, prevName, newName);
+    });
 
     builder.addCase(convertColumnType.fulfilled, (state, action) => {
       state.varTypes = getVariableTypes(action.payload);

@@ -22,7 +22,7 @@ export const AttributePaste = ({ name }) => {
   );
 };
 
-const CustomAggregate = ({ nodes, formula, save }) => {
+const CustomAggregate = ({ nodes, formula }) => {
   const { errors, setFieldError, setFieldValue } =
     useFormikContext();
   const textRef = useRef();
@@ -117,9 +117,6 @@ const CustomAggregate = ({ nodes, formula, save }) => {
         {errors?.aggregationConfig?.formula}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
-        {save}
-      </div>
       <div
         style={{
           display: "flex",

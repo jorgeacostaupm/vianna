@@ -23,11 +23,11 @@
 
   /* UI colors are injected from styles/uiColors.js, the single source of truth. */
 
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
 
   --space-1: 4px;
   --space-2: 8px;

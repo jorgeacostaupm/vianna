@@ -1,6 +1,8 @@
 
 import styles from "./EvolutionTestsInfo.module.css";
 
+const joinClassNames = (...classNames) => classNames.filter(Boolean).join(" ");
+
 function formatNumber(value, digits = 2) {
   const num = Number(value);
   if (!Number.isFinite(num)) return "—";
@@ -322,7 +324,7 @@ function LmmBody({ result }) {
   );
 }
 
-export default function EvolutionTestsInfo({ tests = [] }) {
+export default function EvolutionTestsInfo({ tests = [], hideTestHeader = false }) {
   if (!tests.length) return null;
 
   return (
@@ -358,21 +360,29 @@ export default function EvolutionTestsInfo({ tests = [] }) {
         }
 
         return (
-          <div key={test.id} className={styles.card}>
-            <div className={styles.cardHeader}>
-              <div>
-                <div className={styles.cardTitle}>{test.label}</div>
-                {meta.length > 0 && (
-                  <div className={styles.cardMeta}>{meta.join(" • ")}</div>
-                )}
+          <div
+            key={test.id}
+            className={joinClassNames(
+              styles.card,
+              hideTestHeader && styles.cardPlain,
+            )}
+          >
+            {!hideTestHeader && (
+              <div className={styles.cardHeader}>
+                <div>
+                  <div className={styles.cardTitle}>{test.label}</div>
+                  {meta.length > 0 && (
+                    <div className={styles.cardMeta}>{meta.join(" • ")}</div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
-            {test.description && (
+            {!hideTestHeader && test.description && (
               <div className={styles.cardDesc}>{test.description}</div>
             )}
 
-            {test.referenceUrl && (
+            {!hideTestHeader && test.referenceUrl && (
               <a
                 className={styles.referenceLink}
                 href={test.referenceUrl}

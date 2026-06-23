@@ -16,7 +16,7 @@ function SettingsContent({ config, updateConfig }) {
   );
 
   return (
-    <div className={panelStyles.panel}>
+    <div className={`${panelStyles.panel} ${panelStyles.panelInsetTop}`}>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Navio Settings</div>
         <div className={panelStyles.sliderInlineRowOverview}>

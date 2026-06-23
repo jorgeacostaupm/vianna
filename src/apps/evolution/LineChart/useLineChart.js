@@ -31,8 +31,6 @@ export default function useLineChart({ chartRef, data, config }) {
     showLmmFit,
     showLmmCI,
     showLegend,
-    showGrid,
-    showGridBehindAll,
     meanPointSize,
     meanAsBoxplot,
     meanStrokeWidth,
@@ -136,7 +134,7 @@ export default function useLineChart({ chartRef, data, config }) {
       colorDomain,
       yDomain,
       useNiceY: yAxisMode !== "manual",
-      showGrid,
+      showGrid: true,
       showLegend: showLegend !== false,
       legendMaxWidth: 208,
     });
@@ -308,15 +306,11 @@ export default function useLineChart({ chartRef, data, config }) {
       });
     }
 
-    if (showGrid && yGridG) {
-      if (showGridBehindAll) {
-        yGridG.lower();
-      } else {
-        paintLayersInOrder({
-          chartGroup: chart,
-          layers: [xAxisG, yAxisG, yGridG],
-        });
-      }
+    if (yGridG) {
+      paintLayersInOrder({
+        chartGroup: chart,
+        layers: [xAxisG, yAxisG, yGridG],
+      });
     }
 
     return () => {
@@ -341,8 +335,6 @@ export default function useLineChart({ chartRef, data, config }) {
     showLmmFit,
     showLmmCI,
     showLegend,
-    showGrid,
-    showGridBehindAll,
     meanPointSize,
     meanAsBoxplot,
     meanStrokeWidth,

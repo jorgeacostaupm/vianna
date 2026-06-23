@@ -1,5 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { updateData } from "../dataframe/thunks";
+import {
+  renameColumnEverywhere,
+  updateData,
+} from "../dataframe/thunks";
+
+const renameVariableRef = (value, prevName, newName) =>
+  value === prevName ? newName : value;
 
 const initialState = {
   idVar: null,
@@ -41,6 +47,13 @@ const correlationSlice = createSlice({
       state.groupVar = null;
       state.timeVar = null;
       state.workspace = { views: [], layout: [], revision: 0 };
+    });
+
+    builder.addCase(renameColumnEverywhere.fulfilled, (state, action) => {
+      const { prevName, newName } = action.payload;
+      state.idVar = renameVariableRef(state.idVar, prevName, newName);
+      state.groupVar = renameVariableRef(state.groupVar, prevName, newName);
+      state.timeVar = renameVariableRef(state.timeVar, prevName, newName);
     });
   },
 });

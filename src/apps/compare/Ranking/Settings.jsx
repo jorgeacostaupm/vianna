@@ -1,7 +1,6 @@
 import { Typography, Radio, Slider } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
-import SwitchControl from "@/components/ui/SwitchControl";
 import AxisLabelSizeControl from "@/components/ui/AxisLabelSizeControl";
 import GroupSettings from "../GroupSettings";
 
@@ -13,7 +12,6 @@ export default function Settings({ config, setConfig, maxEffectSize = 0 }) {
     nBars = 10,
     pValue = 0.05,
     effectSize = 0,
-    showGrid,
   } = config;
   const update = (field, value) =>
     setConfig((prev) => ({ ...prev, [field]: value }));
@@ -75,11 +73,6 @@ export default function Settings({ config, setConfig, maxEffectSize = 0 }) {
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Guides</div>
-        <SwitchControl label="Grid lines"
-          size="small"
-            checked={showGrid}
-            onChange={(v) => update("showGrid", v)}
-        />
         <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
 

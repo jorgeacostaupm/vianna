@@ -1,0 +1,209 @@
+GUION DE DEMO DE VIANNA - 15 MINUTOS
+
+Objetivo narrativo:
+Mostrar cómo VIANNA permite pasar de un dataset longitudinal neuropsicológico a una exploración estructurada: organizar variables, definir cohortes, revisar calidad de datos, comparar grupos, analizar evolución temporal y explorar asociaciones.
+
+Pregunta guía para la demo:
+"¿Cómo varía el rendimiento cognitivo entre países, cómo evoluciona durante las visitas y qué variables parecen estar relacionadas?"
+
+Dataset sugerido:
+Usar el dataset demo incluido en la aplicación.
+
+
+0:00 - 0:45 | Entrada y contexto
+
+Acción:
+Abrir VIANNA y elegir "Explore demo dataset".
+
+Guion:
+"VIANNA es una herramienta de visual analytics para datos neuropsicológicos longitudinales. Está pensada para investigación exploratoria: no produce diagnósticos clínicos, sino que ayuda a inspeccionar, curar, estratificar y analizar datos complejos."
+
+"Voy a usar el dataset demo para enseñar el flujo completo: primero organizamos variables, luego definimos cohortes, revisamos datos problemáticos, comparamos grupos, analizamos trayectorias y finalmente exploramos correlaciones."
+
+
+0:45 - 1:30 | Carga y estructura del dataset
+
+Acción:
+Abrir el panel de gestión de datos o mostrar que el dataset ya está cargado.
+
+Guion:
+"El dataset tiene participantes medidos en varias visitas. Para esta demo nos interesan tres campos de estructura: el identificador del participante, la visita temporal y una variable de grupo, en este caso el país."
+
+"Esto es importante porque VIANNA coordina todas las vistas: cuando selecciono o filtro datos en una parte, esa selección puede alimentar otros análisis."
+
+Puntos a mencionar:
+- Datos longitudinales.
+- Variables sociodemográficas y cognitivas.
+- Agrupación por país.
+- Varias visitas por participante.
+
+
+1:30 - 3:15 | Hierarchy Editor: organización de variables
+
+Acción:
+Ir a "Hierarchy Editor".
+Expandir grupos como SocDem, DMS, RVP o SWM.
+Seleccionar una variable cognitiva, por ejemplo DMSPC.
+
+Guion:
+"El primer problema en datasets neuropsicológicos grandes es que hay muchas columnas. El Hierarchy Editor permite organizar esas variables en una estructura semántica."
+
+"Aquí vemos ramas por dominios o pruebas. Por ejemplo, DMS agrupa variables relacionadas con Delayed Matching to Sample. Puedo inspeccionar variables concretas, leer su descripción y decidir cuáles son relevantes para el análisis."
+
+"Esta organización evita trabajar con una lista plana de columnas y permite construir análisis más controlados."
+
+Acción opcional:
+Mostrar cómo se selecciona una rama o variable.
+
+Guion opcional:
+"También puedo activar o desactivar ramas para concentrarme solo en las variables que necesito."
+
+
+3:15 - 5:30 | Overview: inspección, filtros y cohortes
+
+Acción:
+Ir a "Overview".
+Mostrar la vista general.
+Filtrar por Country, por ejemplo Spain y Norway.
+Si hay variable de edad visible, aplicar un filtro simple.
+
+Guion:
+"La vista Overview sirve para inspeccionar el dataset y definir cohortes. Aquí puedo filtrar por país, edad, visita u otras variables, y ver cómo cambia la población seleccionada."
+
+"Por ejemplo, voy a comparar participantes de Spain y Norway. Esta selección queda coordinada con el resto de la aplicación, así que no tengo que reconstruir el subconjunto en cada vista."
+
+"Además, esta vista permite detectar valores ausentes o registros sospechosos. Si encuentro datos problemáticos, puedo enviarlos temporalmente a Quarantine sin borrarlos."
+
+Acción:
+Enviar alguna fila o subconjunto a Quarantine si resulta natural en la demo.
+
+Guion:
+"La idea no es eliminar datos de forma irreversible, sino apartarlos mientras reviso si deben incluirse en el análisis."
+
+
+5:30 - 6:15 | Quarantine: revisión de registros problemáticos
+
+Acción:
+Ir a "Quarantine".
+Mostrar registros apartados.
+Restaurar alguno si conviene.
+
+Guion:
+"Quarantine es una zona de revisión. Los registros enviados aquí quedan fuera del análisis principal, pero siguen disponibles para inspección."
+
+"Esto es útil en investigación porque muchas veces no queremos borrar datos inmediatamente. Queremos documentar, revisar y decidir."
+
+"Si un registro resulta válido, puedo restaurarlo al dataset principal."
+
+
+6:15 - 9:00 | Comparison: comparación entre grupos
+
+Acción:
+Ir a "Comparison".
+Configurar Country como variable de grupo.
+Elegir una variable cognitiva, por ejemplo DMSPC.
+Crear una distribución con boxplot o violin plot.
+Ejecutar un test estadístico adecuado, por ejemplo Welch ANOVA o Kruskal-Wallis.
+
+Guion:
+"Ahora pasamos de inspección a comparación. En Comparison puedo comparar una variable entre grupos, por ejemplo el rendimiento DMSPC entre países."
+
+"La vista muestra la distribución, no solo un promedio. Esto es importante porque permite ver dispersión, asimetrías, outliers y diferencias de tamaño entre grupos."
+
+"Además puedo ejecutar pruebas estadísticas exploratorias. Según el tipo de variable y los supuestos, VIANNA ofrece alternativas como ANOVA, Welch ANOVA, Kruskal-Wallis, t-test, Mann-Whitney o chi-cuadrado."
+
+"Aquí no estoy buscando una conclusión clínica. Estoy usando estadística para priorizar hipótesis: qué variables parecen diferenciar grupos y merecen análisis posterior."
+
+Puntos a señalar:
+- p-value.
+- intervalo de confianza si está disponible.
+- tamaño de efecto.
+- ranking de variables si se muestra.
+
+
+9:00 - 12:00 | Evolution: evolución longitudinal
+
+Acción:
+Ir a "Evolution".
+Configurar:
+- ID: id.
+- Time: Visit Name.
+- Group: Country.
+- Variable: DMSPC u otra variable cognitiva.
+
+Mostrar líneas individuales, medias por visita, intervalos de confianza y diferencias entre grupos.
+
+Guion:
+"La vista Evolution aprovecha la estructura longitudinal. En vez de mirar cada visita por separado, podemos ver cómo cambian los participantes a lo largo del tiempo."
+
+"Cada línea representa trayectorias individuales, y encima podemos ver medias, intervalos de confianza y patrones agregados por grupo."
+
+"Esto permite distinguir varias situaciones: diferencias iniciales entre grupos, cambios con el tiempo, variabilidad individual y posibles interacciones entre grupo y visita."
+
+"VIANNA también incluye pruebas para datos repetidos y modelos longitudinales, como ANOVA de medidas repetidas, Friedman, tests pareados y modelos lineales mixtos. De nuevo, el objetivo es apoyar exploración e hipótesis, no sustituir un análisis confirmatorio completo."
+
+
+12:00 - 14:00 | Correlation: asociaciones y estructura latente
+
+Acción:
+Ir a "Correlation".
+Abrir una matriz de correlación con varias variables cognitivas, por ejemplo:
+- DMSPC.
+- RVPTH.
+- SWMBE4.
+- PALFAMS28.
+
+Después mostrar scatter plot matrix o PCA.
+
+Guion:
+"Después de comparar grupos y ver evolución temporal, queremos entender relaciones entre variables."
+
+"La matriz de correlación ayuda a detectar asociaciones entre pruebas o dominios cognitivos. Por ejemplo, podemos buscar qué medidas se mueven juntas o qué variables parecen capturar información diferente."
+
+"La scatter plot matrix permite inspeccionar esas relaciones con más detalle, porque una correlación numérica puede ocultar outliers, subgrupos o relaciones no lineales."
+
+"La vista PCA ayuda a explorar estructura latente: si muchas variables cognitivas están relacionadas, quizá podamos resumir parte de la variabilidad en componentes principales."
+
+
+14:00 - 14:30 | PCA y variables derivadas
+
+Acción:
+Mostrar PCA si está preparado.
+Si aplica, usar selección/lasso para agrupar variables.
+
+Guion:
+"Una capacidad útil es que ciertas exploraciones pueden convertirse en nuevos atributos derivados. Por ejemplo, desde PCA se pueden definir agrupaciones o particiones que luego se usan como variables categóricas en otras vistas."
+
+"Esto cierra el ciclo de visual analytics: no solo miro gráficos, sino que genero nuevas formas de estratificar y seguir explorando."
+
+
+14:30 - 15:00 | Cierre y guardado
+
+Acción:
+Abrir gestión de datos o workspace.
+Mostrar opción de guardar workspace.
+
+Guion:
+"Finalmente, puedo guardar el workspace. Esto conserva datos, jerarquía, selecciones y contexto de análisis, de forma que el trabajo exploratorio es reproducible y se puede retomar."
+
+"En resumen, VIANNA cubre el flujo completo de exploración: organizar variables, definir cohortes, revisar calidad de datos, comparar grupos, analizar trayectorias longitudinales y explorar asociaciones. Su valor está en coordinar todas estas vistas para que el investigador pueda razonar sobre datos complejos sin perder el contexto."
+
+
+MENSAJE FINAL RECOMENDADO
+
+"VIANNA no intenta dar una respuesta clínica automática. Su objetivo es ayudar al investigador a entender el dataset, detectar problemas, formular hipótesis y preparar análisis más rigurosos."
+
+
+LISTA DE PREPARACIÓN ANTES DE LA DEMO
+
+1. Permitir ventanas emergentes si la aplicación abre vistas separadas.
+2. Cargar el dataset demo o tener un workspace ya preparado.
+3. Ensayar el filtro por países, por ejemplo Spain y Norway.
+4. Tener preparada una variable cognitiva principal, por ejemplo DMSPC.
+5. Dejar abiertas solo las vistas necesarias para evitar distracciones.
+6. Guardar un workspace de respaldo para recuperar rápidamente el estado si algo se desconfigura.
+
+
+VERSIÓN ULTRACORTA PARA PRESENTAR EN 30 SEGUNDOS
+
+"VIANNA es una herramienta de visual analytics para datos neuropsicológicos longitudinales. Permite organizar variables en jerarquías, inspeccionar y filtrar cohortes, apartar registros problemáticos en cuarentena, comparar grupos con visualizaciones y pruebas estadísticas, analizar trayectorias temporales por participante y explorar asociaciones mediante correlaciones y PCA. Todo está coordinado entre vistas, de modo que las selecciones y decisiones tomadas en una parte de la aplicación alimentan el resto del análisis."

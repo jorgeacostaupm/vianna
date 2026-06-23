@@ -43,6 +43,7 @@ export default function Grid({
   compactType = null,
   workspace,
   onWorkspaceChange,
+  enableCloseAllViews = false,
 }) {
   const normalizedRegistry = useMemo(
     () => normalizeViewRegistry(registry),
@@ -73,7 +74,15 @@ export default function Grid({
     );
   }, [leftPanelBounds.h, leftPanelBounds.maxH, leftPanelBounds.minH]);
 
-  const { views, layout, setLayout, addView, removeView, updateView } =
+  const {
+    views,
+    layout,
+    setLayout,
+    addView,
+    removeView,
+    removeAllViews,
+    updateView,
+  } =
     useGridViews(
       10,
       4,
@@ -86,7 +95,12 @@ export default function Grid({
         onWorkspaceChange,
       },
     );
-  const panelNode = panel ? panel(addView) : null;
+  const panelNode = panel
+    ? panel(addView, {
+        closeAllViews: enableCloseAllViews ? removeAllViews : null,
+        hasViews: views.length > 0,
+      })
+    : null;
   const leftPanelLayout = useMemo(() => {
     const minW = Math.max(1, leftPanelBounds.minW);
     const maxW = Math.max(minW, leftPanelBounds.maxW ?? minW);

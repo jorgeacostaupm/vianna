@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useEffect } from "react";
+import { useCallback, useMemo, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Tabs, Typography } from "antd";
+import { Modal, Typography } from "antd";
 
 import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
 import Settings from "./Settings";
@@ -27,31 +27,44 @@ import {
   uniqueColumns,
 } from "@/utils/viewRecords";
 import useWorkspaceBackedState from "@/hooks/useWorkspaceBackedState";
+import { AppButton, APP_BUTTON_PRESETS } from "@/components/buttons/core";
 
 const { Text } = Typography;
 
 const Chart = createD3Chart(useLineChart);
 
-function ToolbarTabs({ configContent, resultsContent, emptyMessage }) {
+function ResultsModalButton({
+  title,
+  tests = [],
+  emptyMessage,
+  hideTestHeader = false,
+}) {
+  const [open, setOpen] = useState(false);
+  const hasResults = tests.length > 0;
+
   return (
-    <Tabs
-      defaultActiveKey="config"
-      items={[
-        {
-          key: "config",
-          label: "Config",
-          children: configContent,
-        },
-        {
-          key: "results",
-          label: "Results",
-          children:
-            resultsContent || (
-              <Text type="secondary">{emptyMessage || "No results available."}</Text>
-            ),
-        },
-      ]}
-    />
+    <>
+      <AppButton
+        preset={APP_BUTTON_PRESETS.ACTION}
+        block
+        onClick={() => setOpen(true)}
+      >
+        Calculate results
+      </AppButton>
+      <Modal
+        title={title}
+        open={open}
+        onCancel={() => setOpen(false)}
+        footer={null}
+        width={900}
+      >
+        {hasResults ? (
+          <EvolutionTestsInfo tests={tests} hideTestHeader={hideTestHeader} />
+        ) : (
+          <Text type="secondary">{emptyMessage || "No results available."}</Text>
+        )}
+      </Modal>
+    </>
   );
 }
 
@@ -300,6 +313,13 @@ export default function LineChart({
       groupVar={groupVar}
       variableOptions={allSelectableVars}
       varTypes={varTypes}
+      footer={
+        <ResultsModalButton
+          title="Global test results"
+          tests={globalTestResults}
+          emptyMessage="No global test results available."
+        />
+      }
     />
   );
   const lmmSettingsContent = (
@@ -315,6 +335,14 @@ export default function LineChart({
       groupVar={groupVar}
       variableOptions={allSelectableVars}
       varTypes={varTypes}
+      footer={
+        <ResultsModalButton
+          title="LMM results"
+          tests={lmmResults}
+          emptyMessage="No LMM results available."
+          hideTestHeader
+        />
+      }
     />
   );
 
@@ -338,27 +366,9 @@ export default function LineChart({
         varTypes={varTypes}
       />
     ),
-    testsSettings: (
-      <ToolbarTabs
-        configContent={globalSettingsContent}
-        resultsContent={
-          globalTestResults.length ? (
-            <EvolutionTestsInfo tests={globalTestResults} />
-          ) : null
-        }
-        emptyMessage="No global test results available."
-      />
-    ),
+    testsSettings: globalSettingsContent,
     testsTitle: "GLOBAL",
-    lmmSettings: (
-      <ToolbarTabs
-        configContent={lmmSettingsContent}
-        resultsContent={
-          lmmResults.length ? <EvolutionTestsInfo tests={lmmResults} /> : null
-        }
-        emptyMessage="No LMM results available."
-      />
-    ),
+    lmmSettings: lmmSettingsContent,
     chart,
     config,
     setConfig,

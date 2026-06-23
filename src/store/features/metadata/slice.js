@@ -16,6 +16,7 @@ import {
   sanitizeHierarchyNode,
 } from "./utils/thunkUtils";
 import { applyAttributeRemovals } from "./utils/removeAttributes";
+import { moveRelatedIdsAsBlock } from "./utils/reorder";
 
 const MAX_ASSIGNMENT_HISTORY = 100;
 
@@ -235,27 +236,22 @@ const metaSlice = createSlice({
     }),
 
     changeOrder: create.reducer((state, action) => {
-      const { sourceID, parentID, newIndex } = action.payload;
+      const { sourceID, sourceIDs, parentID, newIndex } = action.payload || {};
+      const idsToMove = Array.isArray(sourceIDs) ? sourceIDs : [sourceID];
 
-      const parentNode = state.attributes.find((node) =>
-        node.related.includes(sourceID),
+      const parentNode = state.attributes.find((node) => node.id === parentID);
+      if (!parentNode) return;
+
+      const currentRelated = toRelatedList(parentNode);
+      const nextRelated = moveRelatedIdsAsBlock(
+        currentRelated,
+        idsToMove,
+        newIndex,
       );
 
-      if (!parentNode) return;
-      if (parentNode.id !== parentID) return;
+      if (nextRelated === currentRelated) return;
 
-      const oldIndex = parentNode.related.indexOf(sourceID);
-
-      if (
-        oldIndex === -1 ||
-        newIndex < 0 ||
-        newIndex >= parentNode.related.length
-      ) {
-        return;
-      }
-
-      parentNode.related.splice(oldIndex, 1);
-      parentNode.related.splice(newIndex, 0, sourceID);
+      parentNode.related = nextRelated;
 
       state.hierarchyRevision += 0.5;
     }),

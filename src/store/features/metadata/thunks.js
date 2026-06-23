@@ -1,9 +1,11 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import * as aq from "arquero";
 import {
+  convertColumnType,
   generateColumn,
-  removeBatch,
   generateColumnBatch,
+  renameColumnEverywhere,
+  removeBatch,
 } from "../dataframe/thunks";
 import {
   generateTree,
@@ -11,7 +13,6 @@ import {
   getRandomInt,
   getVisibleNodes,
 } from "@/utils/functions";
-import { convertColumnType } from "../dataframe/thunks";
 import {
   buildHierarchyIndexes,
   createNodeInfo,
@@ -256,6 +257,8 @@ export const updateAttribute = createAsyncThunk(
 
       const attributes = getState().metadata.attributes || [];
       const existingNode = attributes.find((node) => node?.id === payload?.id);
+      const previousAttributeName =
+        existingNode?.type === "attribute" ? existingNode.name : null;
       const previousAggregationName =
         existingNode?.type === "aggregation" ? existingNode.name : null;
       const previousAggregationFormula = getAggregationExecutableFormula(
@@ -299,6 +302,17 @@ export const updateAttribute = createAsyncThunk(
           removeBatch({
             cols: [previousAggregationName || name],
             silentSuccess: true,
+          }),
+        ).unwrap();
+      } else if (
+        type === "attribute" &&
+        previousAttributeName &&
+        previousAttributeName !== name
+      ) {
+        await dispatch(
+          renameColumnEverywhere({
+            prevName: previousAttributeName,
+            newName: name,
           }),
         ).unwrap();
       }

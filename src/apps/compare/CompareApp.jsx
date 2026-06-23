@@ -18,7 +18,7 @@ export default function CompareApp() {
     [dispatch],
   );
 
-  const panel = (addView) => {
+  const panel = (addView, gridActions = {}) => {
     const commands = createComparePanelCommands({
       addView,
       dispatch,
@@ -31,6 +31,8 @@ export default function CompareApp() {
         generateDistribution={commands.addDistribution}
         generateTest={commands.runTestForVariable}
         generateRanking={commands.addRanking}
+        closeAllViews={gridActions.closeAllViews}
+        hasViews={gridActions.hasViews}
       />
     );
   };
@@ -45,6 +47,7 @@ export default function CompareApp() {
       compactType="vertical"
       workspace={workspace}
       onWorkspaceChange={handleWorkspaceChange}
+      enableCloseAllViews
     />
   );
 }

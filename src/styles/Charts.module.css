@@ -166,10 +166,47 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-4);
-  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4);
   display: flex;
   flex-direction: column;
+}
+
+.nodeInfoSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.nodeInfoSectionTitle {
+  color: var(--color-ink-tertiary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.nodeInfoNotice {
+  color: var(--color-ink-secondary);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  padding: var(--space-3);
+}
+
+.nodeInfoActions {
+  position: sticky;
+  bottom: calc(var(--space-4) * -1);
+  z-index: 1;
+  flex-direction: row;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0 calc(var(--space-4) * -1) calc(var(--space-4) * -1);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 0;
+  background: var(--color-surface);
 }
 
 /* hierarchyOverlays.module.css */

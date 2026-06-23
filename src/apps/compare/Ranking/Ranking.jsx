@@ -71,7 +71,7 @@ export default function Ranking({
       <RankingBarChart
         id={id}
         data={data}
-        config={config}
+        config={{ ...config, showGrid: true }}
         onVariableClick={onVariableClick}
       />
     );

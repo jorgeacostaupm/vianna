@@ -1,6 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { updateData } from "../dataframe/thunks";
+import {
+  renameColumnEverywhere,
+  updateData,
+} from "../dataframe/thunks";
 import { normalizeTimeOrderConfig } from "@/utils/evolutionTimeOrder";
+
+const renameVariableRef = (value, prevName, newName) =>
+  value === prevName ? newName : value;
 
 const initialState = {
   idVar: null,
@@ -67,6 +73,26 @@ const evolutionSlice = createSlice({
       state.selectedVar = null;
       state.timeOrderByVar = {};
       state.workspace = { views: [], layout: [], revision: 0 };
+    });
+
+    builder.addCase(renameColumnEverywhere.fulfilled, (state, action) => {
+      const { prevName, newName } = action.payload;
+      state.idVar = renameVariableRef(state.idVar, prevName, newName);
+      state.groupVar = renameVariableRef(state.groupVar, prevName, newName);
+      state.timeVar = renameVariableRef(state.timeVar, prevName, newName);
+      state.selectedVar = renameVariableRef(
+        state.selectedVar,
+        prevName,
+        newName,
+      );
+
+      if (
+        state.timeOrderByVar &&
+        Object.prototype.hasOwnProperty.call(state.timeOrderByVar, prevName)
+      ) {
+        state.timeOrderByVar[newName] = state.timeOrderByVar[prevName];
+        delete state.timeOrderByVar[prevName];
+      }
     });
   },
 });

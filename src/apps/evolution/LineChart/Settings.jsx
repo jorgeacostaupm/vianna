@@ -3,6 +3,7 @@ import {
   Typography,
   Select,
   InputNumber,
+  Tabs,
 } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import SwitchControl from "@/components/ui/SwitchControl";
@@ -31,6 +32,7 @@ export default function Settings({
   groupVar,
   variableOptions = [],
   varTypes = {},
+  footer = null,
 }) {
   const {
     showObs,
@@ -52,9 +54,6 @@ export default function Settings({
     subjectPointSize,
     meanStrokeWidth,
     subjectStrokeWidth,
-    showLegend,
-    showGrid,
-    showGridBehindAll,
     testIds = [],
     testTimeFrom,
     testTimeTo,
@@ -126,79 +125,81 @@ export default function Settings({
   );
 
   if (mode === "tests") {
-    return (
-      <div className={panelStyles.panel}>
-        <div className={panelStyles.section}>
-          <div className={panelStyles.sectionTitle}>Global</div>
-          <Text className={panelStyles.helper}>
-            Select one or more tests to compute for the evolution view.
-          </Text>
-          {!!baseTests.length && (
-            <div className={panelStyles.optionList}>
-              {baseTests.map(renderTestOption)}
-            </div>
-          )}
-        </div>
-
-        {!!pairedTests.length && (
-          <div className={panelStyles.section}>
-            <div className={panelStyles.sectionTitle}>Paired</div>
-            <div className={panelStyles.optionList}>
-              {pairedTests.map(renderTestOption)}
-            </div>
-
-            <div className={panelStyles.rowStack}>
-              <Text className={panelStyles.label}>Paired timepoints</Text>
-              <Text className={panelStyles.helper}>
-                Used by paired tests to compare two time points within each
-                group.
-              </Text>
-              <div className={panelStyles.inline}>
-                <Select
-                  size="small"
-                  className={panelStyles.control}
-                  options={timeOptions}
-                  placeholder="Time A"
-                  value={
-                    availableTimes.includes(testTimeFrom)
-                      ? testTimeFrom
-                      : undefined
-                  }
-                  onChange={(value) => update("testTimeFrom", value)}
-                  disabled={timeOptions.length < 2}
-                />
-                <Select
-                  size="small"
-                  className={panelStyles.control}
-                  options={timeOptions}
-                  placeholder="Time B"
-                  value={
-                    availableTimes.includes(testTimeTo) ? testTimeTo : undefined
-                  }
-                  onChange={(value) => update("testTimeTo", value)}
-                  disabled={timeOptions.length < 2}
-                />
-              </div>
-              {availableTimes.length < 2 && (
-                <Text className={panelStyles.helper}>
-                  At least two time points are needed to run paired tests.
-                </Text>
-              )}
-            </div>
+    const testsContent = (
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Global</div>
+        <Text className={panelStyles.helper}>
+          Select one or more tests to compute for the evolution view.
+        </Text>
+        {!!baseTests.length && (
+          <div className={panelStyles.optionList}>
+            {baseTests.map(renderTestOption)}
           </div>
         )}
+      </div>
+    );
 
+    const pairedContent = (
+      !!pairedTests.length && (
         <div className={panelStyles.section}>
-          <div className={panelStyles.sectionTitle}>Variables</div>
-          <EvolutionVariableSettings />
+          <div className={panelStyles.sectionTitle}>Paired</div>
+          <div className={panelStyles.optionList}>
+            {pairedTests.map(renderTestOption)}
+          </div>
+
+          <div className={panelStyles.rowStack}>
+            <Text className={panelStyles.label}>Paired timepoints</Text>
+            <Text className={panelStyles.helper}>
+              Used by paired tests to compare two time points within each group.
+            </Text>
+            <div className={panelStyles.inline}>
+              <Select
+                size="small"
+                className={panelStyles.control}
+                options={timeOptions}
+                placeholder="Time A"
+                value={
+                  availableTimes.includes(testTimeFrom)
+                    ? testTimeFrom
+                    : undefined
+                }
+                onChange={(value) => update("testTimeFrom", value)}
+                disabled={timeOptions.length < 2}
+              />
+              <Select
+                size="small"
+                className={panelStyles.control}
+                options={timeOptions}
+                placeholder="Time B"
+                value={
+                  availableTimes.includes(testTimeTo) ? testTimeTo : undefined
+                }
+                onChange={(value) => update("testTimeTo", value)}
+                disabled={timeOptions.length < 2}
+              />
+            </div>
+            {availableTimes.length < 2 && (
+              <Text className={panelStyles.helper}>
+                At least two time points are needed to run paired tests.
+              </Text>
+            )}
+          </div>
         </div>
+      )
+    );
+
+    return (
+      <div className={`${panelStyles.panel} ${panelStyles.panelInsetTop}`}>
+        {testsContent}
+        {pairedContent}
+        {footer}
       </div>
     );
   }
 
   if (mode === "lmm") {
-    return (
-      <div className={panelStyles.panel}>
+    const modelContent = (
+      <>
         {!!lmmTests.length && (
           <div className={panelStyles.section}>
             <div className={panelStyles.sectionTitle}>Mixed Model (LMM)</div>
@@ -280,77 +281,95 @@ export default function Settings({
             )}
           </div>
         )}
+      </>
+    );
 
-        <div className={panelStyles.section}>
-          <div className={panelStyles.sectionTitle}>Variables</div>
-          <EvolutionVariableSettings />
-        </div>
+    const fitContent = (
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Fit</div>
+        <SwitchControl
+          label="LMM fit"
+          size="small"
+          checked={showLmmFit}
+          disabled={!lmmSelected}
+          onChange={(v) => update("showLmmFit", v)}
+        />
+        <SwitchControl
+          label="LMM 95% CIs"
+          size="small"
+          checked={showLmmCI}
+          disabled={!lmmSelected}
+          onChange={(v) => update("showLmmCI", v)}
+        />
+      </div>
+    );
+
+    return (
+      <div className={`${panelStyles.panel} ${panelStyles.panelInsetTop}`}>
+        {modelContent}
+        {fitContent}
+        {footer}
       </div>
     );
   }
 
-  return (
-    <div className={panelStyles.panel}>
+  const seriesTab = (
+    <>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Displayed Series</div>
-        <SwitchControl label="Means"
+        <SwitchControl
+          label="Means"
           size="small"
-            checked={showMeans}
-            onChange={(v) => update("showMeans", v)}
+          checked={showMeans}
+          onChange={(v) => update("showMeans", v)}
         />
-        <SwitchControl label="Overall mean"
+        <SwitchControl
+          label="Overall mean"
           checked={showOverallMean}
-            size="small"
-            onChange={(v) => update("showOverallMean", v)}
-        />
-        <SwitchControl label="Items"
           size="small"
-            checked={showObs}
-            onChange={(v) => update("showObs", v)}
+          onChange={(v) => update("showOverallMean", v)}
+        />
+        <SwitchControl
+          label="Items"
+          size="small"
+          checked={showObs}
+          onChange={(v) => update("showObs", v)}
         />
       </div>
 
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Uncertainty</div>
-        <SwitchControl label="STDs"
+        <SwitchControl
+          label="STDs"
           size="small"
-            checked={showStds}
-            onChange={(v) => update("showStds", v)}
+          checked={showStds}
+          onChange={(v) => update("showStds", v)}
         />
-        <SwitchControl label="95% CIs"
+        <SwitchControl
+          label="95% CIs"
           size="small"
-            checked={showCIs}
-            onChange={(v) => update("showCIs", v)}
-        />
-      </div>
-
-      <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>LMM</div>
-        <SwitchControl label="LMM fit"
-          size="small"
-            checked={showLmmFit}
-            disabled={!lmmSelected}
-            onChange={(v) => update("showLmmFit", v)}
-        />
-        <SwitchControl label="LMM 95% CIs"
-          size="small"
-            checked={showLmmCI}
-            disabled={!lmmSelected}
-            onChange={(v) => update("showLmmCI", v)}
+          checked={showCIs}
+          onChange={(v) => update("showCIs", v)}
         />
       </div>
+    </>
+  );
 
+  const dataTab = (
+    <>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>View Modifiers</div>
-        <SwitchControl label="Complete items"
+        <SwitchControl
+          label="Complete items"
           size="small"
-            checked={showComplete}
-            onChange={(v) => update("showComplete", v)}
+          checked={showComplete}
+          onChange={(v) => update("showComplete", v)}
         />
-        <SwitchControl label="Incomplete items"
+        <SwitchControl
+          label="Incomplete items"
           size="small"
-            checked={Boolean(showIncomplete)}
-            onChange={(v) => update("showIncomplete", v)}
+          checked={Boolean(showIncomplete)}
+          onChange={(v) => update("showIncomplete", v)}
         />
         {Boolean(showIncomplete) && (
           <div className={panelStyles.rowStack}>
@@ -379,17 +398,21 @@ export default function Settings({
             />
           </div>
         )}
-        <AxisLabelSizeControl config={config} setConfig={setConfig} />
       </div>
+    </>
+  );
 
+  const axisTab = (
+    <>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Y Axis</div>
-        <SwitchControl label="Manual range"
+        <SwitchControl
+          label="Manual range"
           size="small"
-            checked={yAxisMode === "manual"}
-            onChange={(enabled) =>
-              update("yAxisMode", enabled ? "manual" : "auto")
-            }
+          checked={yAxisMode === "manual"}
+          onChange={(enabled) =>
+            update("yAxisMode", enabled ? "manual" : "auto")
+          }
         />
         <Text className={panelStyles.helper}>
           {yAxisMode === "manual"
@@ -421,7 +444,15 @@ export default function Settings({
           />
         </div>
       </div>
+      <div className={panelStyles.section}>
+        <div className={panelStyles.sectionTitle}>Axis Labels</div>
+        <AxisLabelSizeControl config={config} setConfig={setConfig} />
+      </div>
+    </>
+  );
 
+  const appearanceTab = (
+    <>
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Appearance</div>
 
@@ -457,37 +488,35 @@ export default function Settings({
           max={10}
           onChange={(v) => update("subjectStrokeWidth", v)}
         />
-        <SwitchControl label="Means as boxplots"
+        <SwitchControl
+          label="Means as boxplots"
           size="small"
-            checked={Boolean(meanAsBoxplot)}
-            onChange={(v) => update("meanAsBoxplot", v)}
+          checked={Boolean(meanAsBoxplot)}
+          onChange={(v) => update("meanAsBoxplot", v)}
         />
       </div>
+    </>
+  );
 
-      <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Guides</div>
-        <SwitchControl label="Legend"
-          size="small"
-            checked={showLegend}
-            onChange={(v) => update("showLegend", v)}
-        />
-        <SwitchControl label="Grid"
-          size="small"
-            checked={showGrid}
-            onChange={(v) => update("showGrid", v)}
-        />
-        <SwitchControl label="Grid behind all"
-          size="small"
-            checked={Boolean(showGridBehindAll)}
-            disabled={!showGrid}
-            onChange={(v) => update("showGridBehindAll", v)}
-        />
-      </div>
+  const variablesTab = (
+    <div className={panelStyles.section}>
+      <div className={panelStyles.sectionTitle}>Variables</div>
+      <EvolutionVariableSettings />
+    </div>
+  );
 
-      <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Variables</div>
-        <EvolutionVariableSettings />
-      </div>
+  return (
+    <div className={panelStyles.panel}>
+      <Tabs
+        defaultActiveKey="series"
+        items={[
+          { key: "series", label: "Series", children: seriesTab },
+          { key: "data", label: "Data", children: dataTab },
+          { key: "axis", label: "Axis", children: axisTab },
+          { key: "style", label: "Style", children: appearanceTab },
+          { key: "variables", label: "Variables", children: variablesTab },
+        ]}
+      />
     </div>
   );
 }

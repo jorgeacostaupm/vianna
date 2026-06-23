@@ -4,12 +4,17 @@ export const resolveTransitionDuration = ({
   animateTransitions = true,
 } = {}) => (instant || animateTransitions === false ? 0 : transitionDuration);
 export const dragClickThreshold = 5;
+// ponytail: browsers do not expose the OS double-click interval; raise this if slow double-clicks still toggle first.
+export const nodeDoubleClickDelayMs = 300;
 export const tooltipHoverDelayMs = 2000;
 export const nodeHalfSize = 12.5;
 export const nodeCornerRadius = 4;
 export const triangleTopFactor = 1.152;
 export const triangleBottomFactor = 0.576;
 export const assignRadius = 40;
+export const ghostCircleGap = 10;
+export const getGhostCircleMinDistance = (radius) =>
+  Math.max(0, radius) * 2 + ghostCircleGap;
 
 export const allowedLinkStyles = new Set(["smooth", "elbow", "straight"]);
 

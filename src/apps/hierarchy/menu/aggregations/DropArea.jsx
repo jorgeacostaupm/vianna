@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Tooltip, Typography } from "antd";
+import { Typography } from "antd";
 import { useFormikContext } from "formik";
 import { CopyOutlined, DeleteOutlined } from "@ant-design/icons";
 import {
@@ -23,7 +23,6 @@ const DropArea = ({
   moveNode,
   updateNodeWeight,
   modeAllNodes,
-  save,
 }) => {
   const [active, setActive] = useState(false);
   const [searchText] = useState("");
@@ -129,28 +128,24 @@ const DropArea = ({
         {errors?.aggregationConfig?.formula}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
-        {save}
+      <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+        <AppButton
+          variant={APP_BUTTON_VARIANTS.ACTION}
+          onClick={() => modeAllNodes(true)}
+          icon={<CopyOutlined />}
+          style={{ minWidth: 112 }}
+        >
+          Add all
+        </AppButton>
 
-        <Tooltip title={"Add all variables"}>
-          <AppButton
-            variant={APP_BUTTON_VARIANTS.ACTION}
-            shape="circle"
-            size="large"
-            onClick={() => modeAllNodes(true)}
-            icon={<CopyOutlined />}
-          />
-        </Tooltip>
-
-        <Tooltip title={"Delete all variables"}>
-          <AppButton
-            variant={APP_BUTTON_VARIANTS.ACTION}
-            shape="circle"
-            size="large"
-            onClick={() => modeAllNodes(false)}
-            icon={<DeleteOutlined />}
-          />
-        </Tooltip>
+        <AppButton
+          variant={APP_BUTTON_VARIANTS.ACTION}
+          onClick={() => modeAllNodes(false)}
+          icon={<DeleteOutlined />}
+          style={{ minWidth: 112 }}
+        >
+          Remove all
+        </AppButton>
       </div>
     </>
   );

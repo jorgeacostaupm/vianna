@@ -1,7 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-import { updateData } from "../dataframe/thunks";
+import {
+  renameColumnEverywhere,
+  updateData,
+} from "../dataframe/thunks";
 import { checkAssumptions } from "./thunks";
+
+const renameVariableRef = (value, prevName, newName) =>
+  value === prevName ? newName : value;
 
 const initialState = {
   groupVar: null,
@@ -62,6 +68,18 @@ const compareSlice = createSlice({
       state.selectedVar = null;
       state.selectedTest = null;
       state.workspace = { views: [], layout: [], revision: 0 };
+    });
+
+    builder.addCase(renameColumnEverywhere.fulfilled, (state, action) => {
+      const { prevName, newName } = action.payload;
+      state.groupVar = renameVariableRef(state.groupVar, prevName, newName);
+      state.idVar = renameVariableRef(state.idVar, prevName, newName);
+      state.timeVar = renameVariableRef(state.timeVar, prevName, newName);
+      state.selectedVar = renameVariableRef(
+        state.selectedVar,
+        prevName,
+        newName,
+      );
     });
   },
 });

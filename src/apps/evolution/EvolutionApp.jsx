@@ -15,11 +15,13 @@ export default function EvolutionApp() {
     [dispatch],
   );
 
-  const panel = (addView) => (
+  const panel = (addView, gridActions = {}) => (
     <Panel
       generateEvolution={(variable) =>
         variable && addView("evolution", { variable })
       }
+      closeAllViews={gridActions.closeAllViews}
+      hasViews={gridActions.hasViews}
     />
   );
 
@@ -33,6 +35,7 @@ export default function EvolutionApp() {
       compactType="vertical"
       workspace={workspace}
       onWorkspaceChange={handleWorkspaceChange}
+      enableCloseAllViews
     />
   );
 }

@@ -40,7 +40,7 @@ export default function Distribution({
   const chart = useMemo(() => {
     if (!data?.length) return <NoDataPlaceholder />;
     const Chart = chartStrategies[config.chartType] ?? FallbackChart;
-    return <Chart data={data} config={config} id={id} />;
+    return <Chart data={data} config={{ ...config, showGrid: true }} id={id} />;
   }, [FallbackChart, chartStrategies, config, data, id]);
 
   return (

@@ -23,9 +23,11 @@
   flex-direction: column;
   overflow-y: auto;
   padding: var(--space-3);
+  padding-top: 0;
   max-height: 70vh;
   display: flex;
   max-width: 500px;
+  border: 1px solid var(--color-border);
 }
 
 .panelHeader {

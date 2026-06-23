@@ -107,6 +107,26 @@
   transform: none;
 }
 
+.syncButton:global(.ant-btn.ant-btn) {
+  border-color: var(--color-on-brand) !important;
+}
+
+.syncButton:global(.ant-btn.ant-btn):not(:disabled):not(
+    .ant-btn-disabled
+  ):hover,
+.syncButton:global(.ant-btn.ant-btn):not(:disabled):not(
+    .ant-btn-disabled
+  ):active {
+  border-color: var(--color-on-brand) !important;
+}
+
+.syncButton:global(.ant-btn.ant-btn)[data-active="true"]:not(:disabled):not(
+    .ant-btn-disabled
+  ) {
+  background: var(--color-accent) !important;
+  border-color: var(--color-on-brand) !important;
+}
+
 .actionButton {
   padding: 0 var(--space-3);
 }

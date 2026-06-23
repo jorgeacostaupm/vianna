@@ -42,6 +42,9 @@ function gridViewsReducer(state, action) {
       };
     }
 
+    case "REMOVE_ALL_VIEWS":
+      return initialState;
+
     case "SET_LAYOUT":
       return {
         ...state,
@@ -162,6 +165,10 @@ export default function useGridViews(defaultW = 3, defaultH = 4, options = {}) {
     dispatch({ type: "REMOVE_VIEW", payload: { id } });
   }, []);
 
+  const removeAllViews = useCallback(() => {
+    dispatch({ type: "REMOVE_ALL_VIEWS" });
+  }, []);
+
   const updateView = useCallback((id, patch) => {
     dispatch({ type: "UPDATE_VIEW", payload: { id, patch } });
   }, []);
@@ -202,6 +209,7 @@ export default function useGridViews(defaultW = 3, defaultH = 4, options = {}) {
     setLayout,
     addView,
     removeView,
+    removeAllViews,
     updateView,
   };
 }

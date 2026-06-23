@@ -27,6 +27,12 @@ const STAT_LABELS = {
   timeVar: "Time points",
 };
 
+const CARD_TITLES = {
+  idVar: "ID Attribute",
+  groupVar: "Group Attribute",
+  timeVar: "Time Attribute",
+};
+
 const formatValue = (value) => value || "Not set";
 
 export default function AnalysisVariableSettings({
@@ -34,6 +40,7 @@ export default function AnalysisVariableSettings({
   actions,
   fields,
   renderFieldExtra,
+  variant = "stack",
 }) {
   const dispatch = useDispatch();
   const categoricalVars = useSelector(selectCategoricalVars);
@@ -62,10 +69,23 @@ export default function AnalysisVariableSettings({
           typeof rawDescription === "string" ? rawDescription.trim() : "";
         const count = getDistinctValueCount(rows, effectiveValue);
 
+        const isCardVariant = variant === "cards";
+
         return (
-          <div className={panelStyles.rowStack} key={field}>
+          <div
+            className={
+              isCardVariant
+                ? styles.variableSettingsCard
+                : panelStyles.rowStack
+            }
+            key={field}
+          >
             <AnalysisSelectField
-              label={FIELD_LABELS[field] || field}
+              label={
+                isCardVariant
+                  ? CARD_TITLES[field] || FIELD_LABELS[field] || field
+                  : FIELD_LABELS[field] || field
+              }
               value={localValue ?? undefined}
               onChange={(value) => dispatch(action(value ?? null))}
               placeholder={`Default: ${formatValue(effectiveValue)}`}
@@ -74,12 +94,16 @@ export default function AnalysisVariableSettings({
               extra={renderFieldExtra?.(field, context) ?? null}
             />
             <div className={styles.contextStatsBox}>
-              <div className={styles.contextStatsRow}>
-                <span className={styles.contextStatsLabel}>Current variable</span>
-                <span className={styles.contextStatsValue}>
-                  {formatValue(effectiveValue)}
-                </span>
-              </div>
+              {!isCardVariant ? (
+                <div className={styles.contextStatsRow}>
+                  <span className={styles.contextStatsLabel}>
+                    Current variable
+                  </span>
+                  <span className={styles.contextStatsValue}>
+                    {formatValue(effectiveValue)}
+                  </span>
+                </div>
+              ) : null}
               {effectiveValue ? (
                 <div className={styles.contextStatsRow}>
                   <span className={styles.contextStatsLabel}>

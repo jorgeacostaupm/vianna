@@ -2,31 +2,30 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  background: var(--color-surface);
   color: var(--color-ink);
+}
+
+.panelInsetTop {
+  padding-top: var(--space-3);
+}
+
+.tabbedPanel :global(.ant-tabs-content-holder) {
+  padding-left: var(--space-2);
+}
+
+.tabbedPanelWideInset :global(.ant-tabs-content-holder) {
+  padding-left: var(--space-3);
 }
 
 .section {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
   gap: var(--space-2);
-  padding: var(--space-3);
-  box-shadow: var(--shadow-xs);
 }
 
 .sectionTitle {
-  margin-bottom: 2px;
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-border);
-  font-family: var(--font-family-display);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  color: var(--color-ink);
+  display: none;
 }
 
 .row {
@@ -149,7 +148,7 @@
 }
 
 .resetButton {
-  align-self: flex-end;
+  align-self: center;
 }
 
 .optionList {

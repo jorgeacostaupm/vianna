@@ -1,9 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
-import * as aq from "arquero";
 
 import {
   generateColumn,
   generateColumnBatch,
+  renameColumnEverywhere,
   removeBatch,
 } from "./thunks";
 
@@ -26,6 +26,7 @@ import {
   EMPTY_MISSING_BY_ATTRIBUTE,
   selectionHasMissingInAttributes,
 } from "./utils/missingValues";
+import { renameColumnInRows } from "./utils/rowColumns";
 
 const initialState = {
   filename: null,
@@ -76,13 +77,10 @@ const dataSlice = createSlice({
 
     renameColumn: (state, action) => {
       const { prevName, newName } = action.payload;
-      state.dataframe = aq
-        .from(state.dataframe)
-        .rename({ [prevName]: newName })
-        .objects();
+      state.dataframe = renameColumnInRows(state.dataframe, prevName, newName);
 
       const navColIdx = state.navioColumns.findIndex((n) => n === prevName);
-      state.navioColumns[navColIdx] = newName;
+      if (navColIdx !== -1) state.navioColumns[navColIdx] = newName;
       state.missingByAttribute = buildMissingByAttribute(state.dataframe);
       syncMissingStateForSelection(state);
 
@@ -154,6 +152,18 @@ const dataSlice = createSlice({
         syncSelectionFromDataframe(state, action.payload.data);
         state.version += 1;
       });
+
+    builder.addCase(renameColumnEverywhere.fulfilled, (state, action) => {
+      const { data, prevName, newName } = action.payload;
+      state.navioColumns = Array.isArray(state.navioColumns)
+        ? state.navioColumns.map((column) =>
+            column === prevName ? newName : column,
+          )
+        : [];
+      syncSelectionFromDataframe(state, data);
+      state.navioUiState = null;
+      state.version += 1;
+    });
 
     builder.addCase(replaceValuesWithNull.fulfilled, (state, action) => {
       const previousValues = Array.isArray(state.nullifiedValues)

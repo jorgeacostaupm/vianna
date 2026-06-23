@@ -44,12 +44,18 @@ export function onChangeOrder(node, newIndex) {
   this.svg.selectAll(".ghostCircle").attr("fill-opacity", 0);
   this.instantNextUpdate = true;
 
+  const reorderNodes =
+    Array.isArray(this._dragReorderNodes) && this._dragReorderNodes.length > 0
+      ? this._dragReorderNodes
+      : [node];
   const sourceID = node.id;
+  const sourceIDs = reorderNodes.map((d) => d.id);
   const parentID = node.parent.id;
 
   this.dispatcher(
     changeOrder({
       sourceID,
+      sourceIDs,
       parentID,
       newIndex,
     }),
@@ -496,6 +502,10 @@ export function destroy() {
   if (this.navioSyncTimeout) {
     clearTimeout(this.navioSyncTimeout);
     this.navioSyncTimeout = null;
+  }
+  if (this.nodeClickTimer) {
+    clearTimeout(this.nodeClickTimer);
+    this.nodeClickTimer = null;
   }
 
   clearTimeout(this._tooltipTimer);

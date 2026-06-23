@@ -5,9 +5,13 @@ import ChartSelector from "./ChartSelector";
 import CorrelationVariableSettings from "../VariableSettings";
 import { CORR_DESC } from "@/utils/constants";
 
-export default function Panel({ addChart }) {
+export default function Panel({ addChart, closeAllViews, hasViews = false }) {
   return (
-    <AnalysisSidebar description={CORR_DESC}>
+    <AnalysisSidebar
+      description={CORR_DESC}
+      onCloseAllViews={closeAllViews}
+      closeAllViewsDisabled={!hasViews}
+    >
       <AnalysisPanelSection title="Analysis Context">
         <CorrelationVariableSettings />
       </AnalysisPanelSection>

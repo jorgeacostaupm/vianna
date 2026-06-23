@@ -14,6 +14,7 @@ import {
   APP_BUTTON_PRESETS,
   APP_BUTTON_VARIANTS,
 } from "@/components/buttons/core";
+import buttonStyles from "@/components/buttons/core/AppButton.module.css";
 import PopoverButton from "@/components/buttons/ui/PopoverButton";
 
 const DEFAULT_CHART_BAR_ACTION_ORDER = Object.freeze([
@@ -42,6 +43,7 @@ function buildSyncAction({ isSync, updateConfig }) {
       active={isSync}
       tooltip={tooltip}
       ariaLabel={tooltip}
+      className={buttonStyles.syncButton}
       icon={<SyncOutlined />}
       onClick={() => updateConfig("isSync", !isSync)}
       variant={

@@ -13,7 +13,19 @@ import {
   normalizeStringColumn,
   recomputeAggregationColumns,
 } from "./utils/thunkUtils";
-import { removeColumnsFromRows } from "./utils/rowColumns";
+import {
+  removeColumnsFromRows,
+  renameColumnInRows,
+} from "./utils/rowColumns";
+
+const hasColumnInRows = (rows, column) =>
+  Array.isArray(rows) &&
+  rows.some(
+    (row) =>
+      row &&
+      typeof row === "object" &&
+      Object.prototype.hasOwnProperty.call(row, column),
+  );
 
 export const generateColumn = createAsyncThunk(
   "dataframe/agg-generate",
@@ -92,6 +104,58 @@ export const removeBatch = createAsyncThunk(
       };
     } catch {
       return rejectWithValue("Failed to batch remove");
+    }
+  },
+);
+
+export const renameColumnEverywhere = createAsyncThunk(
+  "dataframe/rename-column",
+  async ({ prevName, newName }, { getState, rejectWithValue }) => {
+    try {
+      if (!prevName || !newName) {
+        throw new Error("Column names are required.");
+      }
+
+      const state = getState();
+      const dataframe = Array.isArray(state.dataframe.dataframe)
+        ? state.dataframe.dataframe
+        : [];
+      const quarantineData = Array.isArray(state.main.quarantineData)
+        ? state.main.quarantineData
+        : [];
+
+      if (prevName === newName) {
+        return {
+          prevName,
+          newName,
+          data: dataframe,
+          quarantineData,
+        };
+      }
+
+      const hasRows = dataframe.length > 0 || quarantineData.length > 0;
+      const sourceExists =
+        hasColumnInRows(dataframe, prevName) ||
+        hasColumnInRows(quarantineData, prevName);
+      if (hasRows && !sourceExists) {
+        throw new Error(`Column "${prevName}" was not found in the dataset.`);
+      }
+
+      const targetExists =
+        hasColumnInRows(dataframe, newName) ||
+        hasColumnInRows(quarantineData, newName);
+      if (targetExists) {
+        throw new Error(`Column "${newName}" already exists in the dataset.`);
+      }
+
+      return {
+        prevName,
+        newName,
+        data: renameColumnInRows(dataframe, prevName, newName),
+        quarantineData: renameColumnInRows(quarantineData, prevName, newName),
+      };
+    } catch (error) {
+      return rejectWithValue(error?.message || "Failed to rename column.");
     }
   },
 );

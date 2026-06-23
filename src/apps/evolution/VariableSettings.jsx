@@ -18,6 +18,7 @@ export default function EvolutionVariableSettings() {
     <AnalysisVariableSettings
       context={context}
       fields={["idVar", "groupVar", "timeVar"]}
+      variant="cards"
       actions={{
         idVar: setIdVar,
         groupVar: setGroupVar,

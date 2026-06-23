@@ -1,3 +1,4 @@
+import { ReloadOutlined } from "@ant-design/icons";
 import { Select, Slider, Typography } from "antd";
 
 import panelStyles from "@/styles/SettingsPanel.module.css";
@@ -42,7 +43,10 @@ export default function HierarchyViewSettings({
     onViewConfigChange?.((prev) => ({ ...prev, [field]: value }));
 
   return (
-    <div className={panelStyles.panel} style={{ width: 400 }}>
+    <div
+      className={`${panelStyles.panel} ${panelStyles.panelInsetTop}`}
+      style={{ width: 400 }}
+    >
       <div className={panelStyles.section}>
         <div className={panelStyles.sectionTitle}>Layout</div>
 
@@ -146,6 +150,7 @@ export default function HierarchyViewSettings({
 
       <AppButton
         className={panelStyles.resetButton}
+        icon={<ReloadOutlined />}
         size="small"
         onClick={() =>
           onViewConfigChange?.(() => DEFAULT_HIERARCHY_VIEW_CONFIG)
