@@ -10,7 +10,7 @@ import { chiSquareIndependence } from "./categorical/ChiSquared";
 const testMeta = {
   "anova-one-way": {
     shortDescription: "Compares means of k independent groups with ANOVA.",
-    applicability: "Numerical variable, 2 or more independent groups.",
+    applicability: "Numerical attribute, 2 or more independent groups.",
     reportedMeasures: [
       "F statistic and p-value",
       "Effect size eta squared (η²)",
@@ -24,7 +24,7 @@ const testMeta = {
   },
   "anova-welch": {
     shortDescription: "One-way ANOVA without assuming equal variances (Welch).",
-    applicability: "Numerical variable, 2 or more independent groups.",
+    applicability: "Numerical attribute, 2 or more independent groups.",
     reportedMeasures: [
       "Welch F statistic and p-value",
       "Global effect size omega squared (ω²), SS-based",
@@ -39,7 +39,7 @@ const testMeta = {
   "kruskal-wallis-test": {
     shortDescription:
       "Non-parametric alternative to ANOVA for k independent groups.",
-    applicability: "Numerical variable, 2 or more independent groups.",
+    applicability: "Numerical attribute, 2 or more independent groups.",
     reportedMeasures: [
       "H statistic and p-value",
       "Effect size epsilon H squared (εH²)",
@@ -54,7 +54,7 @@ const testMeta = {
   "t-test-independent": {
     shortDescription:
       "Compares means of two independent groups (Student's t-test).",
-    applicability: "Numerical variable, exactly 2 independent groups.",
+    applicability: "Numerical attribute, exactly 2 independent groups.",
     reportedMeasures: [
       "t statistic and p-value",
       "Mean difference with 95% CI",
@@ -67,7 +67,7 @@ const testMeta = {
   },
   "t-test-welch": {
     shortDescription: "Two-sample t-test with unequal variances (Welch).",
-    applicability: "Numerical variable, exactly 2 independent groups.",
+    applicability: "Numerical attribute, exactly 2 independent groups.",
     reportedMeasures: [
       "Welch t statistic and p-value",
       "Mean difference with 95% CI",
@@ -80,7 +80,7 @@ const testMeta = {
   },
   "mann-whitney-u": {
     shortDescription: "Non-parametric comparison of two independent groups.",
-    applicability: "Numerical variable, exactly 2 independent groups.",
+    applicability: "Numerical attribute, exactly 2 independent groups.",
     reportedMeasures: [
       "U statistic, z approximation and p-value",
       "Group medians with bootstrap 95% CI",
@@ -97,7 +97,7 @@ const testMeta = {
   },
   "chi-square-independence": {
     shortDescription: "Chi-square test of independence for contingency tables.",
-    applicability: "Categorical variable, 2 or more groups and 2 or more categories.",
+    applicability: "Categorical attribute, 2 or more groups and 2 or more categories.",
     reportedMeasures: [
       "Chi-square statistic (χ²), degrees of freedom and p-value",
       "Global effect size Cramer's V",

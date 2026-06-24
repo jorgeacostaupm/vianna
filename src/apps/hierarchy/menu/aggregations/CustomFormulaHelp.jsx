@@ -10,7 +10,7 @@ import styles from "./CustomFormulaHelp.module.css";
 const { Text } = Typography;
 
 const QUICK_RULES = [
-  "Reference variables as $(Variable Name).",
+  "Reference attributes as $(Attribute Name).",
   "Arithmetic operators: +, -, *, /, ^.",
   "Comparisons: ==, !=, <, <=, >, >=.",
   "Logic operators: & (and), | (or), ~ (not).",
@@ -146,8 +146,8 @@ export default function CustomFormulaHelp() {
       />
 
       <div className={styles.footerNote}>
-        Tip: click an item in Available Variables to copy{" "}
-        <code className={styles.inlineCode}>$(Variable Name)</code>.
+        Tip: click an item in Available Attributes to copy{" "}
+        <code className={styles.inlineCode}>$(Attribute Name)</code>.
       </div>
     </div>
   );

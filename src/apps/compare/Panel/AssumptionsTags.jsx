@@ -49,7 +49,7 @@ const StatusTag = ({ condition, successText, failText, label }) =>
 
 const TypeTag = ({ type }) =>
   type ? (
-    <AutoCloseTooltip title={`Variable type: ${getNameByDtype(type)}`}>
+    <AutoCloseTooltip title={`Attribute type: ${getNameByDtype(type)}`}>
       <Tag color={getColorByDtype(type)} style={tagStyle}>
         Type: {getNameByDtype(type)}
       </Tag>

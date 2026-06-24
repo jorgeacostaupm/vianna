@@ -1,4 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit";
+import { filterValidNavioScaleOverrides } from "./utils/navioScaleOverrides";
 
 import {
   EMPTY_SELECTION_REF,
@@ -16,6 +17,16 @@ export const selectDataframe = createSelector(
 export const selectNavioColumns = createSelector(
   [selectDataframeState],
   (dataframeState) => dataframeState.navioColumns || [],
+);
+
+export const selectNavioScaleOverrides = createSelector(
+  [(state) => state.dataframe.navioScaleOverrides],
+  filterValidNavioScaleOverrides,
+);
+
+export const selectNavioScaleTypes = createSelector(
+  [selectDataframeState],
+  (dataframeState) => dataframeState.navioScaleTypes || [],
 );
 
 export const selectSelectionRef = createSelector(

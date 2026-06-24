@@ -29,6 +29,7 @@ import {
   sanitizeHierarchyNode,
   validateHierarchy,
 } from "./utils/thunkUtils";
+import { normalizeAggregationSavePayload } from "./utils/aggregationSave";
 
 export const applyOperation = createAsyncThunk(
   "metadata/applyOperation",
@@ -203,7 +204,7 @@ export const buildMetaFromVariableTypes = createAsyncThunk(
       return [sanitizeHierarchyNode(root), ...nodeInfo];
     } catch (err) {
       return rejectWithValue(
-        err.message || "Error building meta from variable types."
+        err.message || "Error building meta from attribute types."
       );
     }
   }
@@ -247,7 +248,12 @@ export const updateAttribute = createAsyncThunk(
       const executableFormula = getAggregationExecutableFormula(
         normalizedAggregationConfig,
       );
-      const { name, type, recover, dtype } = payload;
+      const normalizedPayload = normalizeAggregationSavePayload(
+        payload,
+        normalizedAggregationConfig,
+        Boolean(executableFormula),
+      );
+      const { name, type, recover, dtype } = normalizedPayload;
       const shouldEnforceNumberOnAggregation =
         type === "aggregation" &&
         Boolean(executableFormula) &&
@@ -265,8 +271,7 @@ export const updateAttribute = createAsyncThunk(
         existingNode?.aggregationConfig,
       );
       const candidateNode = sanitizeHierarchyNode({
-        ...payload,
-        aggregationConfig: normalizedAggregationConfig,
+        ...normalizedPayload,
       });
       const candidateHierarchy = attributes.map((node) =>
         node?.id === candidateNode.id ? candidateNode : node,
@@ -552,7 +557,7 @@ function parseDescriptionsPayload(descriptions) {
       typeof parsed !== "object"
     ) {
       throw new Error(
-        "Invalid descriptions JSON. Expected an object keyed by variable name."
+        "Invalid descriptions JSON. Expected an object keyed by attribute name."
       );
     }
 

@@ -17,7 +17,7 @@ const NodeAggregationConfig = ({ aggOp, nodes, vals, scope }) => {
       <div>
         <Text strong>Derived measure</Text>
         <br />
-        <Text type="secondary">Use {scope} to define this variable.</Text>
+        <Text type="secondary">Use {scope} to define this attribute.</Text>
       </div>
 
       <div

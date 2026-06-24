@@ -31,6 +31,10 @@ import { GROUP_CATEGORICAL_PALETTE } from "../../utils/groupColors.js";
 
 let DEBUG = false;
 
+export const getNavioBrushOverlayWidth = (left, right) => right - left;
+export const isNavioXWithinAttribBounds = (value, left, right) =>
+  value >= left && value <= right;
+
 //eleId must be the ID of a context element where everything is going to be drawn
 function navio(selection, _h) {
   "use strict";
@@ -986,15 +990,14 @@ function navio(selection, _h) {
   }
 
   function updateBrushes(d, level, recomputeBrushes = false) {
+    const attribLeft = getLevelAttribLeft(level);
+    const attribRight = getLevelAttribRight(level);
+
     dBrushes[level] = d3
       .brushY()
       .extent([
-        [x(xScale.domain()[0], level), yScales[level].range()[0]],
-        [
-          x(xScale.domain()[xScale.domain().length - 1], level) +
-            xScale.bandwidth() * 1.1,
-          yScales[level].range()[1],
-        ],
+        [attribLeft, yScales[level].range()[0]],
+        [attribRight, yScales[level].range()[1]],
       ])
       .on("brush", brushed)
       .on("end", onSelectByRange);
@@ -1024,8 +1027,7 @@ function navio(selection, _h) {
       .selectAll("rect")
       .attr(
         "width",
-        x(xScale.domain()[xScale.domain().length - 1], level) +
-          xScale.bandwidth() * 1.1
+        getNavioBrushOverlayWidth(attribLeft, attribRight)
       );
 
     if (recomputeBrushes) {
@@ -1172,7 +1174,7 @@ function navio(selection, _h) {
       const after = performance.now();
       if (DEBUG) console.log("invertOrdinalScale " + (after - before) + "ms");
 
-      let itemAttr = invertOrdinalScale(xScale, clientX - levelScale(level));
+      let itemAttr = getAttribAtX(clientX, level);
       if (itemAttr === undefined) {
         console.log(
           `navio.selectByValue: error, couldn't find attr in coords ${
@@ -1181,7 +1183,6 @@ function navio(selection, _h) {
         );
         return;
       }
-      itemAttr = dAttribs.get(itemAttr);
 
       const sel = dData.get(itemId);
       let newFilter;
@@ -1225,6 +1226,33 @@ function navio(selection, _h) {
         );
     }
   } // updateBrushes
+
+  function getLevelAttribLeft(level) {
+    return x(xScale.domain()[0], level);
+  }
+
+  function getLevelAttribRight(level) {
+    return (
+      x(xScale.domain()[xScale.domain().length - 1], level) +
+      xScale.bandwidth() * 1.1
+    );
+  }
+
+  function getAttribAtX(xOnWidget, level) {
+    if (
+      !isNavioXWithinAttribBounds(
+        xOnWidget,
+        getLevelAttribLeft(level),
+        getLevelAttribRight(level)
+      )
+    ) {
+      return undefined;
+    }
+
+    return dAttribs.get(
+      invertOrdinalScale(xScale, xOnWidget - levelScale(level))
+    );
+  }
 
   function getBrushSelectionForLevel(level) {
     const levelFilters = Array.isArray(filtersByLevel[level])
@@ -1280,20 +1308,25 @@ function navio(selection, _h) {
   }
 
   function showTooptip(xOnWidget, yOnWidget, clientX, clientY, level) {
+    const itemAttr = getAttribAtX(xOnWidget, level);
+    if (itemAttr === undefined) {
+      hideTooltip();
+      return;
+    }
+
     let itemId;
     try {
       itemId = invertOrdinalScale(yScales[level], yOnWidget);
     } catch (e) {
+      hideTooltip();
       return;
     }
 
-    let itemAttr = invertOrdinalScale(xScale, xOnWidget - levelScale(level));
     const d = dData.get(itemId);
-
-    itemAttr = dAttribs.get(itemAttr);
 
     if (!d || d === undefined) {
       console.log("Couldn't find datum for tooltip y", yOnWidget, d);
+      hideTooltip();
       return;
     }
 
@@ -1327,6 +1360,7 @@ function navio(selection, _h) {
 
     if (!overData.data || overData.data.length === 0) {
       if (DEBUG) console.log("onMouseOver no data", overData);
+      hideTooltip();
       return;
     }
 
@@ -1335,21 +1369,14 @@ function navio(selection, _h) {
   }
 
   function onMouseOut() {
+    hideTooltip();
+  }
+
+  function hideTooltip() {
     tooltipCoords.x = -200;
     tooltipCoords.y = -200;
     tooltipElement.style("display", "none");
     tooltip.scheduleUpdate();
-
-    // svg.select(".nvTooltip")
-    //   .attr("transform", "translate(" + (-200) + "," + (-200) + ")")
-    //   .call(function (tool) {
-    //     tool.select(".tool_id")
-    //       .text("");
-    //     tool.select(".tool_value_name")
-    //       .text("");
-    //     tool.select(".tool_value_val")
-    //       .text("");
-    //   });
   }
 
   function drawCounts(levelOverlay, levelOverlayEnter) {
@@ -2294,21 +2321,99 @@ function navio(selection, _h) {
     return nv;
   };
 
+  const visualScaleTypeByInternalType = {
+    bool: "boolean",
+    cat: "categorical",
+    date: "date",
+    div: "diverging",
+    ordered: "ordered",
+    seq: "sequential",
+    text: "text",
+  };
+
+  const validVisualScaleTypes = new Set(
+    Object.values(visualScaleTypeByInternalType)
+  );
+
+  function getVisualScaleType(scale) {
+    return visualScaleTypeByInternalType[scale?.__type] || null;
+  }
+
+  function addAttribWithVisualScaleType(attr, visualScaleType) {
+    if (visualScaleType === "categorical") return nv.addCategoricalAttrib(attr);
+    if (visualScaleType === "ordered") return nv.addOrderedAttrib(attr);
+    if (visualScaleType === "text") return nv.addTextAttrib(attr);
+    if (visualScaleType === "sequential") return nv.addSequentialAttrib(attr);
+    if (visualScaleType === "diverging") return nv.addDivergingAttrib(attr);
+    if (visualScaleType === "date") return nv.addDateAttrib(attr);
+    if (visualScaleType === "boolean") return nv.addBooleanAttrib(attr);
+    return null;
+  }
+
+  function inferVisualScaleType(attr) {
+    const firstNotNull = findNotNull(data, attr);
+
+    if (
+      firstNotNull === null ||
+      firstNotNull === undefined ||
+      typeof firstNotNull === typeof ""
+    ) {
+      const numDistictValues = new Set(
+        data
+          .slice(0, nv.howManyItemsShouldSearchForNotNull)
+          .map((d) => getAttrib(d, attr))
+      ).size;
+
+      if (numDistictValues < nv.maxNumDistictForCategorical) {
+        return "categorical";
+      }
+      if (numDistictValues < nv.maxNumDistictForOrdered) {
+        return "ordered";
+      }
+      return "text";
+    }
+
+    if (typeof firstNotNull === typeof 0) {
+      return d3.min(data, (d) => getAttrib(d, attr)) < 0
+        ? "diverging"
+        : "sequential";
+    }
+
+    if (firstNotNull instanceof Date) return "date";
+    if (typeof firstNotNull === typeof true) return "boolean";
+    if (Array.isArray(firstNotNull)) {
+      return nv.addAllAttribsIncludeArrays ? "categorical" : null;
+    }
+    return nv.addAllAttribsIncludeObjects ? "categorical" : null;
+  }
+
+  function getAttribsToInfer(_attribs) {
+    return _attribs !== undefined
+      ? _attribs
+      : getAttribsFromObjectAsFn(data[0], nv.addAllAttribsRecursionLevel);
+  }
+
   // Adds all the attributes on the data, or all the attributes provided on the list based on their types
-  nv.addAllAttribs = function (_attribs) {
+  nv.addAllAttribs = function (_attribs, _visualScaleOverrides = {}) {
     if (!data || !data.length)
       throw Error(
         "addAllAttribs called without data to guess the attribs. Make sure to call it after setting the data"
       );
 
-    let attribs =
-      _attribs !== undefined
-        ? _attribs
-        : getAttribsFromObjectAsFn(data[0], nv.addAllAttribsRecursionLevel);
+    let attribs = getAttribsToInfer(_attribs);
     for (let attr of attribs) {
       if (attr === "__seqId" || attr === "__i" || attr === "selected") continue;
 
       const attrName = typeof attr === "function" ? attr.name : attr;
+      const overrideType = _visualScaleOverrides[attrName];
+      if (validVisualScaleTypes.has(overrideType)) {
+        logAddAllAttribs(
+          `Navio: Adding attr ${attrName} as ${overrideType} by override`
+        );
+        addAttribWithVisualScaleType(attr, overrideType);
+        continue;
+      }
+
       const firstNotNull = findNotNull(data, attr);
 
       if (
@@ -2386,6 +2491,24 @@ function navio(selection, _h) {
     nv.data(data);
     // drawBrushes(true); // updates brushes width
     return nv;
+  };
+
+  nv.inferAttribTypes = function (_attribs) {
+    if (!data || !data.length) return [];
+
+    return getAttribsToInfer(_attribs)
+      .filter((attr) => attr !== "__seqId" && attr !== "__i" && attr !== "selected")
+      .map((attr) => ({
+        attribute: typeof attr === "function" ? attr.name : attr,
+        type: inferVisualScaleType(attr),
+      }));
+  };
+
+  nv.getAttribScaleTypes = function () {
+    return attribsOrdered.map((attr) => ({
+      attribute: getAttribName(attr),
+      type: getVisualScaleType(colScales.get(attr)),
+    }));
   };
 
   nv.data = function (_) {

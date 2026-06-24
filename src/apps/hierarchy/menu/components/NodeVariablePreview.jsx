@@ -9,7 +9,7 @@ export default function NodeVariablePreview({ values = [], columnName }) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <Text strong>Sample values:</Text>
-        <Text type="secondary">No data found for this variable.</Text>
+        <Text type="secondary">No data found for this attribute.</Text>
       </div>
     );
   }
@@ -18,7 +18,7 @@ export default function NodeVariablePreview({ values = [], columnName }) {
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <Text strong>Sample values:</Text>
-        <Text type="secondary">No values available for this variable.</Text>
+        <Text type="secondary">No values available for this attribute.</Text>
       </div>
     );
   }

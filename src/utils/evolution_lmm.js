@@ -429,7 +429,7 @@ function buildPreparedRows({
     .map((row) => Number(row?.[outcomeVar]))
     .filter((value) => Number.isFinite(value));
   if (!outcomeValues.length) {
-    throw new Error("Outcome variable must be numeric.");
+    throw new Error("Outcome attribute must be numeric.");
   }
 
   const covariateInfo = (covariates || []).map((name) => {
@@ -527,7 +527,7 @@ function buildPreparedRows({
   ).sort((a, b) => a.localeCompare(b));
 
   if (includeGroupEffect && groupVar && groupLevels.length < 2) {
-    throw new Error("Selected group variable has insufficient levels for comparison.");
+    throw new Error("Selected group attribute has insufficient levels for comparison.");
   }
 
   if (covariateInfo.length && covariateInfo.length > subjectsWithMinObs.length / 4) {
@@ -1187,9 +1187,9 @@ export function fitRandomInterceptLmm({
   alpha = 0.05,
   declaredVarTypes = null,
 }) {
-  if (!outcomeVar) throw new Error("Outcome variable must be defined.");
-  if (!idVar) throw new Error("Subject ID variable must be defined.");
-  if (!timeVar) throw new Error("Time variable must be defined.");
+  if (!outcomeVar) throw new Error("Outcome attribute must be defined.");
+  if (!idVar) throw new Error("Subject ID attribute must be defined.");
+  if (!timeVar) throw new Error("Time attribute must be defined.");
   const blocked = new Set([outcomeVar, idVar, timeVar, groupVar].filter(Boolean));
   const invalidCovariates = (covariates || []).filter((name) => blocked.has(name));
   if (invalidCovariates.length) {

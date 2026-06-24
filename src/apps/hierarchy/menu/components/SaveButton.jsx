@@ -99,6 +99,7 @@ export default function SaveButton() {
     isSubmitting,
     validateForm,
     submitForm,
+    setValues,
   } = useFormikContext();
   const dataframe = useSelector((state) => state.dataframe.dataframe);
   const attributes = useSelector((state) => state.metadata.attributes);
@@ -128,7 +129,27 @@ export default function SaveButton() {
   const handleSave = async () => {
     if (isSaveInProgress) return;
 
-    const errors = await validateForm();
+    const compiledFormula = compileAggregationFormula(
+      values?.aggregationConfig?.formula,
+    );
+    const valuesToSave =
+      isAggregation && !compiledFormula.exec
+        ? {
+            ...values,
+            dtype: "determine",
+            aggregationConfig: {
+              ...(values?.aggregationConfig || {}),
+              formula: "",
+              usedAttributes: [],
+            },
+          }
+        : values;
+
+    if (valuesToSave !== values) {
+      await setValues(valuesToSave, true);
+    }
+
+    const errors = await validateForm(valuesToSave);
     const firstError = getFirstFormikError(errors);
 
     if (firstError) {
@@ -141,11 +162,11 @@ export default function SaveButton() {
     }
 
     const isConvertingToNumeric =
-      values?.dtype === "number" && initialValues?.dtype !== "number";
+      valuesToSave?.dtype === "number" && initialValues?.dtype !== "number";
 
     if (isConvertingToNumeric) {
       const resolvedColumnName = resolveColumnName({
-        values,
+        values: valuesToSave,
         initialValues,
         dataframe,
         quarantineData,

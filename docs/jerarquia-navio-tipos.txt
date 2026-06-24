@@ -1,0 +1,83 @@
+Descripcion de Hierarchy Editor y Navio
+
+Sintesis
+
+La jerarquia codifica el tipo logico de la variable.
+Navio codifica el tipo visual de escala que usa para pintar y filtrar cada columna.
+
+Hierarchy Editor
+
+El Hierarchy Editor organiza variables y agregaciones en un arbol. Sus nodos viven en
+metadata.attributes y tienen dos campos distintos:
+
+- type: rol del nodo dentro del arbol.
+  Valores: root, attribute, aggregation.
+
+- dtype: tipo logico persistido por la aplicacion.
+  Valores validos: root, number, string, determine.
+
+El campo dtype es parte del contrato de la jerarquia. No es solo una decision de
+color: tambien afecta a como se guardan o materializan variables y agregaciones.
+Por ejemplo, si una variable se cambia a number, el guardado puede convertir la
+columna real a numerica; los valores no numericos pueden acabar como null.
+
+Codificacion de color en la jerarquia:
+
+- number -> verde, Numerical
+- string -> naranja, Categorical
+- determine -> blanco, Unknown o nodo estructural
+- root -> blanco
+
+Los nodos aggregation tienen un caso especial: si no tienen formula valida y su
+dtype es determine, se tratan como nodos estructurales y se pintan en blanco.
+Si una aggregation tiene formula valida, su dtype seleccionado si representa el
+tipo logico de la variable derivada.
+
+Navio
+
+Navio es la vista de exploracion y filtrado. Recibe los datos y la lista de
+columnas visibles, pero no usa directamente el dtype de la jerarquia para
+colorear. Al llamar a addAllAttribs(columns), Navio inspecciona los valores reales
+de cada columna e infiere que escala visual conviene usar.
+
+Tipos visuales inferidos por Navio:
+
+- string con pocas categorias -> categorical
+- string con cardinalidad media -> ordered
+- string con muchas categorias -> text
+- numero sin negativos -> sequential
+- numero con negativos -> diverging
+- Date -> date
+- boolean -> boolean
+- null o missing -> color especial de nulos
+
+Estos tipos de Navio son decisiones de renderizado. Separan casos que la
+jerarquia agrupa deliberadamente. Por ejemplo, sequential y diverging son ambos
+datos numericos desde el punto de vista logico, pero necesitan escalas de color
+distintas. Del mismo modo, categorical, ordered y text pueden seguir siendo
+strings desde el punto de vista de la jerarquia.
+
+Relacion correcta entre ambas vistas
+
+No es necesario que Hierarchy Editor y Navio tengan exactamente los mismos tipos.
+De hecho, conviene que no los mezclen:
+
+- Hierarchy Editor debe mantener tipos logicos: number, string, determine, root.
+- Navio debe mantener tipos visuales: categorical, ordered, text, sequential,
+  diverging, date, boolean, etc.
+
+La inconsistencia real aparece si un tipo visual de Navio se persiste como tipo
+logico de jerarquia. Por ejemplo, una columna textual no deberia convertirse en
+number solo porque Navio la vaya a representar como ordered. Eso mezcla semantica
+de datos con una decision de visualizacion.
+
+Recomendacion
+
+Mantener la jerarquia simple y semantica: numerico, categorico/texto,
+desconocido/estructural. Usar los tipos mas finos de Navio solo para elegir
+escalas de color y comportamiento visual dentro de Navio.
+
+Si en el futuro se necesitan fechas o booleanos como tipos analiticos reales, se
+deberian anadir al modelo de forma completa: validacion, importacion, conversion,
+selectores, documentacion, colores y pruebas. No bastaria con copiar la leyenda
+de Navio a la jerarquia.

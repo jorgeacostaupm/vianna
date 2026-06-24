@@ -99,8 +99,8 @@ export default function useRankingViewState({
           : "";
 
       notifyWarning({
-        message: "Ranking generated with skipped variables",
-        description: `${skipped.length} variable(s) were excluded:\n${details}${extra}`,
+        message: "Ranking generated with skipped attributes",
+        description: `${skipped.length} attribute(s) were excluded:\n${details}${extra}`,
         placement: "bottomRight",
         source: "test",
       });

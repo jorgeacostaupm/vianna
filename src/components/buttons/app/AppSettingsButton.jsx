@@ -28,10 +28,10 @@ function VariablesSettingsTab() {
     <div className={styles.settingsPanel}>
       <section className={styles.settingsSection}>
         <AnalysisSelectField
-          label="ID variable"
+          label="ID attribute"
           value={idVar ?? undefined}
           onChange={(value) => dispatch(setIdVar(value ?? null))}
-          placeholder="Select ID variable"
+          placeholder="Select ID attribute"
           options={navioVars}
           allowClear
         />
@@ -42,29 +42,29 @@ function VariablesSettingsTab() {
 
       <section className={styles.settingsSection}>
         <AnalysisSelectField
-          label="Group variable"
+          label="Group attribute"
           value={groupVar ?? undefined}
           onChange={(value) => dispatch(setGroupVar(value ?? null))}
-          placeholder="Select group variable"
+          placeholder="Select group attribute"
           options={categoricalVars}
           allowClear
         />
         <Text type="secondary" className={styles.settingsHint}>
-          Default grouping variable for comparison, evolution, and correlation.
+          Default grouping attribute for comparison, evolution, and correlation.
         </Text>
       </section>
 
       <section className={styles.settingsSection}>
         <AnalysisSelectField
-          label="Time variable"
+          label="Time attribute"
           value={timeVar ?? undefined}
           onChange={(value) => dispatch(setTimeVar(value ?? null))}
-          placeholder="Select time variable"
+          placeholder="Select time attribute"
           options={navioVars}
           allowClear
         />
         <Text type="secondary" className={styles.settingsHint}>
-          Default time variable for longitudinal views.
+          Default time attribute for longitudinal views.
         </Text>
       </section>
     </div>
@@ -106,7 +106,7 @@ export default function AppSettingsButton({
               Settings
             </Title>
             <Text type="secondary" className={styles.modalSubtitle}>
-              Configure application behavior and default analysis variables.
+              Configure application behavior and default analysis attributes.
             </Text>
           </div>
         }
@@ -128,7 +128,7 @@ export default function AppSettingsButton({
             },
             {
               key: "variables",
-              label: "Variables",
+              label: "Attributes",
               children: <VariablesSettingsTab />,
             },
           ]}

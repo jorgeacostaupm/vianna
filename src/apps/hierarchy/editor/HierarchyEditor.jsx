@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, useState } from "react";
+import { useRef, useCallback, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import D3HierarchyEditor from "./D3HierarchyEditor";
@@ -10,14 +10,48 @@ import styles from "@/styles/Charts.module.css";
 import NoDataPlaceholder from "@/components/charts/NoDataPlaceholder";
 import HierarchyBar from "../toolbar/HierarchyBar";
 import ViewMenu from "../tools/ViewMenu";
-import { DEFAULT_HIERARCHY_VIEW_CONFIG } from "../tools/HierarchyViewSettings";
+import {
+  DEFAULT_HIERARCHY_VIEW_CONFIG,
+  DEFAULT_HIERARCHY_VIEW_SETTINGS,
+} from "../tools/hierarchyViewConfig";
+import { setHierarchyViewSettings } from "@/store/features/metadata";
 
 export default function HierarchyEditor() {
+  const dispatch = useDispatch();
   const attributes = useSelector((state) => state.metadata.attributes);
-  const [orientation, setOrientation] = useState("vertical");
-  const [linkStyle, setLinkStyle] = useState("smooth");
-  const [viewConfig, setViewConfig] = useState(DEFAULT_HIERARCHY_VIEW_CONFIG);
+  const hierarchyViewSettings = useSelector(
+    (state) => state.metadata.hierarchyViewSettings,
+  );
+  const orientation =
+    hierarchyViewSettings?.orientation ??
+    DEFAULT_HIERARCHY_VIEW_SETTINGS.orientation;
+  const linkStyle =
+    hierarchyViewSettings?.linkStyle ?? DEFAULT_HIERARCHY_VIEW_SETTINGS.linkStyle;
+  const viewConfig = {
+    ...DEFAULT_HIERARCHY_VIEW_CONFIG,
+    ...hierarchyViewSettings?.viewConfig,
+  };
   const [selectionMode, setSelectionMode] = useState("none");
+  const setOrientation = useCallback(
+    (nextOrientation) =>
+      dispatch(setHierarchyViewSettings({ orientation: nextOrientation })),
+    [dispatch],
+  );
+  const setLinkStyle = useCallback(
+    (nextLinkStyle) =>
+      dispatch(setHierarchyViewSettings({ linkStyle: nextLinkStyle })),
+    [dispatch],
+  );
+  const setViewConfig = useCallback(
+    (nextViewConfig) => {
+      const resolved =
+        typeof nextViewConfig === "function"
+          ? nextViewConfig(viewConfig)
+          : nextViewConfig;
+      dispatch(setHierarchyViewSettings({ viewConfig: resolved }));
+    },
+    [dispatch, viewConfig],
+  );
 
   return (
     <div className={styles.viewContainer} data-view-container>

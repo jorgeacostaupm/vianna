@@ -111,7 +111,7 @@ const CustomMeasure = ({ formula }) => {
           gap: 8,
         }}
       >
-        <Text strong>Available Variables:</Text>
+        <Text strong>Available Attributes:</Text>
         <div style={{ position: "relative", margin: "6px 0" }}>
           <SearchOutlined
             style={{

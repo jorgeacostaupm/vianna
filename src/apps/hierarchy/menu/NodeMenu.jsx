@@ -170,7 +170,7 @@ const NodeMenu = () => {
               ? node.related.length
               : 0;
             const aggregationScope =
-              childCount > 0 ? "children" : "all variables";
+              childCount > 0 ? "children" : "all attributes";
 
             return (
               <Form className={styles.nodeInfoBody} ref={resizeRef}>

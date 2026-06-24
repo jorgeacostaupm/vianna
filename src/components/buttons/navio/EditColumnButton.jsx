@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Modal, Tabs, Typography, Select, Input } from "antd";
+import { Modal, Tabs, Typography, Select, Input, Radio } from "antd";
 import { EditOutlined, FormOutlined } from "@ant-design/icons";
 import { selectNavioVars } from "@/store/features/main";
 import { setDataframe } from "@/store/features/dataframe";
@@ -11,6 +11,11 @@ import { useSelectionOrderValues } from "@/hooks/useSelectionRows";
 import { getAffectedAggregationNodes } from "@/store/features/dataframe/utils/aggregationDependencies";
 import NullifyValuesPanel from "@/components/management/NullifyValuesPanel";
 import styles from "@/components/management/Data.module.css";
+import {
+  EDIT_VALUE_TYPE,
+  isValidEditNumber,
+  resolveEditValue,
+} from "./editValue";
 
 const { Text, Title } = Typography;
 
@@ -29,6 +34,7 @@ function EditColumn() {
   const dispatch = useDispatch();
   const [column, setColumn] = useState(null);
   const [inputValue, setInputValue] = useState("");
+  const [valueType, setValueType] = useState(EDIT_VALUE_TYPE.TEXT);
 
   const data = useSelector((state) => state.dataframe.dataframe);
   const attributes = useSelector((state) => state.metadata.attributes);
@@ -36,13 +42,23 @@ function EditColumn() {
   const selectedOrderValues = useSelectionOrderValues();
 
   const selectedOrderSet = new Set(selectedOrderValues);
+  const canApplyEdit =
+    Boolean(column) &&
+    (valueType !== EDIT_VALUE_TYPE.NUMBER || isValidEditNumber(inputValue));
+  const editTooltip = !column
+    ? "Select a column to edit"
+    : !canApplyEdit
+      ? "Enter a valid number"
+      : `Change selection ${column} values to ${inputValue} as ${valueType}`;
 
   const onEditSelection = () => {
-    if (!column) return;
+    if (!canApplyEdit) return;
+
+    const editValue = resolveEditValue(inputValue, valueType);
 
     const updatedData = data.map((item) =>
       selectedOrderSet.has(item?.[ORDER_VARIABLE])
-        ? { ...item, [column]: inputValue }
+        ? { ...item, [column]: editValue }
         : item,
     );
 
@@ -83,13 +99,24 @@ function EditColumn() {
           placeholder="New values"
           style={{ flex: 1 }}
         />
+        <Radio.Group
+          optionType="button"
+          buttonStyle="solid"
+          size="small"
+          value={valueType}
+          onChange={(e) => setValueType(e.target.value)}
+          style={{ whiteSpace: "nowrap" }}
+        >
+          <Radio.Button value={EDIT_VALUE_TYPE.TEXT}>Text</Radio.Button>
+          <Radio.Button value={EDIT_VALUE_TYPE.NUMBER}>Number</Radio.Button>
+        </Radio.Group>
         <AppButton
           preset={APP_BUTTON_PRESETS.TOOLBAR_ICON}
-          tooltip={`Change selection ${column} values to ${inputValue}`}
+          tooltip={editTooltip}
           tooltipPlacement="bottom"
           onClick={onEditSelection}
           icon={<EditOutlined />}
-          disabled={!column}
+          disabled={!canApplyEdit}
         />
       </div>
     </>

@@ -107,7 +107,7 @@ export default function Settings({
           </div>
           <Text className={panelStyles.helper}>
             {isLassoEnabled
-              ? `Lasso mode active on column: ${lassoTargetColumn || "-"}. Use right click to draw lasso, left click + drag to pan, and save the partition as a categorical variable.`
+              ? `Lasso mode active on column: ${lassoTargetColumn || "-"}. Use right click to draw lasso, left click + drag to pan, and save the partition as a categorical attribute.`
               : "Enable Lasso mode to manually define PCA groups with free-form right-click lasso while keeping mouse pan/zoom navigation."}
           </Text>
         </div>
@@ -117,20 +117,20 @@ export default function Settings({
   const variableSettings = (
     <>
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Variables</div>
+        <div className={panelStyles.sectionTitle}>Attributes</div>
         <CorrelationVariableSettings />
       </div>
 
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>PCA Variables</div>
+        <div className={panelStyles.sectionTitle}>PCA Attributes</div>
         <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Included variables</Text>
+          <Text className={panelStyles.label}>Included attributes</Text>
           <Select
             size="small"
             mode="multiple"
             value={params.variables}
             onChange={onVariablesChange}
-            placeholder="Select variables"
+            placeholder="Select attributes"
             options={variableOptions}
             disabled={!config.isSync}
           />
@@ -144,7 +144,7 @@ export default function Settings({
             </AppButton>
           </div>
           <Text className={panelStyles.helper}>
-            Variables in red cannot be used in PCA with the current selection.
+            Attributes in red cannot be used in PCA with the current selection.
           </Text>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function Settings({
           { key: "style", label: "Style", children: styleSettings },
           { key: "axis", label: "Axis", children: axisSettings },
           { key: "lasso", label: "Lasso", children: lassoSettings },
-          { key: "variables", label: "Variables", children: variableSettings },
+          { key: "variables", label: "Attributes", children: variableSettings },
         ]}
       />
     </div>

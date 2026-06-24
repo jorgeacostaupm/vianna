@@ -63,7 +63,7 @@ const ChildHolder = ({ allNodes, nodes, moveNode }) => {
 
   return (
     <>
-      <Text strong>Available Variables:</Text>
+      <Text strong>Available Attributes:</Text>
       <div
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}

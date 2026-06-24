@@ -21,7 +21,7 @@ export default function AnalysisSelectField({
   showSearch = true,
   filterOption = defaultFilterOption,
   optionFilterProp = "children",
-  notFoundContent = "No variables found",
+  notFoundContent = "No attributes found",
   ...selectProps
 }) {
   return (

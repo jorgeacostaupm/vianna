@@ -222,7 +222,7 @@ const lmmRandomIntercept = {
     if (!variable || !idVar || !timeVar) {
       return {
         error:
-          "Missing required model variables (outcome, subject ID, or time).",
+          "Missing required model attributes (outcome, subject ID, or time).",
       };
     }
 

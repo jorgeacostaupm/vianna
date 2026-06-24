@@ -131,8 +131,8 @@ export default function TestSelector({ generateTest, generateRanking }) {
       <div>
         <strong>Current context:</strong> {groups.length} groups
         {selectedVarType
-          ? `, ${getVariableTypeLabel(selectedVarType)} variable`
-          : ", variable type not selected"}
+          ? `, ${getVariableTypeLabel(selectedVarType)} attribute`
+          : ", attribute type not selected"}
       </div>
       <div>
         <strong>Current applicability:</strong>{" "}
@@ -198,7 +198,7 @@ export default function TestSelector({ generateTest, generateRanking }) {
           notFoundContent={
             groupVar
               ? "No tests apply to the current context"
-              : "Select a group variable first"
+              : "Select a group attribute first"
           }
         >
           {orderedGroups.map((category) => (
@@ -219,8 +219,8 @@ export default function TestSelector({ generateTest, generateRanking }) {
             preset={APP_BUTTON_PRESETS.ACTION}
             tooltip={
               groupVar
-                ? "Run the selected test on current variable"
-                : "Group variable must be set."
+                ? "Run the selected test on current attribute"
+                : "Group attribute must be set."
             }
             tooltipPlacement={"bottom"}
             icon={<ExperimentOutlined />}
@@ -236,15 +236,15 @@ export default function TestSelector({ generateTest, generateRanking }) {
             preset={APP_BUTTON_PRESETS.ACTION}
             tooltip={
               groupVar
-                ? "Rank every variable compatible with the selected test"
-                : "Group variable must be set."
+                ? "Rank every attribute compatible with the selected test"
+                : "Group attribute must be set."
             }
             tooltipPlacement={"bottom"}
             icon={<BarChartOutlined />}
             onClick={() => selectedTest && generateRanking(selectedTest)}
             disabled={!selectedTest || !isGroupCountApplicable}
           >
-            Rank variables
+            Rank attributes
           </AppButton>
         </div>
       </div>

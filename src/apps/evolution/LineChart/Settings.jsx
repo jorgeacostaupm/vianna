@@ -500,7 +500,7 @@ export default function Settings({
 
   const variablesTab = (
     <div className={panelStyles.section}>
-      <div className={panelStyles.sectionTitle}>Variables</div>
+      <div className={panelStyles.sectionTitle}>Attributes</div>
       <EvolutionVariableSettings />
     </div>
   );
@@ -514,7 +514,7 @@ export default function Settings({
           { key: "data", label: "Data", children: dataTab },
           { key: "axis", label: "Axis", children: axisTab },
           { key: "style", label: "Style", children: appearanceTab },
-          { key: "variables", label: "Variables", children: variablesTab },
+          { key: "variables", label: "Attributes", children: variablesTab },
         ]}
       />
     </div>

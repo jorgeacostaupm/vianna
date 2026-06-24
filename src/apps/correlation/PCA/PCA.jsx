@@ -160,8 +160,8 @@ export default function PCA({
         if (!warnedInvalidVariablesRef.current.has(variableName)) {
           warnedInvalidVariablesRef.current.add(variableName);
           notifyWarning({
-            message: "Variable not used in PCA",
-            description: `Column "${variableName}" has ${invalidCount} invalid values and was excluded.`,
+            message: "Attribute not used in PCA",
+            description: `Attribute "${variableName}" has ${invalidCount} invalid values and was excluded.`,
             placement: "bottomRight",
           });
         }
@@ -573,7 +573,7 @@ export default function PCA({
   ]);
 
   const viewModel = createViewModel({
-    title: `PCA · ${params.variables.length} Variables`,
+    title: `PCA · ${params.variables.length} Attributes`,
     svgIDs: [id],
     remove,
     settings: (

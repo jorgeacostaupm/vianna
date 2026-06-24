@@ -215,7 +215,7 @@ export default function TimeOrderModal({ timeVar }) {
         footer={
           <div className={styles.modalFooter}>
             <AppButton onClick={resetCurrentVariable}>
-              Reset variable settings
+              Reset attribute settings
             </AppButton>
             <AppButton type="primary" onClick={applyChanges}>
               Apply
@@ -277,7 +277,7 @@ export default function TimeOrderModal({ timeVar }) {
           <div className={styles.previewTitle}>Order preview</div>
           {displayPreview.length === 0 ? (
             <div className={styles.empty}>
-              No values found for this variable in the current selection.
+              No values found for this attribute in the current selection.
             </div>
           ) : (
             <div className={styles.valueList}>

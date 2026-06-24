@@ -1,28 +1,11 @@
-import { DataType } from "@/utils/constants";
 import { hasValidAggregationFormula } from "@/store/features/metadata/utils/thunkUtils";
-
-const dtypeColors = {
-  [DataType.NUMERICAL.dtype]: DataType.NUMERICAL.color,
-  [DataType.TEXT.dtype]: DataType.TEXT.color,
-  [DataType.UNKNOWN.dtype]: DataType.UNKNOWN.color,
-  root: "white",
-};
+import { resolveNodeColor } from "./nodeColor.js";
 
 export function colorNode(node) {
-  if (node?.data?.isActive === false) {
-    return "var(--chart-bg-muted)";
-  }
-
-  const isRootNode = node?.data?.type === "root" || node?.data?.id === 0;
-  const isAggregationWithoutFormula =
-    node?.data?.type === "aggregation" && !hasValidAggregationFormula(node?.data);
-
-  if (isRootNode || isAggregationWithoutFormula) {
-    return dtypeColors.root;
-  }
-
-  const dtype = node?.data?.dtype || DataType.UNKNOWN.dtype;
-  return dtypeColors[dtype] || dtypeColors[DataType.UNKNOWN.dtype];
+  return resolveNodeColor(
+    node?.data,
+    hasValidAggregationFormula(node?.data),
+  );
 }
 
 export const clampNumber = (value, min, max, fallback) => {

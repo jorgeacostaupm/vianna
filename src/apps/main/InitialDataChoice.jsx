@@ -56,7 +56,7 @@ export default function InitialDataChoice({
             Welcome to VIANNA
           </Title>
           <Text type="secondary" className={styles.initialChoiceText}>
-            Load data, organize variables, and build coordinated analytical
+            Load data, organize attributes, and build coordinated analytical
             views for exploratory research.
           </Text>
 

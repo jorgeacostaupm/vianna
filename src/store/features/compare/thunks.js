@@ -14,10 +14,10 @@ export const checkAssumptions = createAsyncThunk(
       const { groupVar } = selectCompareAnalysisContext(state);
       const { selectedVar } = state.compare;
       if (!groupVar) {
-        throw new Error("Group variable is not set for assumptions.");
+        throw new Error("Group attribute is not set for assumptions.");
       }
       if (!selectedVar) {
-        throw new Error("Selected variable is not set for assumptions.");
+        throw new Error("Selected attribute is not set for assumptions.");
       }
       if (!Array.isArray(selection) || selection.length === 0) {
         throw new Error("No rows available in current selection.");

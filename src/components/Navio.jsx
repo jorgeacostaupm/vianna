@@ -2,7 +2,11 @@ import React, { useEffect, useRef, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import navio from "@/vendor/navio";
 
-import { selectNavioColumns } from "@/store/features/dataframe";
+import {
+  selectNavioColumns,
+  selectNavioScaleOverrides,
+  setNavioScaleTypes,
+} from "@/store/features/dataframe";
 import { ORDER_VARIABLE } from "@/utils/constants";
 import { GROUP_CATEGORICAL_PALETTE } from "@/utils/groupColors";
 
@@ -27,6 +31,7 @@ export default function Navio({
   const navioUiStateRef = useRef(navioUiState);
   const resetTokenRef = useRef(resetToken);
   const columns = useSelector(selectNavioColumns);
+  const scaleOverrides = useSelector(selectNavioScaleOverrides);
   const columnsRef = useRef(columns);
 
   const emitNavioUiState = useCallback(() => {
@@ -91,7 +96,12 @@ export default function Navio({
     nv.id(ORDER_VARIABLE);
     nv.data(JSON.parse(JSON.stringify(data)));
     nv.updateCallback(handleSelection);
-    nv.addAllAttribs(columns);
+    nv.addAllAttribs(columns, scaleOverrides);
+    dispatch(
+      setNavioScaleTypes(
+        buildNavioScaleTypeSummary(nv, columns, scaleOverrides),
+      ),
+    );
     restoreNavioState(nv, previousUiState, {
       restoreAttribOrder: !hasExternalColumnOrderChange,
     });
@@ -108,7 +118,16 @@ export default function Navio({
         navioInstanceRef.current = null;
       }
     };
-  }, [data, config, columns, handleSelection, emitNavioUiState, resetToken]);
+  }, [
+    data,
+    config,
+    columns,
+    scaleOverrides,
+    dispatch,
+    handleSelection,
+    emitNavioUiState,
+    resetToken,
+  ]);
 
   return (
     <div
@@ -121,6 +140,28 @@ export default function Navio({
       <div ref={navioRef} style={{ fontSize: 14 }} />
     </div>
   );
+}
+
+function buildNavioScaleTypeSummary(nv, columns, scaleOverrides) {
+  const inferredByAttribute = new Map(
+    (nv.inferAttribTypes?.(columns) || []).map((item) => [
+      item.attribute,
+      item.type,
+    ]),
+  );
+  const effectiveByAttribute = new Map(
+    (nv.getAttribScaleTypes?.() || []).map((item) => [
+      item.attribute,
+      item.type,
+    ]),
+  );
+
+  return columns.map((attribute) => ({
+    attribute,
+    inferredType: inferredByAttribute.get(attribute) || null,
+    effectiveType: effectiveByAttribute.get(attribute) || null,
+    overrideType: scaleOverrides?.[attribute] || null,
+  }));
 }
 
 function restoreNavioState(

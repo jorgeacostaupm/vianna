@@ -4,6 +4,7 @@ import { Select, Slider, Typography } from "antd";
 import panelStyles from "@/styles/SettingsPanel.module.css";
 import SwitchControl from "@/components/ui/SwitchControl";
 import { AppButton } from "@/components/buttons/core";
+import { DEFAULT_HIERARCHY_VIEW_CONFIG } from "./hierarchyViewConfig";
 
 const { Text } = Typography;
 
@@ -17,17 +18,6 @@ const LINK_STYLE_OPTIONS = [
   { value: "elbow", label: "Elbow" },
   { value: "straight", label: "Straight" },
 ];
-
-export const DEFAULT_HIERARCHY_VIEW_CONFIG = {
-  nodeSize: 60,
-  depthSpacing: 240,
-  nodeScale: 1,
-  labelFontSize: 24,
-  labelMaxLength: 20,
-  linkWidth: 1,
-  showLabels: true,
-  animateTransitions: true,
-};
 
 const sliderFormatter = (value, suffix = "") => `${value}${suffix}`;
 

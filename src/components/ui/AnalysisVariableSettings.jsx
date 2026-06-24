@@ -16,9 +16,9 @@ import { uniqueColumns } from "@/utils/viewRecords";
 const { Text } = Typography;
 
 const FIELD_LABELS = {
-  idVar: "ID variable",
-  groupVar: "Group variable",
-  timeVar: "Time variable",
+  idVar: "ID attribute",
+  groupVar: "Group attribute",
+  timeVar: "Time attribute",
 };
 
 const STAT_LABELS = {
@@ -97,7 +97,7 @@ export default function AnalysisVariableSettings({
               {!isCardVariant ? (
                 <div className={styles.contextStatsRow}>
                   <span className={styles.contextStatsLabel}>
-                    Current variable
+                    Current attribute
                   </span>
                   <span className={styles.contextStatsValue}>
                     {formatValue(effectiveValue)}

@@ -124,7 +124,7 @@ const CustomAggregate = ({ nodes, formula }) => {
           gap: 8,
         }}
       >
-        <Text strong>Available Variables:</Text>
+        <Text strong>Available Attributes:</Text>
         <div className={styles.dropContainer}>
           {nodes.map((n) => {
             return <AttributePaste key={n.name} name={n.name} />;

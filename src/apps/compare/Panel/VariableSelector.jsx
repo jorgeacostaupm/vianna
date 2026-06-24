@@ -29,10 +29,10 @@ export default function VariableSelector({ generateDistribution }) {
   return (
     <>
       <AnalysisSelectField
-        label="Variable"
+        label="Attribute"
         value={selectedVar ?? undefined}
         onChange={(v) => dispatch(setSelectedVar(v ?? null))}
-        placeholder="Select variable"
+        placeholder="Select attribute"
         options={variables}
         allowClear={true}
       />
@@ -41,8 +41,8 @@ export default function VariableSelector({ generateDistribution }) {
         preset={APP_BUTTON_PRESETS.ACTION}
         tooltip={
           groupVar
-            ? "Add distribution plots for the selected variable."
-            : "Group variable must be set."
+            ? "Add distribution plots for the selected attribute."
+            : "Group attribute must be set."
         }
         tooltipPlacement={"bottom"}
         icon={<AreaChartOutlined />}

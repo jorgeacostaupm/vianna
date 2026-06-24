@@ -5,7 +5,7 @@ export const chiSquareIndependence = {
   id: "chi-square-independence",
   label: "Chi-Square Test of Independence",
   description:
-    "Test of independence between a grouping variable and a categorical variable",
+    "Test of independence between a grouping attribute and a categorical attribute",
   isApplicable: (count) => count >= 2,
   variableType: VariableTypes.CATEGORICAL,
   category: "Categóricas — Independencia",

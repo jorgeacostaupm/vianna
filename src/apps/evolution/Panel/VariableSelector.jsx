@@ -23,10 +23,10 @@ export default function VariableSelector({ generateEvolution }) {
   return (
     <>
       <AnalysisSelectField
-        label="Variable"
+        label="Attribute"
         value={selectedVar ?? undefined}
         onChange={(v) => dispatch(setSelectedVar(v ?? null))}
-        placeholder="Select variable"
+        placeholder="Select attribute"
         options={variables}
         allowClear={true}
       />
@@ -35,8 +35,8 @@ export default function VariableSelector({ generateEvolution }) {
         preset={APP_BUTTON_PRESETS.ACTION}
         tooltip={
           groupVar && timeVar
-            ? "Add evolution plot for the selected variable."
-            : "Group and Time variables must be set."
+            ? "Add evolution plot for the selected attribute."
+            : "Group and Time attributes must be set."
         }
         icon={<LineChartOutlined />}
         onClick={() => selectedVar && generateEvolution(selectedVar)}

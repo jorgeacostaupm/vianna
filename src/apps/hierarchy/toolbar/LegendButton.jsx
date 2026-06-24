@@ -91,7 +91,7 @@ function LegendSection({ title, items }) {
 
 function Legend() {
   const shapeLegend = [
-    { name: "Original variable", shape: "circle", color: "white" },
+    { name: "Original attribute", shape: "circle", color: "white" },
     { name: "Aggregation with children", shape: "square", color: "white" },
     { name: "Aggregation without children", shape: "triangle", color: "white" },
   ];
@@ -109,7 +109,7 @@ function Legend() {
   return (
     <div className={styles.legend}>
       <LegendSection title="Node types" items={shapeLegend} />
-      <LegendSection title="Variable types" items={colorLegend} />
+      <LegendSection title="Attribute types" items={colorLegend} />
     </div>
   );
 }

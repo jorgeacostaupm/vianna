@@ -300,7 +300,7 @@ export function getLineChartData(
   }
 
   if (!valueVar || !groupVar || !timeVar || !idVar) {
-    console.error("[getLineChartData] missing required variable", {
+    console.error("[getLineChartData] missing required attribute", {
       valueVar,
       groupVar,
       timeVar,
@@ -323,7 +323,7 @@ export function getLineChartData(
   requiredColumns.forEach(({ name, role }) => {
     if (!isValidColumnName(name)) {
       console.error("[getLineChartData] invalid column name", { role, name });
-      throw new Error(`Invalid ${role} variable: empty column name.`);
+      throw new Error(`Invalid ${role} attribute: empty column name.`);
     }
     if (columns.length > 0 && !columns.includes(name)) {
       console.error("[getLineChartData] column not found in raw", {
@@ -331,7 +331,7 @@ export function getLineChartData(
         name,
         columns,
       });
-      throw new Error(`Invalid ${role} variable: "${name}" is not a column.`);
+      throw new Error(`Invalid ${role} attribute: "${name}" is not a column.`);
     }
   });
 

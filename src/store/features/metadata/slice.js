@@ -17,6 +17,7 @@ import {
 } from "./utils/thunkUtils";
 import { applyAttributeRemovals } from "./utils/removeAttributes";
 import { moveRelatedIdsAsBlock } from "./utils/reorder";
+import { DEFAULT_HIERARCHY_VIEW_SETTINGS } from "@/apps/hierarchy/tools/hierarchyViewConfig";
 
 const MAX_ASSIGNMENT_HISTORY = 100;
 
@@ -218,6 +219,7 @@ const initialState = {
   assignmentUndoStack: [],
   assignmentRedoStack: [],
   hierarchyRevision: -1,
+  hierarchyViewSettings: DEFAULT_HIERARCHY_VIEW_SETTINGS,
 };
 
 const metaSlice = createSlice({
@@ -267,6 +269,18 @@ const metaSlice = createSlice({
         return attr;
       });
       state.hierarchyRevision = 0;
+    }),
+
+    setHierarchyViewSettings: create.reducer((state, action) => {
+      const settings = action.payload || {};
+      state.hierarchyViewSettings = {
+        ...state.hierarchyViewSettings,
+        ...settings,
+        viewConfig: {
+          ...state.hierarchyViewSettings?.viewConfig,
+          ...settings.viewConfig,
+        },
+      };
     }),
 
     toggleAttribute: create.reducer((state, action) => {
@@ -603,6 +617,7 @@ export const {
   redoAssignmentChange,
   aggregateSelectedNodes,
   changeOrder,
+  setHierarchyViewSettings,
 } = metaSlice.actions;
 
 export default metaSlice.reducer;

@@ -4,6 +4,7 @@ import {
   WarningNullButton,
   SendQuarantineButton as QuarantineButton,
   NavioLegendButton,
+  NavioScaleButton,
   NavioSettingsButton,
   EditColumnButton,
   ExportDataButton,
@@ -32,6 +33,7 @@ export default function Bar({ title, config, updateConfig }) {
           <div className={styles.separator} />
 
           <NavioLegendButton />
+          <NavioScaleButton />
           <NavioSettingsButton
             config={config}
             updateConfig={updateConfig}

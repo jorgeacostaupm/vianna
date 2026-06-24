@@ -128,15 +128,15 @@ export default function Settings({ config, setConfig, params, setParams }) {
 
   const variableSettings = (
       <div className={panelStyles.section}>
-        <div className={panelStyles.sectionTitle}>Variables</div>
+        <div className={panelStyles.sectionTitle}>Attributes</div>
         <div className={panelStyles.rowStack}>
-          <Text className={panelStyles.label}>Included variables</Text>
+          <Text className={panelStyles.label}>Included attributes</Text>
           <Select
             size="small"
             mode="multiple"
             value={params.variables}
             onChange={onVariablesChange}
-            placeholder="Select variables"
+            placeholder="Select attributes"
             options={navioColumns.map((key) => ({
               value: key,
               label: key,
@@ -170,7 +170,7 @@ export default function Settings({ config, setConfig, params, setParams }) {
           },
           { key: "style", label: "Style", children: styleSettings },
           { key: "axis", label: "Axis", children: axisSettings },
-          { key: "variables", label: "Variables", children: variableSettings },
+          { key: "variables", label: "Attributes", children: variableSettings },
         ]}
       />
     </div>

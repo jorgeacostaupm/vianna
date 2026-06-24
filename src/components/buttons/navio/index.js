@@ -2,6 +2,7 @@ export { default as SwitchButton } from "./SwitchButton";
 export { default as WarningNullButton } from "./WarningNullButton";
 export { default as SendQuarantineButton } from "./SendQuarantineButton";
 export { default as NavioLegendButton } from "./NavioLegendButton";
+export { default as NavioScaleButton } from "./NavioScaleButton";
 export { default as NavioSettingsButton } from "./NavioSettingsButton";
 export { default as EditColumnButton } from "./EditColumnButton";
 export { default as ExportDataButton } from "./ExportDataButton";

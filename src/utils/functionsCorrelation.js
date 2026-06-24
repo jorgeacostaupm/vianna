@@ -82,7 +82,7 @@ export function getCorrelationData(data, params) {
         Number.isNaN(num) ||
         !Number.isFinite(num)
       ) {
-        errors.push(`Invalid value: "${raw}" in variable "${varName}"`);
+        errors.push(`Invalid value: "${raw}" in attribute "${varName}"`);
       }
     });
   });

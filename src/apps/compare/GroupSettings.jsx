@@ -52,7 +52,7 @@ export default function GroupSettings({ disabled = false }) {
   return (
     <>
       <AnalysisSelectField
-        label="Group variable"
+        label="Group attribute"
         value={localGroupVar ?? undefined}
         onChange={(value) => dispatch(setGroupVar(value ?? null))}
         placeholder={`Default: ${formatValue(groupVar)}`}
@@ -62,7 +62,7 @@ export default function GroupSettings({ disabled = false }) {
       />
       <div className={statsStyles.contextStatsBox}>
         <div className={statsStyles.contextStatsRow}>
-          <span className={statsStyles.contextStatsLabel}>Current variable</span>
+          <span className={statsStyles.contextStatsLabel}>Current attribute</span>
           <span className={statsStyles.contextStatsValue}>
             {formatValue(groupVar)}
           </span>

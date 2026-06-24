@@ -18,6 +18,11 @@ import {
   syncSelectionFromDataframe,
 } from "./utils/sliceUtils";
 import {
+  pruneNavioScaleOverrides,
+  renameNavioScaleOverride,
+  setNavioScaleOverrideValue,
+} from "./utils/navioScaleOverrides";
+import {
   createSelectionRefForAllRows,
   resolveSelectionRefPayload,
 } from "./utils/selectionRef";
@@ -41,6 +46,8 @@ const initialState = {
 
   navioColumns: [],
   navioUiState: null,
+  navioScaleOverrides: {},
+  navioScaleTypes: [],
   version: -1,
 
   config: {
@@ -65,6 +72,10 @@ const dataSlice = createSlice({
     setNavioColumns: (state, action) => {
       const nextColumns = Array.isArray(action.payload) ? action.payload : [];
       syncMissingStateForColumns(state, nextColumns);
+      state.navioScaleOverrides = pruneNavioScaleOverrides(
+        state.navioScaleOverrides,
+        state.navioColumns,
+      );
     },
 
     setSelection: (state, action) => {
@@ -81,6 +92,11 @@ const dataSlice = createSlice({
 
       const navColIdx = state.navioColumns.findIndex((n) => n === prevName);
       if (navColIdx !== -1) state.navioColumns[navColIdx] = newName;
+      state.navioScaleOverrides = renameNavioScaleOverride(
+        state.navioScaleOverrides,
+        prevName,
+        newName,
+      );
       state.missingByAttribute = buildMissingByAttribute(state.dataframe);
       syncMissingStateForSelection(state);
 
@@ -94,6 +110,26 @@ const dataSlice = createSlice({
     setNavioUiState: (state, action) => {
       state.navioUiState = action.payload || null;
     },
+    setNavioScaleTypes: (state, action) => {
+      state.navioScaleTypes = Array.isArray(action.payload)
+        ? action.payload
+        : [];
+    },
+    setNavioScaleOverride: (state, action) => {
+      const { attribute, type } = action.payload || {};
+      if (!attribute) return;
+
+      state.navioScaleOverrides = setNavioScaleOverrideValue(
+        state.navioScaleOverrides,
+        attribute,
+        type,
+      );
+      state.navioUiState = null;
+    },
+    clearNavioScaleOverrides: (state) => {
+      state.navioScaleOverrides = {};
+      state.navioUiState = null;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(updateHierarchy.fulfilled, (state, action) => {
@@ -102,6 +138,10 @@ const dataSlice = createSlice({
       const filtered = getVisibleNodes(tree);
 
       syncMissingStateForColumns(state, filtered);
+      state.navioScaleOverrides = pruneNavioScaleOverrides(
+        state.navioScaleOverrides,
+        state.navioColumns,
+      );
     });
 
     builder.addCase(updateData.pending, (state) => {
@@ -115,6 +155,10 @@ const dataSlice = createSlice({
 
       if (isNewColumns) {
         state.navioColumns = columnNames;
+        state.navioScaleOverrides = pruneNavioScaleOverrides(
+          state.navioScaleOverrides,
+          state.navioColumns,
+        );
       }
 
       state.dataframe = items;
@@ -127,6 +171,7 @@ const dataSlice = createSlice({
         attributeIds: state.navioColumns,
       });
       state.navioUiState = null;
+      state.navioScaleTypes = [];
       state.version = 0;
       state.nullifiedValues = [];
     });
@@ -160,6 +205,11 @@ const dataSlice = createSlice({
             column === prevName ? newName : column,
           )
         : [];
+      state.navioScaleOverrides = renameNavioScaleOverride(
+        state.navioScaleOverrides,
+        prevName,
+        newName,
+      );
       syncSelectionFromDataframe(state, data);
       state.navioUiState = null;
       state.version += 1;
@@ -180,9 +230,12 @@ const dataSlice = createSlice({
 export default dataSlice.reducer;
 export const {
   renameColumn,
+  clearNavioScaleOverrides,
   setNavioColumns,
   setDataframe,
   setSelection,
+  setNavioScaleOverride,
+  setNavioScaleTypes,
   setNavioUiState,
   updateConfig,
 } = dataSlice.actions;

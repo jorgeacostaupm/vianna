@@ -22,7 +22,7 @@ function computePointRangeData(selection, groupVar, variable, test) {
         !Number.isFinite(value)
       ) {
         errors.push(
-          `Invalid value in column "${variable}" group "${name}" value: "${value}"`,
+          `Invalid value in attribute "${variable}" group "${name}" value: "${value}"`,
         );
       }
     });
@@ -106,7 +106,7 @@ export default function useStatTestData({
         fallback:
           mode === "pairwise"
             ? "Pairwise effect calculation failed."
-            : "Summary calculation failed for the selected variable.",
+            : "Summary calculation failed for the selected attribute.",
         placement: "bottomRight",
         source: "test",
       });

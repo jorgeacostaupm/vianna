@@ -85,12 +85,12 @@ export function computePairwiseData(selection, groupVar, variable, test) {
           !Number.isFinite(value)
         ) {
           errors.push(
-            `Invalid value in column "${variable}" group "${group}" value: "${value}"`,
+            `Invalid value in attribute "${variable}" group "${group}" value: "${value}"`,
           );
         }
       } else if (value == null || Number.isNaN(value)) {
         errors.push(
-          `Invalid value in column "${variable}" group "${group}" value: "${value}"`,
+          `Invalid value in attribute "${variable}" group "${group}" value: "${value}"`,
         );
       }
     });
@@ -287,7 +287,7 @@ export function getPCAData(data, params) {
     return {
       points: [],
       info: [
-        "PCA needs at least 2 numeric variables without missing or invalid values.",
+        "PCA needs at least 2 numeric attributes without missing or invalid values.",
       ],
       skippedVariables,
     };
